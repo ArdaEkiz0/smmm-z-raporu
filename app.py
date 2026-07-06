@@ -13,6 +13,7 @@ import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageEnhance
 import numpy as np
+import feedparser
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
@@ -500,6 +501,26 @@ def urun_kodu_bul(urun_adi, urun_kodlari):
 def data_to_luca_rows(data, hesap_kodlari, fis_no_start=1, urun_kodlari=None):
     rows = []
     fis_no = fis_no_start
+    # ... (kodun geri kalanı aynen duruyor)
+    return rows
+
+@st.cache_data
+def hesapla_luca_rows(results, hesap_kodlari, urun_kodlari):
+    all_luca_rows = []
+    fc = 1
+    for r in results:
+        if "error" in r:
+            continue
+        rows = data_to_luca_rows(r, hesap_kodlari, fc, urun_kodlari)
+        all_luca_rows.extend(rows)
+        fc += 1
+    return all_luca_rows
+
+@st.cache_data
+def generate_excel_cached(all_luca_rows_tuple):
+    return generate_excel(list(all_luca_rows_tuple))
+    rows = []
+    fis_no = fis_no_start
     tarih = data.get("tarih", datetime.now().strftime("%d.%m.%Y"))
     z_no = data.get("z_no") or data.get("belge_no") or str(fis_no)
     banka = data.get("banka_adi", "")
@@ -624,6 +645,22 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no_start=1, urun_kodlari=None):
 
     return rows
 
+@st.cache_data
+def hesapla_luca_rows(results, hesap_kodlari, urun_kodlari):
+    all_luca_rows = []
+    fc = 1
+    for r in results:
+        if "error" in r:
+            continue
+        rows = data_to_luca_rows(r, hesap_kodlari, fc, urun_kodlari)
+        all_luca_rows.extend(rows)
+        fc += 1
+    return all_luca_rows
+
+@st.cache_data
+def generate_excel_cached(all_luca_rows_tuple):
+    return generate_excel(list(all_luca_rows_tuple))
+
 def generate_excel(all_rows):
     output = io.BytesIO()
     wb = openpyxl.Workbook()
@@ -659,6 +696,18 @@ def generate_excel(all_rows):
 
 def mukellefler():
     return dosya_oku(MUKELLEF_FILE, [])
+
+@st.cache_data(ttl=3600)
+def haberleri_getir():
+    kaynaklar = [
+        "https://www.gib.gov.tr/rss/duyurular.xml"
+    ]
+    haberler = []
+    for k in kaynaklar:
+        feed = feedparser.parse(k)
+        for entry in feed.entries[:5]:
+            haberler.append({"title": entry.title, "link": entry.link})
+    return haberler
 
 def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -779,6 +828,16 @@ with st.sidebar:
 
 if sayfa == "Dashboard":
     st.header("Genel Bakış")
+    
+    # Haber Paneli
+    with st.expander("📢 GÜNCEL MEVZUAT VE VERGİ HABERLERİ (GİB)", expanded=True):
+        haberler = haberleri_getir()
+        if haberler:
+            for h in haberler:
+                st.markdown(f"- [{h['title']}]({h['link']})")
+        else:
+            st.write("Haberler şu an yüklenemedi.")
+
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
     ml = mukellefler()
@@ -1024,11 +1083,6 @@ elif sayfa == "Z Raporu Yükle":
                     if idx < len(duzeltilebilir) - 1:
                         st.divider()
 
-        kdv_eksik = []
-        for i, r in enumerate(results):
-            if "error" not in r and not r.get("kdv_kalemleri"):
-                kdv_eksik.append((i, r))
-
         if kdv_eksik:
             st.warning(f"{len(kdv_eksik)} Z raporunda KDV oranı bulunamadı. Excel için KDV oranı seçin:")
             for idx, r in kdv_eksik:
@@ -1054,17 +1108,12 @@ elif sayfa == "Z Raporu Yükle":
                         kdv_tutar = round(tutar - net_tutar, 2)
                         r["kdv_kalemleri"] = [{"oran": oran, "matrah": net_tutar, "kdv_tutari": kdv_tutar}]
                         st.rerun()
+            st.info("KDV oranlarını tamamlayıp sayfayı yenileyin.")
+            st.stop()
 
-            st.info("Tüm KDV oranlarını seçtikten sonra Excel indirilebilir.")
-            all_luca_rows = []
-            fc = 1
-            for r in results:
-                if "error" in r:
-                    continue
-                rows = data_to_luca_rows(r, hesap_kodlari, fc, urun_kodlari)
-                all_luca_rows.extend(rows)
-                fc += 1
-
+        # Tüm hesaplamalar tek merkezden
+        all_luca_rows = hesapla_luca_rows(results, hesap_kodlari, urun_kodlari)
+        
         toplam_borc = sum(r.get("Borç", 0) or 0 for r in all_luca_rows)
         toplam_alacak = sum(r.get("Alacak", 0) or 0 for r in all_luca_rows)
         c1, c2, c3, c4 = st.columns(4)
@@ -1080,7 +1129,7 @@ elif sayfa == "Z Raporu Yükle":
 
         st.divider()
 
-        excel_data = generate_excel(all_luca_rows)
+        excel_data = generate_excel_cached(tuple(all_luca_rows))
         st.download_button("EXCEL İNDİR (LUCA)", excel_data,
             f"z_raporlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
