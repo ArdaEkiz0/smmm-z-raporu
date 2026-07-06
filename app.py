@@ -728,24 +728,21 @@ tema_modu = st.session_state.tema
 if tema_modu == "Açık":
     tema_css = """
     <style>
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"],
-    .block-container {
+    [data-testid="stAppViewContainer"] > .main {
         background-color: #FFFFFF !important;
-        color: #31333F !important;
     }
-    [data-testid="stSidebar"] {
+    [data-testid="stHeader"] {
+        background-color: #FFFFFF !important;
+    }
+    [data-testid="stSidebar"] > div:first-child {
         background-color: #F0F2F6 !important;
+    }
+    .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown li, .stMarkdown span:not([data-testid]),
+    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
         color: #31333F !important;
     }
-    [data-testid="stSidebar"] * {
-        color: #31333F !important;
-    }
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
-        color: #31333F !important;
-    }
-    [data-testid="stMetric"] {
-        background-color: #F8F9FA !important;
+    [data-testid="stDataFrame"] {
         border: 1px solid #E0E0E0 !important;
     }
     </style>
@@ -753,20 +750,18 @@ if tema_modu == "Açık":
 else:
     tema_css = """
     <style>
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"],
-    .block-container {
+    [data-testid="stAppViewContainer"] > .main {
         background-color: #0E1117 !important;
-        color: #FAFAFA !important;
     }
-    [data-testid="stSidebar"] {
+    [data-testid="stHeader"] {
+        background-color: #0E1117 !important;
+    }
+    [data-testid="stSidebar"] > div:first-child {
         background-color: #1A1D23 !important;
-        color: #FAFAFA !important;
     }
-    [data-testid="stSidebar"] * {
-        color: #FAFAFA !important;
-    }
-    h1, h2, h3, h4, h5, h6, p, span, label, div {
+    .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
+    .stMarkdown li, .stMarkdown span:not([data-testid]),
+    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
         color: #FAFAFA !important;
     }
     [data-testid="stMetric"] {
