@@ -721,9 +721,50 @@ def fis_sil(kayit_yolu, fis_index):
 
 st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
 
+if "tema" not in st.session_state:
+    st.session_state.tema = "Koyu"
+
+tema_modu = st.session_state.tema
+if tema_modu == "Açık":
+    tema_css = """
+    <style>
+    :root {
+        --bg-color: #FFFFFF;
+        --secondary-bg: #F0F2F6;
+        --text-color: #31333F;
+        --card-bg: #F8F9FA;
+        --border-color: #E0E0E0;
+    }
+    </style>
+    """
+else:
+    tema_css = """
+    <style>
+    :root {
+        --bg-color: #0E1117;
+        --secondary-bg: #1A1D23;
+        --text-color: #FAFAFA;
+        --card-bg: #1A1D23;
+        --border-color: #333333;
+    }
+    </style>
+    """
+st.markdown(tema_css, unsafe_allow_html=True)
+
 with st.sidebar:
     st.header("Aygıtlar")
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
+
+    def tema_degistir():
+        st.session_state.tema = "Açık" if st.session_state.tema == "Koyu" else "Koyu"
+
+    cols = st.columns([3, 1])
+    with cols[0]:
+        st.write("")
+    with cols[1]:
+        if st.button("🌙" if st.session_state.tema == "Koyu" else "☀️", key="tema_btn", help="Tema Değiştir"):
+            tema_degistir()
+            st.rerun()
 
     st.divider()
     st.header("Hesap Kodları")
