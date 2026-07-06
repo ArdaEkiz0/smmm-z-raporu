@@ -501,26 +501,6 @@ def urun_kodu_bul(urun_adi, urun_kodlari):
 def data_to_luca_rows(data, hesap_kodlari, fis_no_start=1, urun_kodlari=None):
     rows = []
     fis_no = fis_no_start
-    # ... (kodun geri kalanı aynen duruyor)
-    return rows
-
-@st.cache_data
-def hesapla_luca_rows(results, hesap_kodlari, urun_kodlari):
-    all_luca_rows = []
-    fc = 1
-    for r in results:
-        if "error" in r:
-            continue
-        rows = data_to_luca_rows(r, hesap_kodlari, fc, urun_kodlari)
-        all_luca_rows.extend(rows)
-        fc += 1
-    return all_luca_rows
-
-@st.cache_data
-def generate_excel_cached(all_luca_rows_tuple):
-    return generate_excel(list(all_luca_rows_tuple))
-    rows = []
-    fis_no = fis_no_start
     tarih = data.get("tarih", datetime.now().strftime("%d.%m.%Y"))
     z_no = data.get("z_no") or data.get("belge_no") or str(fis_no)
     banka = data.get("banka_adi", "")
