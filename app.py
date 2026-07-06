@@ -728,24 +728,50 @@ tema_modu = st.session_state.tema
 if tema_modu == "Açık":
     tema_css = """
     <style>
-    :root {
-        --bg-color: #FFFFFF;
-        --secondary-bg: #F0F2F6;
-        --text-color: #31333F;
-        --card-bg: #F8F9FA;
-        --border-color: #E0E0E0;
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    .block-container {
+        background-color: #FFFFFF !important;
+        color: #31333F !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #F0F2F6 !important;
+        color: #31333F !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: #31333F !important;
+    }
+    h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #31333F !important;
+    }
+    [data-testid="stMetric"] {
+        background-color: #F8F9FA !important;
+        border: 1px solid #E0E0E0 !important;
     }
     </style>
     """
 else:
     tema_css = """
     <style>
-    :root {
-        --bg-color: #0E1117;
-        --secondary-bg: #1A1D23;
-        --text-color: #FAFAFA;
-        --card-bg: #1A1D23;
-        --border-color: #333333;
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    .block-container {
+        background-color: #0E1117 !important;
+        color: #FAFAFA !important;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #1A1D23 !important;
+        color: #FAFAFA !important;
+    }
+    [data-testid="stSidebar"] * {
+        color: #FAFAFA !important;
+    }
+    h1, h2, h3, h4, h5, h6, p, span, label, div {
+        color: #FAFAFA !important;
+    }
+    [data-testid="stMetric"] {
+        background-color: #1A1D23 !important;
+        border: 1px solid #333333 !important;
     }
     </style>
     """
@@ -758,13 +784,9 @@ with st.sidebar:
     def tema_degistir():
         st.session_state.tema = "Açık" if st.session_state.tema == "Koyu" else "Koyu"
 
-    cols = st.columns([3, 1])
-    with cols[0]:
-        st.write("")
-    with cols[1]:
-        if st.button("🌙" if st.session_state.tema == "Koyu" else "☀️", key="tema_btn", help="Tema Değiştir"):
-            tema_degistir()
-            st.rerun()
+    if st.button("Açık Tema" if st.session_state.tema == "Koyu" else "Koyu Tema", key="tema_btn", width="stretch"):
+        tema_degistir()
+        st.rerun()
 
     st.divider()
     st.header("Hesap Kodları")
