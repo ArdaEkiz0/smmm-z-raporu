@@ -3,6 +3,6 @@ openpyxl
 pandas
 rapidocr-onnxruntime
 onnxruntime
-opencv-python
+opencv-python-headless
 Pillow
 numpy
