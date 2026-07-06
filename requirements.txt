@@ -1,0 +1,8 @@
+streamlit
+openpyxl
+pandas
+rapidocr-onnxruntime
+onnxruntime
+opencv-python
+Pillow
+numpy
