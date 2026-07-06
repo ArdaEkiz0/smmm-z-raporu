@@ -721,67 +721,9 @@ def fis_sil(kayit_yolu, fis_index):
 
 st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
 
-if "tema" not in st.session_state:
-    st.session_state.tema = "Koyu"
-
-tema_modu = st.session_state.tema
-if tema_modu == "Açık":
-    tema_css = """
-    <style>
-    [data-testid="stAppViewContainer"] > .main {
-        background-color: #FFFFFF !important;
-    }
-    [data-testid="stHeader"] {
-        background-color: #FFFFFF !important;
-    }
-    [data-testid="stSidebar"] > div:first-child {
-        background-color: #F0F2F6 !important;
-    }
-    .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stMarkdown li, .stMarkdown span:not([data-testid]),
-    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
-        color: #31333F !important;
-    }
-    [data-testid="stDataFrame"] {
-        border: 1px solid #E0E0E0 !important;
-    }
-    </style>
-    """
-else:
-    tema_css = """
-    <style>
-    [data-testid="stAppViewContainer"] > .main {
-        background-color: #0E1117 !important;
-    }
-    [data-testid="stHeader"] {
-        background-color: #0E1117 !important;
-    }
-    [data-testid="stSidebar"] > div:first-child {
-        background-color: #1A1D23 !important;
-    }
-    .stMarkdown p, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3,
-    .stMarkdown li, .stMarkdown span:not([data-testid]),
-    [data-testid="stMetricLabel"], [data-testid="stMetricValue"] {
-        color: #FAFAFA !important;
-    }
-    [data-testid="stMetric"] {
-        background-color: #1A1D23 !important;
-        border: 1px solid #333333 !important;
-    }
-    </style>
-    """
-st.markdown(tema_css, unsafe_allow_html=True)
-
 with st.sidebar:
     st.header("Aygıtlar")
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
-
-    def tema_degistir():
-        st.session_state.tema = "Açık" if st.session_state.tema == "Koyu" else "Koyu"
-
-    if st.button("Açık Tema" if st.session_state.tema == "Koyu" else "Koyu Tema", key="tema_btn", width="stretch"):
-        tema_degistir()
-        st.rerun()
 
     st.divider()
     st.header("Hesap Kodları")
