@@ -722,7 +722,7 @@ def generate_excel(all_rows):
     return output.getvalue()
 
 BASIT_USUL_KOLONLAR = [
-    "ISLEM", "KATEGORI", "BELGE TURU", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
+    "İŞLEM", "KATEGORİ", "BELGE TURU", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
     "EVRAK NO", "TCKN/VKN", "VERGİ DAİRESİ", "SOYADI ÜNVAN", "ADI DEVAMI", "ADRES",
     "CARİ HESAP", "KDV İSTİSNASI", "KOD", "BELGE TÜRÜ(DB)", "ALIŞ/SATIŞ TÜRÜ",
     "KAYIT ALT TÜRÜ", "MAL VE HİZMET KODU", "AÇIKLAMA", "MİKTAR",
