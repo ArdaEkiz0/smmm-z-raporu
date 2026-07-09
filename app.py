@@ -12,7 +12,7 @@ import shutil
 import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageEnhance
-import numpy as np
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
@@ -79,10 +79,11 @@ def gorsel_hazirla(img: Image.Image) -> Image.Image:
 @st.cache_resource
 def load_ocr():
     try:
-        from rapidocr_onnxruntime import RapidOCR
-        return RapidOCR()
+        import pytesseract
+        pytesseract.get_tesseract_version()
+        return pytesseract
     except Exception as e:
-        log.warning(f"OCR yüklenemedi: {e}")
+        log.warning(f"OCR (tesseract) yüklenemedi: {e}")
         return None
 
 ocr_engine = load_ocr()
@@ -91,32 +92,11 @@ def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
     hazir = gorsel_hazirla(img)
-    img_np = np.array(hazir)
     try:
-        result, _ = ocr_engine(img_np)
+        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 6")
+        return text.strip()
     except Exception:
         return ""
-    if not result:
-        return ""
-    kutular = []
-    for item in result:
-        pts = item[0]
-        y_ust = min(p[1] for p in pts)
-        x_sol = min(p[0] for p in pts)
-        kutular.append((y_ust, x_sol, item[1]))
-    kutular.sort(key=lambda x: (x[0], x[1]))
-    satirlar = []
-    mevcut_satir = []
-    onceki_y = None
-    for y_ust, x_sol, metin in kutular:
-        if onceki_y is not None and abs(y_ust - onceki_y) > 15:
-            satirlar.append(" ".join(mevcut_satir))
-            mevcut_satir = []
-        mevcut_satir.append(metin)
-        onceki_y = y_ust if onceki_y is None else (onceki_y + y_ust) / 2
-    if mevcut_satir:
-        satirlar.append(" ".join(mevcut_satir))
-    return "\n".join(satirlar)
 
 def parse_tutar(s):
     if not s:
@@ -872,9 +852,6 @@ elif sayfa == "Z Raporu Yükle":
                 img = Image.open(f)
                 st.image(img, caption=f.name[:20], width="stretch")
                 f.seek(0)
-
-    if ocr_engine is None:
-        st.warning("⚠️ OCR motoru yüklenemedi. Görseller otomatik okunamaz, ancak Z raporu bilgilerini manuel girip devam edebilirsiniz.")
 
     col_b1, col_b2 = st.columns(2)
     with col_b1:
