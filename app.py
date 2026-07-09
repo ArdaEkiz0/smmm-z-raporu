@@ -731,22 +731,28 @@ BASIT_USUL_KOLONLAR = [
     "DÖNEMSELLİK İLKESİ", "FAALİYET KODU", "ÖDEME TÜRÜ",
 ]
 
-def generate_basit_usul_excel(results, mukellef_bilgi):
+def generate_basit_usul_excel(results, mukellef_bilgi, sablon_data=None):
     output = io.BytesIO()
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Basit Usul"
-    hfont = Font(bold=True, color="FFFFFF", size=10)
-    hfill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-    halign = Alignment(horizontal="center", vertical="center", wrap_text=True)
     border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin"))
 
-    for col_idx, header in enumerate(BASIT_USUL_KOLONLAR, 1):
-        cell = ws.cell(row=1, column=col_idx, value=header)
-        cell.font = hfont
-        cell.fill = hfill
-        cell.alignment = halign
-        cell.border = border
+    if sablon_data:
+        wb = openpyxl.load_workbook(io.BytesIO(sablon_data))
+        ws = wb.active
+        kolonlar = [ws.cell(1, col).value or "" for col in range(1, ws.max_column + 1)]
+    else:
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Basit Usul"
+        kolonlar = BASIT_USUL_KOLONLAR
+        hfont = Font(bold=True, color="FFFFFF", size=10)
+        hfill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        halign = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        for col_idx, header in enumerate(kolonlar, 1):
+            cell = ws.cell(row=1, column=col_idx, value=header)
+            cell.font = hfont
+            cell.fill = hfill
+            cell.alignment = halign
+            cell.border = border
 
     evrak_tarihi = ""
     kayit_tarihi = ""
@@ -758,7 +764,7 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
     def yaz_satir(satir):
         nonlocal row_idx
-        for col_idx, header in enumerate(BASIT_USUL_KOLONLAR, 1):
+        for col_idx, header in enumerate(kolonlar, 1):
             cell = ws.cell(row=row_idx, column=col_idx, value=satir.get(header, ""))
             cell.border = border
         row_idx += 1
@@ -775,16 +781,20 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
         toplam_tahsilat = r.get("toplam_tahsilat", 0) or (kk_tutar + nakit_tutar) or 1
 
         def base_row():
-            s = {k: "" for k in BASIT_USUL_KOLONLAR}
-            s["ISLEM"] = "1"
-            s["KATEGORI"] = "Defter Fişleri"
-            s["EVRAK TARİHİ"] = evrak_tarihi
-            s["KAYIT TARİHİ"] = kayit_tarihi
-            s["EVRAK NO"] = evrak_no
-            s["TCKN/VKN"] = tckn
-            s["VERGİ DAİRESİ"] = vd
-            s["SOYADI ÜNVAN"] = unvan
-            s["ADRES"] = adres
+            s = {k: "" for k in kolonlar}
+            for k, v in {
+                "İŞLEM": "1", "ISLEM": "1",
+                "KATEGORİ": "Defter Fişleri", "KATEGORI": "Defter Fişleri",
+                "EVRAK TARİHİ": evrak_tarihi,
+                "KAYIT TARİHİ": kayit_tarihi,
+                "EVRAK NO": evrak_no,
+                "TCKN/VKN": tckn,
+                "VERGİ DAİRESİ": vd,
+                "SOYADI ÜNVAN": unvan, "SOYADI UNVAN": unvan,
+                "ADRES": adres,
+            }.items():
+                if k in s:
+                    s[k] = v
             return s
 
         def kk_orani(brut):
@@ -795,26 +805,43 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
         if not urunler and not kdv_kalemleri:
             s = base_row()
-            s["AÇIKLAMA"] = f"Z Raporu {evrak_no}"
+            for k in kolonlar:
+                if "ACIKLAMA" in k or "AÇIKLAMA" in k:
+                    s[k] = f"Z Raporu {evrak_no}"
+                    break
             brut = r.get("brut", 0) or toplam_tahsilat or 0
-            s["TUTAR"] = brut
-            s["TOPLAM TUTAR"] = brut
-            s["KREDİLİ TUTAR"] = kk_orani(brut)
+            for k in kolonlar:
+                if k == "TUTAR":
+                    s[k] = brut
+                if "TOPLAM" in k and "TUTAR" in k:
+                    s[k] = brut
+                if "KREDILI" in k or "KREDİLİ" in k:
+                    s[k] = kk_orani(brut)
             yaz_satir(s)
             continue
 
         if not urunler and kdv_kalemleri:
             for kv in kdv_kalemleri:
                 s = base_row()
-                s["AÇIKLAMA"] = f"Z Raporu {evrak_no} %{kv['oran']} KDV"
-                s["MİKTAR"] = ""
-                s["B.FİYAT"] = ""
-                s["TUTAR"] = kv.get("matrah", 0)
-                s["KDV ORANI"] = kv.get("oran", 0)
-                s["KDV TUTARI"] = kv.get("kdv_tutari", 0)
-                toplam_t = (kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0)
-                s["TOPLAM TUTAR"] = toplam_t
-                s["KREDİLİ TUTAR"] = kk_orani(toplam_t)
+                for k in kolonlar:
+                    if "ACIKLAMA" in k or "AÇIKLAMA" in k:
+                        s[k] = f"Z Raporu {evrak_no} %{kv['oran']} KDV"
+                    if "MIKTAR" in k or "MİKTAR" in k:
+                        s[k] = ""
+                    if k == "B.FİYAT" or k == "B.FIYAT":
+                        s[k] = ""
+                    if k == "TUTAR":
+                        s[k] = kv.get("matrah", 0)
+                    if k == "KDV ORANI" or k == "KDV ORAN":
+                        s[k] = kv.get("oran", 0)
+                    if "KDV TUTARI" in k or "KDV TUTAR" in k:
+                        s[k] = kv.get("kdv_tutari", 0)
+                    if "TOPLAM TUTAR" in k or "TOPLAM TUTAR" in k:
+                        toplam_t = (kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0)
+                        s[k] = toplam_t
+                    if "KREDILI" in k or "KREDİLİ" in k:
+                        toplam_t = (kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0)
+                        s[k] = kk_orani(toplam_t)
                 yaz_satir(s)
             continue
 
@@ -824,17 +851,25 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
             miktar = urun.get("miktar", 0) or 0
             brut_tutar = urun.get("tutar", 0) or 0
             oran = urun.get("oran", 0) or 0
-
-            s["AÇIKLAMA"] = ua
-            s["MİKTAR"] = miktar
-            if miktar > 0:
-                s["B.FİYAT"] = round(brut_tutar / miktar, 2)
-            s["TUTAR"] = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
-            s["KDV ORANI"] = oran
             kdv_t = round(brut_tutar - (brut_tutar / (1 + oran / 100)), 2) if oran > 0 else 0
-            s["KDV TUTARI"] = kdv_t
-            s["TOPLAM TUTAR"] = brut_tutar
-            s["KREDİLİ TUTAR"] = kk_orani(brut_tutar)
+
+            for k in kolonlar:
+                if "ACIKLAMA" in k or "AÇIKLAMA" in k:
+                    s[k] = ua
+                if "MIKTAR" in k or "MİKTAR" in k:
+                    s[k] = miktar
+                if k == "B.FİYAT" or k == "B.FIYAT":
+                    s[k] = round(brut_tutar / miktar, 2) if miktar > 0 else ""
+                if k == "TUTAR":
+                    s[k] = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
+                if k == "KDV ORANI" or k == "KDV ORAN":
+                    s[k] = oran
+                if "KDV TUTARI" in k or "KDV TUTAR" in k:
+                    s[k] = kdv_t
+                if "TOPLAM TUTAR" in k or "TOPLAM TUTAR" in k:
+                    s[k] = brut_tutar
+                if "KREDILI" in k or "KREDİLİ" in k:
+                    s[k] = kk_orani(brut_tutar)
             yaz_satir(s)
 
     for i, w in enumerate([10, 12, 14, 14, 14, 12, 14, 16, 16, 30, 20, 14, 16, 12, 14, 14, 14, 12, 16, 30, 10, 12, 14, 10, 10, 14, 16, 16, 14, 14, 14, 12, 12, 14, 14, 14, 14], 1):
@@ -915,6 +950,18 @@ with st.sidebar:
     st.divider()
     st.header("Mod")
     st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Basit Usul"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
+
+    if st.session_state.get("mod") == "Basit Usul":
+        with st.expander("LUCA Şablonu", expanded=False):
+            st.caption("LUCA'dan indirdiğiniz Excel şablonunu yükleyin")
+            yuklenen = st.file_uploader("Şablon Seç", type=["xlsx"], label_visibility="collapsed", key="luca_sablon_uploader")
+            if yuklenen:
+                st.session_state["luca_sabloni"] = yuklenen.read()
+                st.toast("Şablon yüklendi!", icon="✅")
+            if st.session_state.get("luca_sabloni"):
+                if st.button("Şablonu Kaldır"):
+                    del st.session_state["luca_sabloni"]
+                    st.rerun()
 
     st.divider()
     st.header("Hesap Kodları")
@@ -1282,7 +1329,7 @@ elif sayfa == "Z Raporu Yükle":
                 if m.get("adi") == secili_mukellef:
                     muk_bilgi = m
                     break
-            basit_excel = generate_basit_usul_excel(results, muk_bilgi)
+            basit_excel = generate_basit_usul_excel(results, muk_bilgi, st.session_state.get("luca_sabloni"))
             st.download_button("EXCEL İNDİR (Basit Usul)", basit_excel,
                 f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1362,7 +1409,7 @@ elif sayfa == "Fiş Geçmişi":
                     if m.get("adi") == secili_mukellef:
                         muk_bilgi = m
                         break
-                basit_excel = generate_basit_usul_excel(filtered, muk_bilgi)
+                basit_excel = generate_basit_usul_excel(filtered, muk_bilgi, st.session_state.get("luca_sabloni"))
                 st.download_button("Seçilenlerden Excel Oluştur (Basit Usul)", basit_excel,
                     f"basit_usul_filtre_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -1513,7 +1560,7 @@ elif sayfa == "KDV Özeti":
                     if m.get("adi") == secili_mukellef:
                         muk_bilgi = m
                         break
-                basit_excel = generate_basit_usul_excel(ay_fisler, muk_bilgi)
+                basit_excel = generate_basit_usul_excel(ay_fisler, muk_bilgi, st.session_state.get("luca_sabloni"))
                 st.download_button(f"{ay:02d}/{yil} Basit Usul Excel", basit_excel,
                     f"basit_usul_{yil}_{ay:02d}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
