@@ -1087,11 +1087,50 @@ elif sayfa == "Z Raporu Yükle":
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
     ml = mukellefler()
-    secili_mukellef = ""
-    if ml:
-        secili_mukellef = st.selectbox("Mükellef Seç (isteğe bağlı)", ["(Mükellef yok)"] + [m["adi"] for m in ml])
+
+    if "secili_mukellef_idx" not in st.session_state:
+        st.session_state.secili_mukellef_idx = 0
+
+    def mukellef_eslestir(firma_adi):
+        if not firma_adi:
+            return None
+        firma_lower = firma_adi.lower().strip()
+        for i, m in enumerate(ml):
+            if m["adi"].lower() in firma_lower or firma_lower in m["adi"].lower():
+                return i
+            ka = m.get("kisa_adi", "").lower().strip()
+            if ka and (ka in firma_lower or firma_lower in ka):
+                return i
+        for i, m in enumerate(ml):
+            kelimeler = m["adi"].lower().split()
+            if any(k in firma_lower for k in kelimeler if len(k) > 3):
+                return i
+        return None
+
+    otomatik_idx = None
+    if "results" in st.session_state and st.session_state.results:
+        for r in st.session_state.results:
+            if "firma_adi" in r and r["firma_adi"]:
+                idx = mukellef_eslestir(r["firma_adi"])
+                if idx is not None:
+                    otomatik_idx = idx
+                    break
+
+    if otomatik_idx is not None:
+        st.session_state.secili_mukellef_idx = otomatik_idx
+        secili_mukellef = ml[otomatik_idx]["adi"]
+        st.info(f"Otomatik algılanan mükellef: **{secili_mukellef}**")
+    else:
+        secili_mukellef = st.selectbox("Mükellef Seç", ["(Mükellef yok)"] + [m["adi"] for m in ml],
+            index=st.session_state.secili_mukellef_idx if st.session_state.secili_mukellef_idx < len(ml) else 0,
+            key="mukellef_select")
         if secili_mukellef == "(Mükellef yok)":
             secili_mukellef = ""
+        else:
+            for i, m in enumerate(ml):
+                if m["adi"] == secili_mukellef:
+                    st.session_state.secili_mukellef_idx = i
+                    break
 
 
 
@@ -1161,6 +1200,20 @@ elif sayfa == "Z Raporu Yükle":
 
         st.session_state.results = all_results
         st.session_state.processed = True
+
+        otomatik_muk = None
+        for r in all_results:
+            if "firma_adi" in r and r["firma_adi"]:
+                idx = mukellef_eslestir(r["firma_adi"])
+                if idx is not None:
+                    otomatik_muk = ml[idx]["adi"]
+                    st.session_state.secili_mukellef_idx = idx
+                    break
+        if otomatik_muk:
+            for r in all_results:
+                if "error" not in r:
+                    r["mukellef_adi"] = otomatik_muk
+
         try:
             gecmis_kaydet(all_results, hesap_kodlari, secili_mukellef)
         except Exception as e:
@@ -1341,10 +1394,15 @@ elif sayfa == "Z Raporu Yükle":
         st.divider()
 
         mod = st.session_state.get("mod", "Bilanço")
+        otomatik_muk_adi = ""
+        if "secili_mukellef_idx" in st.session_state and st.session_state.secili_mukellef_idx < len(ml):
+            otomatik_muk_adi = ml[st.session_state.secili_mukellef_idx]["adi"]
+        if not otomatik_muk_adi and secili_mukellef:
+            otomatik_muk_adi = secili_mukellef
         if mod == "Serbest Meslek":
             muk_bilgi = None
             for m in mukellefler():
-                if m.get("adi") == secili_mukellef:
+                if m.get("adi") == otomatik_muk_adi:
                     muk_bilgi = m
                     break
             satirlar = []
