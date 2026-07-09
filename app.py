@@ -1152,12 +1152,9 @@ elif sayfa == "Z Raporu Yükle":
         if iade_eksik:
             with st.expander("Fiş İptal / İade Varsa Girin (Opsiyonel)", expanded=False):
                 for idx, r in iade_eksik:
-                    mevcut = r.get("iadeler", 0)
                     session_key = f"iade_{idx}"
-
-                    def iade_kaydet(_r=r, _key=session_key):
-                        _r["iadeler"] = st.session_state[_key]
-
+                    if session_key not in st.session_state:
+                        st.session_state[session_key] = float(r.get("iadeler", 0))
                     col1, col2 = st.columns([3, 2])
                     with col1:
                         st.text(f"{r.get('filename','')} — Brüt: {r.get('brut',0):,.2f} TL")
@@ -1165,12 +1162,15 @@ elif sayfa == "Z Raporu Yükle":
                         st.number_input(
                             f"İptal Tutarı (TL)",
                             min_value=0.0,
-                            value=float(mevcut),
                             step=100.0,
                             key=session_key,
-                            on_change=iade_kaydet,
                             help="Fiş iptali/iade tutarı varsa girin, yoksa 0 bırakın"
                         )
+                if st.button("İade Tutarlarını Kaydet", type="primary", use_container_width=True):
+                    for idx, r in iade_eksik:
+                        r["iadeler"] = st.session_state.get(f"iade_{idx}", 0)
+                    st.toast("İade tutarları kaydedildi!", icon="✅")
+                    st.rerun()
 
         duzeltilebilir = [(i, r) for i, r in enumerate(results) if "error" not in r]
         if duzeltilebilir:
