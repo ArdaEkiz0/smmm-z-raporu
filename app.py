@@ -785,11 +785,12 @@ def generate_basit_usul_excel(results, mukellef_bilgi, sablon_data=None):
             s = {}
             for k in kolonlar:
                 s[k] = ""
-            # match by position - KATEGORI is always column 2
-            if len(kolonlar) >= 2:
-                s[kolonlar[1]] = "Defter Fişleri"
             if len(kolonlar) >= 1:
                 s[kolonlar[0]] = "1"
+            if len(kolonlar) >= 2:
+                s[kolonlar[1]] = "Defter Fişleri"
+            if len(kolonlar) >= 3:
+                s[kolonlar[2]] = "Z Raporu"
             for pos, val in [(3, evrak_tarihi), (4, kayit_tarihi),
                              (6, evrak_no), (7, tckn), (8, vd), (9, unvan), (11, adres)]:
                 if len(kolonlar) > pos:
@@ -1357,6 +1358,7 @@ elif sayfa == "Z Raporu Yükle":
                     row = [""] * len(BASIT_USUL_KOLONLAR)
                     row[0] = "1"
                     row[1] = "Defter Fişleri"
+                    row[2] = "Z Raporu"
                     row[3] = evrak_tarihi
                     row[4] = evrak_tarihi
                     row[6] = evrak_no
@@ -1374,6 +1376,7 @@ elif sayfa == "Z Raporu Yükle":
                     row = [""] * len(BASIT_USUL_KOLONLAR)
                     row[0] = "1"
                     row[1] = "Defter Fişleri"
+                    row[2] = "Z Raporu"
                     row[3] = evrak_tarihi
                     row[4] = evrak_tarihi
                     row[6] = evrak_no
