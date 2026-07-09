@@ -7,6 +7,7 @@ yedekler/
 *.exe
 *.txt
 !requirements.txt
+!packages.txt
 .streamlit/secrets.toml
 cf_*.txt
 ngrok_*.txt

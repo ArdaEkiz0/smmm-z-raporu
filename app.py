@@ -79,15 +79,24 @@ def gorsel_hazirla(img: Image.Image) -> Image.Image:
 
 @st.cache_resource
 def load_ocr():
-    from rapidocr_onnxruntime import RapidOCR
-    return RapidOCR()
+    try:
+        from rapidocr_onnxruntime import RapidOCR
+        return RapidOCR()
+    except Exception as e:
+        log.warning(f"OCR yüklenemedi: {e}")
+        return None
 
 ocr_engine = load_ocr()
 
 def ocr_image(img: Image.Image) -> str:
+    if ocr_engine is None:
+        return ""
     hazir = gorsel_hazirla(img)
     img_np = np.array(hazir)
-    result, _ = ocr_engine(img_np)
+    try:
+        result, _ = ocr_engine(img_np)
+    except Exception:
+        return ""
     if not result:
         return ""
     kutular = []
@@ -914,9 +923,12 @@ elif sayfa == "Z Raporu Yükle":
                 st.image(img, caption=f.name[:20], width="stretch")
                 f.seek(0)
 
+    if ocr_engine is None:
+        st.warning("⚠️ OCR motoru yüklenemedi. Görseller otomatik okunamaz, ancak Z raporu bilgilerini manuel girip devam edebilirsiniz.")
+
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files)
+        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files or ocr_engine is None)
     with col_b2:
         if st.button("Temizle", width="stretch"):
             for k in ["results", "processed"]:
