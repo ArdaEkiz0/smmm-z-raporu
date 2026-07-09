@@ -120,14 +120,14 @@ def dosya_yaz(filepath, veri):
 def gorsel_hazirla(img: Image.Image) -> Image.Image:
     img = img.convert("L")
     w, h = img.size
-    target_h = 3000
+    target_h = 3500
     if h < target_h:
         scale = target_h / h
         img = img.resize((int(w * scale), target_h), Image.LANCZOS)
     img = img.filter(ImageFilter.MedianFilter(size=3))
-    img = ImageOps.autocontrast(img, cutoff=2)
-    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
-    img = img.point(lambda x: 0 if x < 180 else 255)
+    img = ImageOps.autocontrast(img, cutoff=1)
+    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200))
+    img = img.point(lambda x: 0 if x < 200 else 255)
     return img
 
 @st.cache_resource
@@ -142,15 +142,33 @@ def load_ocr():
 
 ocr_engine = load_ocr()
 
+def levenshtein(a, b):
+    if a == b:
+        return 0
+    if not a:
+        return len(b)
+    if not b:
+        return len(a)
+    prev = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        cur = [i]
+        for j, cb in enumerate(b, 1):
+            cur.append(min(prev[j] + 1, cur[j-1] + 1, prev[j-1] + (ca != cb)))
+        prev = cur
+    return prev[-1]
+
 def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
     hazir = gorsel_hazirla(img)
     try:
-        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 4 --oem 3")
-        if not text.strip():
-            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 6 --oem 3")
-        return text.strip()
+        configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3"]
+        en_iyi = ""
+        for cfg in configs:
+            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+            if text.strip() and len(text.strip()) > len(en_iyi):
+                en_iyi = text.strip()
+        return en_iyi
     except Exception:
         return ""
 
@@ -1115,12 +1133,23 @@ elif sayfa == "Z Raporu Yükle":
         if not firma_adi:
             return None
         firma_lower = firma_adi.lower().strip()
+        en_iyi = None
+        en_iyi_mesafe = 999
         for i, m in enumerate(ml):
-            if m["adi"].lower() in firma_lower or firma_lower in m["adi"].lower():
-                return i
+            adaylar = [m["adi"].lower()]
             ka = m.get("kisa_adi", "").lower().strip()
-            if ka and (ka in firma_lower or firma_lower in ka):
-                return i
+            if ka:
+                adaylar.append(ka)
+            for ad in adaylar:
+                if ad in firma_lower or firma_lower in ad:
+                    return i
+                d = levenshtein(firma_lower, ad)
+                oran = d / max(len(firma_lower), len(ad), 1)
+                if oran <= 0.35 and d < en_iyi_mesafe:
+                    en_iyi_mesafe = d
+                    en_iyi = i
+        if en_iyi is not None:
+            return en_iyi
         for i, m in enumerate(ml):
             kelimeler = m["adi"].lower().split()
             if any(k in firma_lower for k in kelimeler if len(k) > 3):
