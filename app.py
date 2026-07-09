@@ -11,7 +11,7 @@ import json
 import shutil
 import logging
 from datetime import datetime, timedelta
-from PIL import Image, ImageEnhance
+from PIL import Image, ImageFilter, ImageOps
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -70,11 +70,16 @@ def dosya_yaz(filepath, veri):
 
 def gorsel_hazirla(img: Image.Image) -> Image.Image:
     img = img.convert("L")
-    if img.width < 1000:
-        img = img.resize((img.width * 2, img.height * 2), Image.LANCZOS)
-    img = ImageEnhance.Contrast(img).enhance(1.3)
-    img = ImageEnhance.Sharpness(img).enhance(1.2)
-    return img.convert("RGB")
+    w, h = img.size
+    target_h = 3000
+    if h < target_h:
+        scale = target_h / h
+        img = img.resize((int(w * scale), target_h), Image.LANCZOS)
+    img = img.filter(ImageFilter.MedianFilter(size=3))
+    img = ImageOps.autocontrast(img, cutoff=2)
+    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150))
+    img = img.point(lambda x: 0 if x < 180 else 255)
+    return img
 
 @st.cache_resource
 def load_ocr():
@@ -93,7 +98,9 @@ def ocr_image(img: Image.Image) -> str:
         return ""
     hazir = gorsel_hazirla(img)
     try:
-        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 6")
+        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 4 --oem 3")
+        if not text.strip():
+            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config="--psm 6 --oem 3")
         return text.strip()
     except Exception:
         return ""
