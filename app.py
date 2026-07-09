@@ -315,12 +315,32 @@ def ocr_easyocr(img: Image.Image) -> str:
         if easyocr_reader is None:
             with st.spinner("EasyOCR modeli yukleniyor, lutfen bekleyin..."):
                 easyocr_reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
-        img_rgb = img.convert("RGB")
-        img_np = np.array(img_rgb)
-        results = easyocr_reader.readtext(img_np, detail=0, paragraph=True)
-        text = "\n".join(results)
-        text = ocr_duzelt(text.strip())
-        return text
+
+        en_iyi_text = ""
+        en_iyi_skor = -1
+
+        gorseller = [
+            gorsel_hazirla(img, threshold=200, target_h=3500, invert=False, sharp=True),
+            gorsel_hazirla(img, threshold=170, target_h=3500, invert=False, sharp=True),
+            gorsel_hazirla(img, threshold=220, target_h=4000, invert=False, sharp=True),
+            gorsel_hazirla(img, threshold=200, target_h=3500, invert=True, sharp=True),
+            img.convert("RGB"),
+        ]
+
+        for gorsel in gorseller:
+            try:
+                img_np = np.array(gorsel.convert("RGB"))
+                results = easyocr_reader.readtext(img_np, detail=0, paragraph=True, paragraph_separator="\n")
+                text = "\n".join(results)
+                text = ocr_duzelt(text.strip())
+                skor = ocr_skorla(text)
+                if skor > en_iyi_skor:
+                    en_iyi_skor = skor
+                    en_iyi_text = text
+            except Exception:
+                continue
+
+        return en_iyi_text
     except Exception as e:
         log.error(f"EasyOCR hatasi: {e}")
         return ""
