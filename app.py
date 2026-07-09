@@ -1105,15 +1105,18 @@ with st.sidebar:
     st.divider()
     st.header("Mükellef")
     ml = mukellefler()
-    secili_kisa = st.selectbox("Mükellef Seç", ["(Genel)"] + [m.get("kisa_adi", m["adi"]) for m in ml], label_visibility="collapsed")
+    mevcut_mod = st.session_state.get("mod", "Bilanço")
+    secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed")
+    st.session_state.mod = secili_mod
+
+    filtreli_ml = [m for m in ml if m.get("mod", "Serbest Meslek") == secili_mod]
+    secili_kisa = st.selectbox("Mükellef Seç", ["(Genel)"] + [m.get("kisa_adi", m["adi"]) for m in filtreli_ml], label_visibility="collapsed")
     if secili_kisa != "(Genel)":
-        for m in ml:
+        for m in filtreli_ml:
             if m.get("kisa_adi", m["adi"]) == secili_kisa:
-                st.session_state.mod = m.get("mod", "Serbest Meslek")
                 st.session_state.secili_mukellef = m["adi"]
                 break
     else:
-        st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
         st.session_state.secili_mukellef = ""
 
     if st.session_state.get("mod") == "Serbest Meslek":
@@ -1743,15 +1746,18 @@ elif sayfa == "Mükellef Yönetimi":
             with col_a:
                 adi = st.text_input("Mükellef Adı", placeholder="Örn: Ahmet Mağazacılık Ltd.")
                 vergi_no = st.text_input("Vergi No", placeholder="1234567890")
+                mod = st.selectbox("Muhasebe Türü", ["Bilanço", "Serbest Meslek"])
             with col_b:
                 vd = st.text_input("Vergi Dairesi", placeholder="Örn: Kartal VD")
                 telefon = st.text_input("Telefon", placeholder="0532 xxx xx xx")
+            kisa_adi = st.text_input("Kısa Ad (Opsiyonel)", placeholder="OCR eşleştirmesi için")
             notlar = st.text_area("Notlar", placeholder="Ek bilgiler...")
             submitted = st.form_submit_button("Ekle", type="primary")
             if submitted and adi:
                 ml.append({
                     "adi": adi, "vergi_no": vergi_no, "vd": vd,
-                    "telefon": telefon, "notlar": notlar,
+                    "telefon": telefon, "notlar": notlar, "mod": mod,
+                    "kisa_adi": kisa_adi,
                     "olusturma": datetime.now().strftime("%d.%m.%Y")
                 })
                 dosya_yaz(MUKELLEF_FILE, ml)
@@ -1760,18 +1766,28 @@ elif sayfa == "Mükellef Yönetimi":
 
     if ml:
         st.divider()
-        st.subheader(f"Kayıtlı Mükellefler ({len(ml)})")
-        for i, m in enumerate(ml):
-            with st.expander(f"{m['adi']} — {m.get('vergi_no', '?')}"):
+        bilanco = [m for m in ml if m.get("mod", "Bilanço") == "Bilanço"]
+        sm = [m for m in ml if m.get("mod", "Serbest Meslek") == "Serbest Meslek"]
+        st.subheader(f"Kayıtlı Mükellefler ({len(ml)}) — {len(bilanco)} Bilanço, {len(sm)} Serbest Meslek")
+
+        filtre_mod = st.selectbox("Göster", ["Tümü", "Bilanço", "Serbest Meslek"], key="muk_filtre")
+        gosterim = ml if filtre_mod == "Tümü" else [m for m in ml if m.get("mod", "Serbest Meslek") == filtre_mod]
+
+        for i, m in enumerate(gosterim):
+            mod_etiket = m.get("mod", "?")
+            with st.expander(f"{m['adi']} — {m.get('vergi_no', '?')} [{mod_etiket}]"):
                 c1, c2, c3 = st.columns(3)
                 c1.write(f"**Vergi Dairesi:** {m.get('vd', '?')}")
                 c2.write(f"**Telefon:** {m.get('telefon', '?')}")
                 c3.write(f"**Kayıt:** {m.get('olusturma', '?')}")
+                if m.get("kisa_adi"):
+                    st.write(f"**Kısa Ad:** {m['kisa_adi']}")
                 if m.get("notlar"):
                     st.write(f"Not: {m['notlar']}")
 
-                if st.button("Sil", key=f"sil_{i}", width="stretch"):
-                    ml.pop(i)
+                orijinal_idx = ml.index(m)
+                if st.button("Sil", key=f"sil_{orijinal_idx}", width="stretch"):
+                    ml.pop(orijinal_idx)
                     dosya_yaz(MUKELLEF_FILE, ml)
                     st.rerun()
     else:
