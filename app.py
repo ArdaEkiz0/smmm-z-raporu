@@ -148,18 +148,8 @@ def load_ocr():
         log.warning(f"OCR (tesseract) yuklenemedi: {e}")
         return None
 
-@st.cache_resource
-def load_easyocr():
-    try:
-        import easyocr
-        reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
-        return reader
-    except Exception as e:
-        log.warning(f"EasyOCR yuklenemedi: {e}")
-        return None
-
 ocr_engine = load_ocr()
-easyocr_reader = load_easyocr()
+easyocr_reader = None
 
 def turkce_normalize(s):
     import unicodedata
@@ -318,10 +308,13 @@ def ocr_image(img: Image.Image) -> str:
     return en_iyi_text
 
 def ocr_easyocr(img: Image.Image) -> str:
-    if easyocr_reader is None:
-        return ""
+    global easyocr_reader
     try:
+        import easyocr
         import numpy as np
+        if easyocr_reader is None:
+            with st.spinner("EasyOCR modeli yukleniyor, lutfen bekleyin..."):
+                easyocr_reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
         img_rgb = img.convert("RGB")
         img_np = np.array(img_rgb)
         results = easyocr_reader.readtext(img_np, detail=0, paragraph=True)
@@ -1512,16 +1505,13 @@ with st.sidebar:
 
     st.divider()
     st.header("OCR Motoru")
-    got_cfg = got_ocr_config()
-    ocr_secenekleri = ["EasyOCR (Daha Iyi)"]
-    if ocr_engine is not None:
-        ocr_secenekleri.append("Tesseract")
-    if easyocr_reader is None:
-        ocr_secenekleri = ["Tesseract"] if ocr_engine is not None else []
-    ocr_motor = st.radio("OCR Sec", ocr_secenekleri if ocr_secenekleri else ["Tesseract"], label_visibility="collapsed")
+    ocr_motor = st.radio("OCR Sec", ["EasyOCR (Daha Iyi)", "Tesseract"], label_visibility="collapsed")
     st.session_state.ocr_motor = ocr_motor
     if ocr_motor == "EasyOCR (Daha Iyi)":
-        st.success("EasyOCR hazir - Tesseract'tan daha iyi", icon="🟢")
+        if easyocr_reader is not None:
+            st.success("EasyOCR hazir", icon="🟢")
+        else:
+            st.info("Ilk kullanimda model indirilecek (~1 dakika)")
     elif ocr_motor == "Tesseract":
         if ocr_engine:
             st.success("Tesseract hazir", icon="🟢")
