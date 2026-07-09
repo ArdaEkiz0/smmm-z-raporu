@@ -1664,34 +1664,12 @@ elif sayfa == "Z Raporu Yükle":
                 if "error" not in r:
                     r["mukellef_adi"] = otomatik_muk
 
-        try:
-            gecmis_kaydet(all_results, hesap_kodlari, st.session_state.get("secili_mukellef", ""))
-        except Exception as e:
-            log.error(f"Gecmis kaydedilemedi: {e}")
-        try:
-            kdv_ogren(all_results, st.session_state.urun_kodlari)
-        except Exception as e:
-            log.error(f"KDV ogrenme hatası: {e}")
-        try:
-            basarili = sum(1 for r in all_results if "error" not in r)
-            if basarili > 0:
-                muk_adi = st.session_state.get("secili_mukellef", "Bilinmeyen")
-                toplam_ciro = sum(r.get("net_toplam", 0) or 0 for r in all_results if "error" not in r)
-                konu = f"SMMM Z Raporu - {muk_adi} - {basarili} Fiş"
-                icerik = f"Mükellef: {muk_adi}\nİşlenen: {basarili} fiş\nToplam Ciro: {toplam_ciro:,.2f} TL"
-                email_gonder(konu, icerik)
-        except Exception as e:
-            log.error(f"Email bildirim hatası: {e}")
-        try:
-            otomatik_yedekle()
-        except Exception as e:
-            log.error(f"Otomatik yedek hatası: {e}")
         basarili = sum(1 for r in all_results if "error" not in r)
         hatali = len(all_results) - basarili
         if hatali > 0:
             st.warning(f"{basarili} başarılı, {hatali} hatalı")
         else:
-            st.success(f"{len(all_results)} Z raporu işlendi ve kaydedildi!")
+            st.success(f"{len(all_results)} Z raporu okundu. Düzenlemelerinizi yapıp 'Geçmişe Kaydet' butonuna basın.")
         st.rerun()
 
     if st.session_state.get("processed") and st.session_state.results:
@@ -1942,6 +1920,35 @@ elif sayfa == "Z Raporu Yükle":
                 f"z_raporlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 type="primary", width="stretch")
+
+        st.divider()
+        if st.button("Geçmişe Kaydet", type="primary", use_container_width=True, key="gecmis_kaydet_btn"):
+            try:
+                gecmis_kaydet(results, hesap_kodlari, st.session_state.get("secili_mukellef", ""))
+            except Exception as e:
+                log.error(f"Gecmis kaydedilemedi: {e}")
+            try:
+                kdv_ogren(results, st.session_state.urun_kodlari)
+            except Exception as e:
+                log.error(f"KDV ogrenme hatası: {e}")
+            try:
+                basarili = sum(1 for r in results if "error" not in r)
+                if basarili > 0:
+                    muk_adi = st.session_state.get("secili_mukellef", "Bilinmeyen")
+                    toplam_ciro = sum(r.get("net_toplam", 0) or 0 for r in results if "error" not in r)
+                    konu = f"SMMM Z Raporu - {muk_adi} - {basarili} Fiş"
+                    icerik = f"Mükellef: {muk_adi}\nİşlenen: {basarili} fiş\nToplam Ciro: {toplam_ciro:,.2f} TL"
+                    email_gonder(konu, icerik)
+            except Exception as e:
+                log.error(f"Email bildirim hatası: {e}")
+            try:
+                otomatik_yedekle()
+            except Exception as e:
+                log.error(f"Otomatik yedek hatası: {e}")
+            st.session_state.pop("results", None)
+            st.session_state.pop("processed", None)
+            st.success("Düzenlenen veriler geçmişe kaydedildi!")
+            st.rerun()
 
         with st.expander("OCR Ham Metinler"):
             for i, r in enumerate(results):
