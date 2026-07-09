@@ -498,6 +498,8 @@ def parse_z_raporu(text):
                 kdv_data[oran] = {"oran": oran, "matrah": matrah_v, "kdv_tutari": kdv_v}
 
     for u in sonuc["urunler"]:
+        if "SİGARA" in u["urun"].upper() or "SIGARA" in u["urun"].upper():
+            u["oran"] = 0
         oran = u["oran"]
         tutar = u["tutar"]
         if tutar <= 0 or oran == 0:
@@ -538,9 +540,9 @@ def varsayilan_kodlar():
 
 def urun_kodlari_varsayilan():
     return [
-        {"pattern": "EKMEK", "hesap_kodu": "600.06", "aciklama": "Ekmek Satışı"},
-        {"pattern": "SİGARA", "hesap_kodu": "600.07", "aciklama": "Sigara Satışı"},
-        {"pattern": "SIGARA", "hesap_kodu": "600.07", "aciklama": "Sigara Satışı"},
+        {"pattern": "EKMEK", "hesap_kodu": "600.06", "aciklama": "Ekmek Satışı", "kdv_orani": 1},
+        {"pattern": "SİGARA", "hesap_kodu": "600.07", "aciklama": "Sigara Satışı", "kdv_orani": 0},
+        {"pattern": "SIGARA", "hesap_kodu": "600.07", "aciklama": "Sigara Satışı", "kdv_orani": 0},
     ]
 
 def urun_kodlari_yukle():
