@@ -191,10 +191,17 @@ def ocr_duzelt(text):
     t = re.sub(r'IKSPI BILGISA', 'GÖKKUŞAĞI', t)
     t = re.sub(r'(?<!\w)GOKKUSAGI', 'GÖKKUŞAĞI', t)
     t = re.sub(r'(?<!\w)GOKKUSAG', 'GÖKKUŞAĞI', t)
-    t = re.sub(r'is Bankas1', 'İş Bankası', t)
+    t = re.sub(r'(?<!\w)GOKKUSAGI MARKET', 'GÖKKUŞAĞI MARKET', t)
+    t = re.sub(r'(?<!\w)GOKKUSAG MARKET', 'GÖKKUŞAĞI MARKET', t)
+    t = re.sub(r'(?<!\w)GOKKUSAGI\s+MARKET', 'GÖKKUŞAĞI MARKET', t)
+    t = re.sub(r'(?<!\w)MIKAIL\s+EKIZ\s+ORTAKLIGI', 'MİKAIL EKİZ ORTAKLIĞI', t)
+    t = re.sub(r'(?<!\w)MIKAIL EKIZ ORTAKLIGI', 'MİKAIL EKİZ ORTAKLIĞI', t)
+    t = re.sub(r'(?<!\w)MIKAIL\s+EKIZ(?!\w)', 'MİKAIL EKİZ', t)
+    t = re.sub(r'(?<!\w)is Bankas1', 'İş Bankası', t)
     t = re.sub(r'(?<!\w)IS BANKASI(?!\w)', 'İş Bankası', t)
     t = re.sub(r'(?<!\w)İS BANKAS1', 'İş Bankası', t)
     t = re.sub(r'(?<!\w)TURKIYE FINANS(?!\w)', 'Türkiye Finans', t)
+    t = re.sub(r'(?<!\w)HALKBANK(?!\w)', 'Halkbank', t)
     t = re.sub(r'(?<!\w)KUMULATIF(?!\w)', 'KÜMÜLATİF', t)
     t = re.sub(r'(?<!\w)FPTAL(?!\w)', 'İPTAL', t)
     t = re.sub(r'(?<!\w)IPTAL(?!\w)', 'İPTAL', t)
@@ -347,9 +354,9 @@ def salon_bul(text):
     if not text:
         return None
     satirlar = text.split("\n")
-    for i, satir in enumerate(satirlar[:12]):
+    for i, satir in enumerate(satirlar[:15]):
         s = satir.strip()
-        if not s or len(s) < 3:
+        if not s or len(s) < 4:
             continue
         if any(x in s.lower() for x in ["vd", "tc:", "tel", "vergi", "sirket", "mağaza", "magaza"]):
             continue
@@ -359,9 +366,15 @@ def salon_bul(text):
             continue
         if re.match(r'^[\d\s*.,]+$', s):
             continue
-        if any(x in s.upper() for x in ["TOPLAM", "KDV", "NAKIT", "KART", "CIRO", "CİRO"]):
+        if any(x in s.upper() for x in ["TOPLAM", "KDV", "NAKIT", "KART", "CIRO", "CİRO", "TOPKDV", "KUM", "KÜM"]):
             continue
-        if len(s) > 3:
+        if any(x in s.upper() for x in ["GEÇERLİ", "GECERLİ", "MALİ FİŞ", "SLİP", "TOPLAM FİŞ", "EKÜ", "EKU"]):
+            continue
+        if re.match(r'^[vV]\s*\d+\s*[eEyY]', s):
+            continue
+        if re.match(r'^[a-zA-Z]\s+\d+\s+[a-zA-Z]$', s.strip()):
+            continue
+        if len(s) > 4:
             return s
     return None
 
@@ -378,7 +391,12 @@ def parse_z_raporu(text):
         return sonuc
 
     t = text
-    t_duz = " ".join(text.split())
+    for kesici in ["*** RAPOR SONU ***", "*** BELGEYİ SAKLAYINIZ ***", "*** BELGEYI SAKLAYINIZ ***", "RAPOR SONU"]:
+        idx = t.upper().find(kesici.upper())
+        if idx > 0:
+            t = t[:idx]
+            break
+    t_duz = " ".join(t.split())
 
     sonuc["firma_adi"] = salon_bul(t)
     sonuc["banka_adi"] = banka_bul(t_duz)
@@ -387,14 +405,15 @@ def parse_z_raporu(text):
     if tarih_match:
         sonuc["tarih"] = f"{tarih_match.group(1)}.{tarih_match.group(2)}.{tarih_match.group(3)}"
 
-    z_no = re.search(r'Z\s*No[:\s]*(\d+)', t_duz, re.IGNORECASE)
+    z_no = re.search(r'Z\s*No[:\s]*(\d[\d.]*)', t_duz, re.IGNORECASE)
     if z_no:
-        sonuc["z_no"] = z_no.group(1)
+        raw_z = z_no.group(1).replace(".", "")
+        sonuc["z_no"] = raw_z
     fis_no = re.search(r'Fi[sş]\s*No[:\s]*(\d+)', t_duz, re.IGNORECASE)
     if fis_no:
         sonuc["belge_no"] = fis_no.group(1)
     elif z_no:
-        sonuc["belge_no"] = z_no.group(1)
+        sonuc["belge_no"] = raw_z
 
     m = re.search(r'Br[uü]t\s+\*?\s*([\d.,]+)', t_duz, re.IGNORECASE)
     if m:
