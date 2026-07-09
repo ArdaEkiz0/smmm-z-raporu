@@ -1,9 +1,6 @@
 streamlit
 openpyxl
 pandas
-rapidocr-onnxruntime
-onnxruntime
-opencv-python-headless
 Pillow
 numpy
 feedparser
