@@ -436,11 +436,9 @@ def parse_z_raporu(text):
         if tutar <= 0 or oran == 0:
             continue
         if oran not in kdv_data:
-            kdv_data[oran] = {"oran": oran, "matrah": 0, "kdv_tutari": 0}
-        net_tutar = round(tutar / (1 + oran / 100), 2)
-        kdv_tutar = round(tutar - net_tutar, 2)
-        kdv_data[oran]["matrah"] += net_tutar
-        kdv_data[oran]["kdv_tutari"] += kdv_tutar
+            net_tutar = round(tutar / (1 + oran / 100), 2)
+            kdv_tutar = round(tutar - net_tutar, 2)
+            kdv_data[oran] = {"oran": oran, "matrah": net_tutar, "kdv_tutari": kdv_tutar}
 
     sonuc["kdv_kalemleri"] = sorted(kdv_data.values(), key=lambda x: x["oran"])
 
@@ -592,7 +590,10 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no_start=1, urun_kodlari=None):
             kdv_kod = hesap_kodlari.get(f"kdv_{oran}", kdv_oran_hesap.get(oran, f"391.{oran:02d}"))
             rows.append(satir(kdv_kod, f"%{oran} Hesaplanan KDV", 0, round(gk["kdv"], 2)))
 
-    for kdv in data["kdv_kalemleri"]:
+    kdv_toplam = sum((kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0) for kv in data["kdv_kalemleri"])
+    kdv_guvenilir = kdv_toplam <= data.get("brut", 0) * 1.1 or not data["urunler"]
+
+    for kdv in data["kdv_kalemleri"] if kdv_guvenilir else []:
         oran = kdv["oran"]
         kalan_matrah = kdv["matrah"]
         kalan_kdv = kdv["kdv_tutari"]
@@ -603,6 +604,8 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no_start=1, urun_kodlari=None):
         kalan_matrah -= vb_toplam_matrah
         vb_toplam_kdv = sum(v["kdv"] for v in urun_bazli.values() if v["oran"] == oran)
         kalan_kdv -= vb_toplam_kdv
+        if kalan_matrah < -0.005 or kalan_kdv < -0.005:
+            kalan_matrah = 0; kalan_kdv = 0
         if kalan_matrah > 0.005:
             kod = hesap_kodlari.get(f"satis_{oran}", satis_oran_hesap.get(oran, f"600.{oran:02d}"))
             rows.append(satir(kod, f"%{oran} KDV'li Satış", 0, round(kalan_matrah, 2)))
@@ -1271,6 +1274,13 @@ elif sayfa == "KDV Özeti":
                         kdv_toplamlari[oran]["kdv"] += kdv
                         kdv_toplamlari[oran]["brut"] += tutar
 
+                for kv in f.get("kdv_kalemleri", []):
+                    oran = kv.get("oran", 0)
+                    if oran > 0 and oran not in kdv_toplamlari:
+                        matrah = kv.get("matrah", 0) or 0
+                        kdv_t = kv.get("kdv_tutari", 0) or 0
+                        kdv_toplamlari[oran] = {"matrah": matrah, "kdv": kdv_t, "brut": round(matrah + kdv_t, 2)}
+
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Toplam Ciro", f"{toplam_ciro:,.0f} TL")
             c2.metric("Kredi Kartı", f"{toplam_kk:,.0f} TL")
@@ -1317,7 +1327,7 @@ elif sayfa == "Ayarlar":
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 yedek_klasor = os.path.join(YEDEK_KLASORU, f"yedek_{timestamp}")
                 os.makedirs(yedek_klasor, exist_ok=True)
-                for fp in [HESAP_FILE, MUKELLEF_FILE]:
+                for fp in [HESAP_FILE, MUKELLEF_FILE, URUN_KODLARI_FILE]:
                     if os.path.exists(fp):
                         shutil.copy2(fp, yedek_klasor)
                 if os.path.exists(GECMIS_KLASORU):
