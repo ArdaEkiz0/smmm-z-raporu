@@ -145,10 +145,21 @@ def load_ocr():
         pytesseract.get_tesseract_version()
         return pytesseract
     except Exception as e:
-        log.warning(f"OCR (tesseract) yüklenemedi: {e}")
+        log.warning(f"OCR (tesseract) yuklenemedi: {e}")
+        return None
+
+@st.cache_resource
+def load_easyocr():
+    try:
+        import easyocr
+        reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
+        return reader
+    except Exception as e:
+        log.warning(f"EasyOCR yuklenemedi: {e}")
         return None
 
 ocr_engine = load_ocr()
+easyocr_reader = load_easyocr()
 
 def turkce_normalize(s):
     import unicodedata
@@ -306,8 +317,25 @@ def ocr_image(img: Image.Image) -> str:
                     continue
     return en_iyi_text
 
+def ocr_easyocr(img: Image.Image) -> str:
+    if easyocr_reader is None:
+        return ""
+    try:
+        import numpy as np
+        img_rgb = img.convert("RGB")
+        img_np = np.array(img_rgb)
+        results = easyocr_reader.readtext(img_np, detail=0, paragraph=True)
+        text = "\n".join(results)
+        text = ocr_duzelt(text.strip())
+        return text
+    except Exception as e:
+        log.error(f"EasyOCR hatasi: {e}")
+        return ""
+
 def ocr_gorsel_isle(img: Image.Image) -> str:
     motor = st.session_state.get("ocr_motor", "Tesseract")
+    if motor == "EasyOCR (Daha Iyi)":
+        return ocr_easyocr(img)
     if motor == "GOT-OCR 2.0 (Colab)":
         cfg = got_ocr_config()
         url = cfg.get("api_url", "")
@@ -1485,8 +1513,20 @@ with st.sidebar:
     st.divider()
     st.header("OCR Motoru")
     got_cfg = got_ocr_config()
-    ocr_motor = st.radio("OCR Seç", ["Tesseract", "GOT-OCR 2.0 (Colab)"], label_visibility="collapsed")
+    ocr_secenekleri = ["EasyOCR (Daha Iyi)"]
+    if ocr_engine is not None:
+        ocr_secenekleri.append("Tesseract")
+    if easyocr_reader is None:
+        ocr_secenekleri = ["Tesseract"] if ocr_engine is not None else []
+    ocr_motor = st.radio("OCR Sec", ocr_secenekleri if ocr_secenekleri else ["Tesseract"], label_visibility="collapsed")
     st.session_state.ocr_motor = ocr_motor
+    if ocr_motor == "EasyOCR (Daha Iyi)":
+        st.success("EasyOCR hazir - Tesseract'tan daha iyi", icon="🟢")
+    elif ocr_motor == "Tesseract":
+        if ocr_engine:
+            st.success("Tesseract hazir", icon="🟢")
+        else:
+            st.error("Tesseract yuklenemedi", icon="🔴")
     if ocr_motor == "GOT-OCR 2.0 (Colab)":
         got_url = st.text_input("Colab API URL", value=got_cfg.get("api_url", ""), placeholder="https://xxxx.ngrok-free.app", help="Colab'da calistirdiginiz GOT-OCR API URL'si")
         if got_url != got_cfg.get("api_url", ""):
