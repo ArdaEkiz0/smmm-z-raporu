@@ -265,7 +265,7 @@ def parse_z_raporu(text):
         "nakit": 0, "kredi_karti": 0, "yemek_ceki": 0,
         "toplam_tahsilat": 0, "iadeler": 0, "net_toplam": 0,
         "kdv_kalemleri": [], "brut": 0, "urunler": [], "ham_text": text,
-        "banka_adi": None, "firma_adi": None,
+        "banka_adi": None, "firma_adi": None, "toplam_kdv": 0,
     }
 
     if not text or not text.strip():
@@ -295,6 +295,19 @@ def parse_z_raporu(text):
         val = parse_tutar(m.group(1))
         if val > 0:
             sonuc["brut"] = val
+
+    toplam_match = re.search(r'(?<!K[ÜU]M\.)(?<!KUM\.)\bTOPLAM\s+([\d.,]+)', t_duz, re.IGNORECASE)
+    if toplam_match:
+        val = parse_tutar(toplam_match.group(1))
+        if val > 0:
+            sonuc["brut"] = val
+            sonuc["net_toplam"] = val
+
+    topkdv_match = re.search(r'(?<!K[ÜU]M\.)(?<!KUM\.)\bTOPKDV\s+([\d.,]+)', t_duz, re.IGNORECASE)
+    if topkdv_match:
+        val = parse_tutar(topkdv_match.group(1))
+        if val > 0:
+            sonuc["toplam_kdv"] = val
 
     net_patterns = [
         r'Net\s+C[iı]ro\s+\*?\s*([\d.,]+)',
@@ -481,11 +494,11 @@ def parse_z_raporu(text):
     kdv_data = {}
 
     vergi_patterns = [
-        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*%?\*?\s*([\d.,]+)',
-        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+KDV\s*%?\*?\s*([\d.,]+)',
+        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*%?\*?\s*([\d.,]+)',
+        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+KDV\s*%?\*?\s*([\d.,]+)',
         r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
         r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+.*?KDV\s*\*?\s*([\d.,]+)',
-        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
+        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
     ]
     for pat in vergi_patterns:
         for vm in re.finditer(pat, t_duz, re.IGNORECASE):
