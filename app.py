@@ -376,7 +376,8 @@ def parse_z_raporu(text):
                         "VERGI", "ODEME", "FIS", "SLIP", "FPTAL", "IPTAL",
                         "SAYI", "EKU", "MUSTERI", "RAPOR", "TURLERI",
                         "CIRO", "GENEL", "TARIH", "SAAT", "NO:", "NAKIT",
-                        "BANKA", "ADET"]
+                        "BANKA", "ADET", "KARTI", "GECERLI", "SAYISI",
+                        "TOPLAM FIS", "FIIS", "KUMULATIF"]
 
     urun_pattern1 = re.finditer(
         rf'({URUN_CHARS}{{2,}}?)\s*%(\d+)\s+(\d+)\s*\*?\s*([\d.,]+)',
@@ -393,6 +394,23 @@ def parse_z_raporu(text):
             sonuc["urunler"].append({"urun": urun_adi, "oran": oran, "miktar": miktar, "tutar": tutar})
 
     mevcut_urunler = {u["urun"].upper() for u in sonuc["urunler"]}
+
+    urun_pattern_adet_var = re.finditer(
+        rf'({URUN_CHARS}{{2,}}?)\s+(\d+)\s+\*?\s*([\d.,]+)',
+        t_duz, re.IGNORECASE
+    )
+    for um in urun_pattern_adet_var:
+        urun_adi = um.group(1).strip()
+        if urun_adi.upper() in mevcut_urunler:
+            continue
+        if any(yk in urun_adi.upper() for yk in yanlis_kelimeler):
+            continue
+        miktar = parse_tutar(um.group(2))
+        tutar = parse_tutar(um.group(3))
+        if tutar > 10:
+            sonuc["urunler"].append({"urun": urun_adi, "oran": 0, "miktar": miktar, "tutar": tutar})
+            mevcut_urunler.add(urun_adi.upper())
+
     urun_pattern2 = re.finditer(
         rf'({URUN_CHARS}{{2,}}?)\s+(\d+)\s*%(\d+)\s*\*?\s*([\d.,]+)',
         t_duz, re.IGNORECASE
@@ -445,11 +463,11 @@ def parse_z_raporu(text):
     kdv_data = {}
 
     vergi_patterns = [
-        r'\*?\s*([\d.,]+)\s*%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s*TOPKDV',
-        r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s*.*?TOPKDV\s*\*?\s*([\d.,]+)',
-        r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s*.*?KDV\s*\*?\s*([\d.,]+)',
-        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s*TOPKDV\s*%?\*?\s*([\d.,]+)',
-        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s*KDV\s*%?\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*%?\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+KDV\s*%?\*?\s*([\d.,]+)',
+        r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
+        r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+.*?KDV\s*\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
     ]
     for pat in vergi_patterns:
         for vm in re.finditer(pat, t_duz, re.IGNORECASE):
