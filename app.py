@@ -13,7 +13,6 @@ import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageEnhance
 import numpy as np
-import feedparser
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
@@ -686,46 +685,6 @@ def generate_excel(all_rows):
 def mukellefler():
     return dosya_oku(MUKELLEF_FILE, [])
 
-@st.cache_data(ttl=3600)
-def haberleri_getir():
-    kaynaklar = [
-        "https://www.gib.gov.tr/rss/duyurular.xml",
-        "https://www.gib.gov.tr/rss/basin_odasi.xml",
-        "https://www.resmigazete.gov.tr/rss.xml",
-        "https://www.maliye.gov.tr/rss.xml"
-    ]
-    haberler = []
-    for k in kaynaklar:
-        try:
-            feed = feedparser.parse(k, request_headers={'User-Agent': 'Mozilla/5.0'})
-            if feed.entries:
-                for entry in feed.entries[:3]:
-                    haberler.append({
-                        "title": entry.get("title", "Başlıksız"),
-                        "link": entry.get("link", "#")
-                    })
-                if haberler:
-                    break
-        except Exception:
-            continue
-    
-    # Fallback: Statik önemli tarihler/hatırlatmalar
-    if not haberler:
-        from datetime import datetime
-        ay = datetime.now().month
-        if ay == 1:
-            haberler.append({"title": "OCAK: Yıl başı beyanları, geçici vergi ödemeleri", "link": "https://www.gib.gov.tr"})
-        elif ay == 3:
-            haberler.append({"title": "MART: Kurumlar vergisi beyan dönemi başlıyor", "link": "https://www.gib.gov.tr"})
-        elif ay == 6:
-            haberler.append({"title": "HAZİRAN: Geçici vergi 2. taksit ödeme son tarihi", "link": "https://www.gib.gov.tr"})
-        elif ay == 9:
-            haberler.append({"title": "EYLÜL: Geçici vergi 3. taksit ödeme son tarihi", "link": "https://www.gib.gov.tr"})
-        else:
-            haberler.append({"title": "GİB Duyuruları için resmi siteyi ziyaret edin", "link": "https://www.gib.gov.tr/duyurular"})
-    
-    return haberler
-
 def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     kayit = {
@@ -846,15 +805,6 @@ with st.sidebar:
 if sayfa == "Dashboard":
     st.header("Genel Bakış")
     
-    # Haber Paneli
-    with st.expander("📢 GÜNCEL MEVZUAT VE VERGİ HABERLERİ (GİB)", expanded=True):
-        haberler = haberleri_getir()
-        if haberler:
-            for h in haberler:
-                st.markdown(f"- [{h['title']}]({h['link']})")
-        else:
-            st.write("Haberler şu an yüklenemedi.")
-
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
     ml = mukellefler()
