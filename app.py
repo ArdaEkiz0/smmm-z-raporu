@@ -721,14 +721,14 @@ def generate_excel(all_rows):
     return output.getvalue()
 
 BASIT_USUL_KOLONLAR = [
-    "İŞLEM", "KATEGORİ", "BELGE TÜRÜ", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
-    "EVRAK NO", "TCKN/VKN", "VERGİ DAİRESİ", "SOYADI/ÜNVAN/ADI DEVAMI", "ADRES",
-    "CARİ HESAP", "KDV İSTİSNASI", "KOD", "BELGE TÜRÜ(DB)", "ALIŞ/SATIŞ TÜRÜ",
-    "KAYIT ALT TÜRÜ", "PLAKA NO", "MAL VE HİZMET KODU", "AÇIKLAMA", "MİKTAR",
-    "B.FİYAT", "TUTAR", "TEVKİFAT", "KDV ORANI", "İŞLEM BEDELİ",
-    "MATRAHTAN DÜŞÜLECEK TUTAR", "ÖZEL MATRAH ŞEKLİNE DAHİL OLMAYAN BEDEL",
-    "KDV TUTARI", "TOPLAM TUTAR", "KREDİLİ TUTAR", "STOPAJ KODU", "STOPAJ TUTARI",
-    "DÖNEMSELLIK İLKESİ", "FAALIYET KODU", "ÖDEME TÜRÜ", "OTOMATİK HESAP",
+    "ISLEM", "KATEGORI", "BELGE TURU", "EVRAK TARIHI", "KAYIT TARIHI", "SERI NO",
+    "EVRAK NO", "TCKN/VKN", "VERGI DAIRESI", "SOYADI/UNVAN/ADI DEVAMI", "ADRES",
+    "CARI HESAP", "KDV ISTISNASI", "KOD", "BELGE TURU(DB)", "ALIS/SATIS TURU",
+    "KAYIT ALT TURU", "PLAKA NO", "MAL VE HIZMET KODU", "ACIKLAMA", "MIKTAR",
+    "B.FIYAT", "TUTAR", "TEVKIFAT", "KDV ORANI", "ISLEM BEDELI",
+    "MATRAHTAN DUSULECEK TUTAR", "OZEL MATRAH SEKLINE DAHIL OLMAYAN BEDEL",
+    "KDV TUTARI", "TOPLAM TUTAR", "KREDILI TUTAR", "STOPAJ KODU", "STOPAJ TUTARI",
+    "DONEMSELLIK ILKESI", "FAALIYET KODU", "ODEME TURU", "OTOMATIK HESAP",
 ]
 
 def generate_basit_usul_excel(results, mukellef_bilgi):
@@ -776,14 +776,14 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
         def base_row():
             s = {k: "" for k in BASIT_USUL_KOLONLAR}
-            s["İŞLEM"] = "1"
-            s["KATEGORİ"] = "Defter Fişleri"
-            s["EVRAK TARİHİ"] = evrak_tarihi
-            s["KAYIT TARİHİ"] = kayit_tarihi
+            s["ISLEM"] = "1"
+            s["KATEGORI"] = "Defter Fişleri"
+            s["EVRAK TARIHI"] = evrak_tarihi
+            s["KAYIT TARIHI"] = kayit_tarihi
             s["EVRAK NO"] = evrak_no
             s["TCKN/VKN"] = tckn
-            s["VERGİ DAİRESİ"] = vd
-            s["SOYADI/ÜNVAN/ADI DEVAMI"] = unvan
+            s["VERGI DAIRESI"] = vd
+            s["SOYADI/UNVAN/ADI DEVAMI"] = unvan
             s["ADRES"] = adres
             return s
 
@@ -795,26 +795,26 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
         if not urunler and not kdv_kalemleri:
             s = base_row()
-            s["AÇIKLAMA"] = f"Z Raporu {evrak_no}"
+            s["ACIKLAMA"] = f"Z Raporu {evrak_no}"
             brut = r.get("brut", 0) or toplam_tahsilat or 0
             s["TUTAR"] = brut
             s["TOPLAM TUTAR"] = brut
-            s["KREDİLİ TUTAR"] = kk_orani(brut)
+            s["KREDILI TUTAR"] = kk_orani(brut)
             yaz_satir(s)
             continue
 
         if not urunler and kdv_kalemleri:
             for kv in kdv_kalemleri:
                 s = base_row()
-                s["AÇIKLAMA"] = f"Z Raporu {evrak_no} %{kv['oran']} KDV"
-                s["MİKTAR"] = ""
-                s["B.FİYAT"] = ""
+                s["ACIKLAMA"] = f"Z Raporu {evrak_no} %{kv['oran']} KDV"
+                s["MIKTAR"] = ""
+                s["B.FIYAT"] = ""
                 s["TUTAR"] = kv.get("matrah", 0)
                 s["KDV ORANI"] = kv.get("oran", 0)
                 s["KDV TUTARI"] = kv.get("kdv_tutari", 0)
                 toplam_t = (kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0)
                 s["TOPLAM TUTAR"] = toplam_t
-                s["KREDİLİ TUTAR"] = kk_orani(toplam_t)
+                s["KREDILI TUTAR"] = kk_orani(toplam_t)
                 yaz_satir(s)
             continue
 
@@ -825,16 +825,16 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
             brut_tutar = urun.get("tutar", 0) or 0
             oran = urun.get("oran", 0) or 0
 
-            s["AÇIKLAMA"] = ua
-            s["MİKTAR"] = miktar
+            s["ACIKLAMA"] = ua
+            s["MIKTAR"] = miktar
             if miktar > 0:
-                s["B.FİYAT"] = round(brut_tutar / miktar, 2)
+                s["B.FIYAT"] = round(brut_tutar / miktar, 2)
             s["TUTAR"] = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
             s["KDV ORANI"] = oran
             kdv_t = round(brut_tutar - (brut_tutar / (1 + oran / 100)), 2) if oran > 0 else 0
             s["KDV TUTARI"] = kdv_t
             s["TOPLAM TUTAR"] = brut_tutar
-            s["KREDİLİ TUTAR"] = kk_orani(brut_tutar)
+            s["KREDILI TUTAR"] = kk_orani(brut_tutar)
             yaz_satir(s)
 
     for i, w in enumerate([10, 12, 14, 14, 14, 12, 14, 16, 16, 30, 20, 14, 16, 12, 14, 14, 14, 12, 16, 30, 10, 12, 14, 10, 10, 14, 16, 16, 14, 14, 14, 12, 12, 14, 14, 14, 14], 1):
