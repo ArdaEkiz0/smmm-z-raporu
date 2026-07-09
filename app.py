@@ -781,20 +781,18 @@ def generate_basit_usul_excel(results, mukellef_bilgi, sablon_data=None):
         toplam_tahsilat = r.get("toplam_tahsilat", 0) or (kk_tutar + nakit_tutar) or 1
 
         def base_row():
-            s = {k: "" for k in kolonlar}
-            for k, v in {
-                "İŞLEM": "1", "ISLEM": "1",
-                "KATEGORİ": "Defter Fişleri", "KATEGORI": "Defter Fişleri",
-                "EVRAK TARİHİ": evrak_tarihi,
-                "KAYIT TARİHİ": kayit_tarihi,
-                "EVRAK NO": evrak_no,
-                "TCKN/VKN": tckn,
-                "VERGİ DAİRESİ": vd,
-                "SOYADI ÜNVAN": unvan, "SOYADI UNVAN": unvan,
-                "ADRES": adres,
-            }.items():
-                if k in s:
-                    s[k] = v
+            s = {}
+            for k in kolonlar:
+                s[k] = ""
+            # match by position - KATEGORI is always column 2
+            if len(kolonlar) >= 2:
+                s[kolonlar[1]] = "Defter Fişleri"
+            if len(kolonlar) >= 1:
+                s[kolonlar[0]] = "1"
+            for pos, val in [(3, evrak_tarihi), (4, kayit_tarihi),
+                             (6, evrak_no), (7, tckn), (8, vd), (9, unvan), (11, adres)]:
+                if len(kolonlar) > pos:
+                    s[kolonlar[pos]] = val
             return s
 
         def kk_orani(brut):
@@ -1329,11 +1327,68 @@ elif sayfa == "Z Raporu Yükle":
                 if m.get("adi") == secili_mukellef:
                     muk_bilgi = m
                     break
-            basit_excel = generate_basit_usul_excel(results, muk_bilgi, st.session_state.get("luca_sabloni"))
-            st.download_button("EXCEL İNDİR (Basit Usul)", basit_excel,
-                f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                type="primary", width="stretch")
+            import csv
+            csv_buffer = io.StringIO()
+            writer = csv.writer(csv_buffer, delimiter=";")
+            writer.writerow(BASIT_USUL_KOLONLAR)
+            for r in results:
+                if "error" in r:
+                    continue
+                evrak_tarihi = r.get("tarih", "")
+                evrak_no = r.get("z_no", "") or r.get("belge_no", "")
+                tckn = (muk_bilgi or {}).get("vergi_no", "")
+                vd = (muk_bilgi or {}).get("vd", "")
+                unvan = (muk_bilgi or {}).get("adi", "")
+                adres = (muk_bilgi or {}).get("notlar", "")
+                kk_tutar = r.get("kredi_karti", 0) or 0
+                toplam_tahsilat = r.get("toplam_tahsilat", 0) or 1
+                kk_orani = lambda b: round(b * kk_tutar / toplam_tahsilat, 2) if toplam_tahsilat > 0 else 0
+                urunler = r.get("urunler", [])
+                if not urunler:
+                    row = [""] * len(BASIT_USUL_KOLONLAR)
+                    row[0] = "1"
+                    row[1] = "Defter Fişleri"
+                    row[3] = evrak_tarihi
+                    row[4] = evrak_tarihi
+                    row[6] = evrak_no
+                    row[7] = tckn
+                    row[8] = vd
+                    row[9] = unvan
+                    row[11] = adres
+                    brut = r.get("brut", 0) or toplam_tahsilat or 0
+                    row[22] = brut
+                    row[29] = brut
+                    row[30] = kk_orani(brut)
+                    writer.writerow(row)
+                    continue
+                for urun in urunler:
+                    row = [""] * len(BASIT_USUL_KOLONLAR)
+                    row[0] = "1"
+                    row[1] = "Defter Fişleri"
+                    row[3] = evrak_tarihi
+                    row[4] = evrak_tarihi
+                    row[6] = evrak_no
+                    row[7] = tckn
+                    row[8] = vd
+                    row[9] = unvan
+                    row[11] = adres
+                    ua = urun.get("urun", "")
+                    miktar = urun.get("miktar", 0) or 0
+                    brut_tutar = urun.get("tutar", 0) or 0
+                    oran = urun.get("oran", 0) or 0
+                    row[19] = ua
+                    row[20] = miktar
+                    row[21] = round(brut_tutar / miktar, 2) if miktar > 0 else ""
+                    row[22] = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
+                    row[24] = oran
+                    row[28] = round(brut_tutar - (brut_tutar / (1 + oran / 100)), 2) if oran > 0 else 0
+                    row[29] = brut_tutar
+                    row[30] = kk_orani(brut_tutar)
+                    writer.writerow(row)
+            csv_data = csv_buffer.getvalue().encode("utf-8-sig")
+            st.download_button("CSV İNDİR (LUCA için)", csv_data,
+                f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                "text/csv; charset=utf-8", type="primary", use_container_width=True)
         else:
             excel_data = generate_excel_cached(tuple(all_luca_rows))
             st.download_button("EXCEL İNDİR (LUCA)", excel_data,
