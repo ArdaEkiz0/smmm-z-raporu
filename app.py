@@ -74,6 +74,7 @@ MUKELLEF_FILE = os.path.join(DATA_DIR, "mukellefler.json")
 FISLER_KLASORU = os.path.join(DATA_DIR, "fisler")
 YEDEK_KLASORU = os.path.join(DATA_DIR, "yedekler")
 URUN_KODLARI_FILE = os.path.join(DATA_DIR, "urun_kodlari.json")
+SABLON_FILE = os.path.join(DATA_DIR, "luca_sablonu.xlsx")
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
@@ -951,15 +952,25 @@ with st.sidebar:
 
     if st.session_state.get("mod") == "Basit Usul":
         with st.expander("LUCA Şablonu", expanded=False):
-            st.caption("LUCA'dan indirdiğiniz Excel şablonunu yükleyin")
+            st.caption("LUCA'dan indirdiğiniz Excel şablonunu yükleyin (bir kez yeter)")
             yuklenen = st.file_uploader("Şablon Seç", type=["xlsx"], label_visibility="collapsed", key="luca_sablon_uploader")
             if yuklenen:
-                st.session_state["luca_sabloni"] = yuklenen.read()
-                st.toast("Şablon yüklendi!", icon="✅")
-            if st.session_state.get("luca_sabloni"):
-                if st.button("Şablonu Kaldır"):
+                data = yuklenen.read()
+                with open(SABLON_FILE, "wb") as f:
+                    f.write(data)
+                st.session_state["luca_sabloni"] = data
+                st.toast("Şablon kaydedildi!", icon="✅")
+            if st.button("Şablonu Kaldır"):
+                if os.path.exists(SABLON_FILE):
+                    os.remove(SABLON_FILE)
+                if "luca_sabloni" in st.session_state:
                     del st.session_state["luca_sabloni"]
-                    st.rerun()
+                st.rerun()
+            if os.path.exists(SABLON_FILE) and "luca_sabloni" not in st.session_state:
+                with open(SABLON_FILE, "rb") as f:
+                    st.session_state["luca_sabloni"] = f.read()
+            if st.session_state.get("luca_sabloni"):
+                st.success("✅ Şablon yüklü")
 
     st.divider()
     st.header("Hesap Kodları")
