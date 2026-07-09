@@ -19,34 +19,51 @@ log = logging.getLogger("smmm")
 
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
 
-DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+st.components.v1.html("""
+<script>
+if (localStorage.getItem("smmm_auth") === "1" && window.location.search !== "?smmm_auth=1") {
+    window.location.search = "?smmm_auth=1";
+}
+</script>
+""", height=0)
 
-AUTH_FILE = os.path.join(DATA_DIR, "auth_config.json")
+AUTH_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "auth_config.json")
 
-def auth_yukle():
+def auth_ok():
+    if "auth_ok" in st.session_state and st.session_state.auth_ok:
+        return True
+    if st.query_params.get("smmm_auth") == "1":
+        st.session_state.auth_ok = True
+        return True
+    return False
+
+if not auth_ok():
+    pws = []
     if os.path.exists(AUTH_FILE):
         try:
             with open(AUTH_FILE, "r", encoding="utf-8") as f:
-                return json.load(f)
+                pws = json.load(f).get("passwords", [])
         except Exception:
-            return {"passwords": []}
-    return {"passwords": []}
+            pass
+    if pws:
+        st.title("SMMM Z Raporu Sistemi")
+        st.markdown("Yetkili kullanıcı girişi")
+        pwd = st.text_input("Şifre", type="password", placeholder="Şifrenizi girin")
+        if st.button("Giriş", type="primary"):
+            if pwd in pws:
+                st.session_state.auth_ok = True
+                st.components.v1.html("""
+                <script>
+                try { localStorage.setItem("smmm_auth", "1"); } catch(e) {}
+                window.location.search = "?smmm_auth=1";
+                </script>
+                """, height=0)
+                st.rerun()
+            else:
+                st.error("Geçersiz şifre")
+        st.stop()
 
-if "auth_ok" not in st.session_state:
-    st.session_state.auth_ok = False
-    st.session_state.auth_passwords = auth_yukle().get("passwords", [])
-
-if st.session_state.auth_passwords and not st.session_state.auth_ok:
-    st.title("SMMM Z Raporu Sistemi")
-    st.markdown("Yetkili kullanıcı girişi")
-    pwd = st.text_input("Şifre", type="password", placeholder="Şifrenizi girin")
-    if st.button("Giriş", type="primary"):
-        if pwd in st.session_state.auth_passwords:
-            st.session_state.auth_ok = True
-            st.rerun()
-        else:
-            st.error("Geçersiz şifre")
-    st.stop()
+DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 HESAP_FILE = os.path.join(DATA_DIR, "hesap_kodlari.json")
 GECMIS_KLASORU = os.path.join(DATA_DIR, "gecmis")
