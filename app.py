@@ -138,6 +138,21 @@ def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False,
     img = img.point(lambda x: 0 if x < threshold else 255)
     return img
 
+def ocr_guvenli(img: Image.Image, cfg: str, min_conf: float = 30.0) -> str:
+    if ocr_engine is None:
+        return ""
+    try:
+        data = ocr_engine.image_to_data(img, lang="tur+eng", config=cfg, output_type=ocr_engine.Output.DICT)
+        kelimeler = []
+        for i in range(len(data["text"])):
+            conf = float(data["conf"][i])
+            word = data["text"][i].strip()
+            if conf >= min_conf and word:
+                kelimeler.append(word)
+        return " ".join(kelimeler)
+    except Exception:
+        return ""
+
 @st.cache_resource
 def load_ocr():
     try:
@@ -297,8 +312,12 @@ def ocr_image(img: Image.Image) -> str:
                 continue
             for cfg in configs:
                 try:
-                    text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
-                    text = ocr_duzelt(text.strip())
+                    text = ocr_guvenli(hazir, cfg, min_conf=25.0)
+                    if not text:
+                        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                        text = ocr_duzelt(text.strip())
+                    else:
+                        text = ocr_duzelt(text)
                     skor = ocr_skorla(text)
                     if skor > en_iyi_skor:
                         en_iyi_skor = skor
@@ -353,15 +372,6 @@ def ocr_easyocr(img: Image.Image) -> str:
         return ""
 
 def ocr_gorsel_isle(img: Image.Image) -> str:
-    motor = st.session_state.get("ocr_motor", "Tesseract")
-    if motor == "EasyOCR (Daha Iyi)":
-        return ocr_easyocr(img)
-    if motor == "GOT-OCR 2.0 (Colab)":
-        cfg = got_ocr_config()
-        url = cfg.get("api_url", "")
-        if not url:
-            return ""
-        return ocr_got_ocr(img, url)
     return ocr_image(img)
 
 @st.cache_resource
@@ -1532,18 +1542,10 @@ with st.sidebar:
 
     st.divider()
     st.header("OCR Motoru")
-    ocr_motor = st.radio("OCR Sec", ["EasyOCR (Daha Iyi)", "Tesseract"], label_visibility="collapsed")
-    st.session_state.ocr_motor = ocr_motor
-    if ocr_motor == "EasyOCR (Daha Iyi)":
-        if easyocr_reader is not None:
-            st.success("EasyOCR hazir", icon="🟢")
-        else:
-            st.info("Ilk kullanimda model indirilecek (~1 dakika)")
-    elif ocr_motor == "Tesseract":
-        if ocr_engine:
-            st.success("Tesseract hazir", icon="🟢")
-        else:
-            st.error("Tesseract yuklenemedi", icon="🔴")
+    if ocr_engine:
+        st.success("Tesseract OCR hazir", icon="🟢")
+    else:
+        st.error("Tesseract yuklenemedi", icon="🔴")
     if ocr_motor == "GOT-OCR 2.0 (Colab)":
         got_url = st.text_input("Colab API URL", value=got_cfg.get("api_url", ""), placeholder="https://xxxx.ngrok-free.app", help="Colab'da calistirdiginiz GOT-OCR API URL'si")
         if got_url != got_cfg.get("api_url", ""):
