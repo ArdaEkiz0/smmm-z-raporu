@@ -743,7 +743,7 @@ def generate_basit_usul_excel(results, mukellef_bilgi, sablon_data=None):
     else:
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Basit Usul"
+        ws.title = "Serbest Meslek"
         kolonlar = BASIT_USUL_KOLONLAR
         hfont = Font(bold=True, color="FFFFFF", size=10)
         hfill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
@@ -949,9 +949,9 @@ with st.sidebar:
 
     st.divider()
     st.header("Mod")
-    st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Basit Usul"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
+    st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
 
-    if st.session_state.get("mod") == "Basit Usul":
+    if st.session_state.get("mod") == "Serbest Meslek":
         with st.expander("LUCA Şablonu", expanded=False):
             st.caption("LUCA'dan indirdiğiniz Excel şablonunu yükleyin (bir kez yeter)")
             yuklenen = st.file_uploader("Şablon Seç", type=["xlsx"], label_visibility="collapsed", key="luca_sablon_uploader")
@@ -1333,7 +1333,7 @@ elif sayfa == "Z Raporu Yükle":
         st.divider()
 
         mod = st.session_state.get("mod", "Bilanço")
-        if mod == "Basit Usul":
+        if mod == "Serbest Meslek":
             muk_bilgi = None
             for m in mukellefler():
                 if m.get("adi") == secili_mukellef:
@@ -1402,7 +1402,7 @@ elif sayfa == "Z Raporu Yükle":
             basit_excel = generate_basit_usul_excel(results, muk_bilgi, st.session_state.get("luca_sabloni"))
             c1, c2 = st.columns(2)
             with c1:
-                st.download_button("XLSX İNDİR (Basit Usul)", basit_excel,
+                st.download_button("XLSX İNDİR (Serbest Meslek)", basit_excel,
                     f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary", use_container_width=True)
@@ -1479,14 +1479,14 @@ elif sayfa == "Fiş Geçmişi":
             st.dataframe(df, width="stretch", hide_index=True)
 
             mod = st.session_state.get("mod", "Bilanço")
-            if mod == "Basit Usul":
+            if mod == "Serbest Meslek":
                 muk_bilgi = None
                 for m in mukellefler():
                     if m.get("adi") == secili_mukellef:
                         muk_bilgi = m
                         break
                 basit_excel = generate_basit_usul_excel(filtered, muk_bilgi, st.session_state.get("luca_sabloni"))
-                st.download_button("Seçilenlerden Excel Oluştur (Basit Usul)", basit_excel,
+                st.download_button("Seçilenlerden Excel Oluştur (Serbest Meslek)", basit_excel,
                     f"basit_usul_filtre_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     width="stretch")
@@ -1630,14 +1630,14 @@ elif sayfa == "KDV Özeti":
                 st.metric("Toplam Hesaplanan KDV", f"{genel_kdv:,.2f} TL")
 
             mod = st.session_state.get("mod", "Bilanço")
-            if mod == "Basit Usul":
+            if mod == "Serbest Meslek":
                 muk_bilgi = None
                 for m in mukellefler():
                     if m.get("adi") == secili_mukellef:
                         muk_bilgi = m
                         break
                 basit_excel = generate_basit_usul_excel(ay_fisler, muk_bilgi, st.session_state.get("luca_sabloni"))
-                st.download_button(f"{ay:02d}/{yil} Basit Usul Excel", basit_excel,
+                st.download_button(f"{ay:02d}/{yil} Serbest Meslek Excel", basit_excel,
                     f"basit_usul_{yil}_{ay:02d}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary", width="stretch")
