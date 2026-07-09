@@ -849,6 +849,15 @@ elif sayfa == "Z Raporu Yükle":
         if secili_mukellef == "(Mükellef yok)":
             secili_mukellef = ""
 
+    col_tara, col_info = st.columns([1, 3])
+    with col_tara:
+        st.markdown(
+            '<a href="ms-scan:" target="_blank" style="display:inline-block;padding:10px 16px;background-color:#2e7d32;color:white;text-decoration:none;border-radius:6px;font-weight:bold;font-size:15px;text-align:center;width:100%">📡 Tara ve Kaydet</a>',
+            unsafe_allow_html=True
+        )
+    with col_info:
+        st.info("HP Smart ile tarayın, **PDF** kaydedin, sonra yukarıdaki alana yükleyin.", icon="💡")
+
     uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
 
     if uploaded_files:
