@@ -179,9 +179,9 @@ def ocr_duzelt(text):
     if not text:
         return text
     t = text
-    t = re.sub(r'(?<!\w)TSA(?=\s)', 'İSA', t)
-    t = re.sub(r'(?<!\w)TSA CURA', 'İSA CURA', t)
     t = re.sub(r'(?<!\w)TSA\s+CURA', 'İSA CURA', t)
+    t = re.sub(r'(?<!\w)TSA CURA', 'İSA CURA', t)
+    t = re.sub(r'(?<!\w)TSA(?=\s)', 'İSA', t)
     t = re.sub(r'IKSPI BILGISA', 'GÖKKUŞAĞI', t)
     t = re.sub(r'(?<!\w)GOKKUSAGI', 'GÖKKUŞAĞI', t)
     t = re.sub(r'(?<!\w)GOKKUSAG', 'GÖKKUŞAĞI', t)
@@ -214,7 +214,10 @@ def ocr_duzelt(text):
     t = re.sub(r'(?<!\w)KARTI(?!\w)', 'KARTI', t)
     t = re.sub(r'(?<!\w)SLIP(?!\w)', 'SLİP', t)
     t = re.sub(r'(?<!\w)BANKA(?!\w)', 'BANKA', t)
-    t = re.sub(r'(\d)\s+(\d{3,})', r'\1\2', t)
+    prev = None
+    while prev != t:
+        prev = t
+        t = re.sub(r'(\d)\s+(\d{2,})', r'\1\2', t)
     t = re.sub(r'(\d{2,})\s*\.(\d{3})', r'\1.\2', t)
     return t
 
@@ -378,14 +381,28 @@ def parse_z_raporu(text):
         if val > 0:
             sonuc["brut"] = val
 
-    toplam_match = re.search(r'(?<!K[ÜU]M\.)(?<!KUM\.)\bTOPLAM\s+([\d.,]+)', t_duz, re.IGNORECASE)
+    toplam_match = None
+    for m in re.finditer(r'\bTOPLAM\s+([\d.,]+)', t_duz, re.IGNORECASE):
+        start = m.start()
+        prefix = t_duz[max(0, start-25):start].upper()
+        if re.search(r'K[ÜÜUÜM]', prefix):
+            continue
+        toplam_match = m
+        break
     if toplam_match:
         val = parse_tutar(toplam_match.group(1))
         if val > 0:
             sonuc["brut"] = val
             sonuc["net_toplam"] = val
 
-    topkdv_match = re.search(r'(?<!K[ÜU]M\.)(?<!KUM\.)\bTOPKDV\s+([\d.,]+)', t_duz, re.IGNORECASE)
+    topkdv_match = None
+    for m in re.finditer(r'\bTOPKDV\s+([\d.,]+)', t_duz, re.IGNORECASE):
+        start = m.start()
+        prefix = t_duz[max(0, start-25):start].upper()
+        if re.search(r'K[ÜÜUÜM]', prefix):
+            continue
+        topkdv_match = m
+        break
     if topkdv_match:
         val = parse_tutar(topkdv_match.group(1))
         if val > 0:
@@ -577,14 +594,18 @@ def parse_z_raporu(text):
     kdv_data = {}
 
     vergi_patterns = [
-        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*%?\*?\s*([\d.,]+)',
-        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+KDV\s*%?\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*%?\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+KDV\s*%?\*?\s*([\d.,]+)',
         r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
         r'%(\d+)\s*TOPLAM\s*\*?\s*([\d.,]+)\s+.*?KDV\s*\*?\s*([\d.,]+)',
-        r'(?<!K[ÜU]M\.)(?<!KUM\.)TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
+        r'TOPLAM\s*%(\d+)\s*\*?\s*([\d.,]+)\s+TOPKDV\s*\*?\s*([\d.,]+)',
     ]
     for pat in vergi_patterns:
         for vm in re.finditer(pat, t_duz, re.IGNORECASE):
+            start = vm.start()
+            prefix = t_duz[max(0, start-25):start].upper()
+            if re.search(r'K[ÜÜUÜM]', prefix):
+                continue
             groups = vm.groups()
             if pat.startswith(r'\*?\s*([\d.,]+)\s*%'):
                 brut_v = parse_tutar(groups[0])
@@ -1226,7 +1247,10 @@ elif sayfa == "Z Raporu Yükle":
         st.session_state.secili_mukellef_idx = 0
 
     def turkce_normalize(s):
+        import unicodedata
         s = s.lower().strip()
+        s = unicodedata.normalize('NFKD', s)
+        s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
         s = s.replace('ı', 'i').replace('İ', 'i').replace('I', 'i')
         s = s.replace('ş', 's').replace('Ş', 's')
         s = s.replace('ğ', 'g').replace('Ğ', 'g')
