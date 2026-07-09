@@ -849,16 +849,21 @@ elif sayfa == "Z Raporu Yükle":
         if secili_mukellef == "(Mükellef yok)":
             secili_mukellef = ""
 
-    uploaded_files = st.file_uploader("Z raporu/fiş fotoğrafı seç", type=["jpg", "jpeg", "png"], accept_multiple_files=True)
+    uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
 
     if uploaded_files:
-        st.success(f"{len(uploaded_files)} fotoğraf yüklendi")
+        pdf_count = sum(1 for f in uploaded_files if f.name.lower().endswith(".pdf"))
+        img_count = len(uploaded_files) - pdf_count
+        st.success(f"{img_count} görsel, {pdf_count} PDF yüklendi")
         cols = st.columns(5)
         for i, f in enumerate(uploaded_files):
             with cols[i % 5]:
-                img = Image.open(f)
-                st.image(img, caption=f.name[:20], width="stretch")
-                f.seek(0)
+                if f.name.lower().endswith(".pdf"):
+                    st.caption(f"📄 {f.name[:20]}")
+                else:
+                    img = Image.open(f)
+                    st.image(img, caption=f.name[:20], width="stretch")
+                    f.seek(0)
 
     col_b1, col_b2 = st.columns(2)
     with col_b1:
@@ -871,37 +876,42 @@ elif sayfa == "Z Raporu Yükle":
 
     if run_ocr and uploaded_files:
         import time as _time
+        from pdf2image import convert_from_bytes
         all_results = []
-        progress = st.progress(0, text="OCR yapılıyor...")
         toplam = len(uploaded_files)
+        progress = st.progress(0, text="OCR yapılıyor...")
         baslama = _time.time()
-        sure_tahmini = st.empty()
+
         for i, uf in enumerate(uploaded_files):
             uf.seek(0)
             try:
-                img = Image.open(io.BytesIO(uf.read()))
-                ocr_text = ocr_image(img)
-                parsed = parse_z_raporu(ocr_text)
-                parsed["filename"] = uf.name
-                parsed["ocr_text"] = ocr_text
-                parsed["mukellef_adi"] = secili_mukellef
-                all_results.append(parsed)
+                data = uf.read()
+                if uf.name.lower().endswith(".pdf"):
+                    pages = convert_from_bytes(data, dpi=300)
+                    for pi, page in enumerate(pages):
+                        ocr_text = ocr_image(page.convert("RGB"))
+                        parsed = parse_z_raporu(ocr_text)
+                        parsed["filename"] = f"{uf.name} - Syf {pi+1}"
+                        parsed["ocr_text"] = ocr_text
+                        parsed["mukellef_adi"] = secili_mukellef
+                        all_results.append(parsed)
+                else:
+                    img = Image.open(io.BytesIO(data))
+                    ocr_text = ocr_image(img)
+                    parsed = parse_z_raporu(ocr_text)
+                    parsed["filename"] = uf.name
+                    parsed["ocr_text"] = ocr_text
+                    parsed["mukellef_adi"] = secili_mukellef
+                    all_results.append(parsed)
             except Exception as e:
                 log.error(f"OCR hatasi {uf.name}: {e}")
                 all_results.append({"filename": uf.name, "error": str(e), "ocr_text": ""})
             gecen = _time.time() - baslama
-            ortalama = gecen / (i + 1)
-            kalan = ortalama * (toplam - i - 1)
-            if kalan >= 60:
-                kalan_str = f"{int(kalan//60)} dk {int(kalan%60)} sn"
-            else:
-                kalan_str = f"{int(kalan)} sn"
-            if gecen >= 60:
-                gecen_str = f"{int(gecen//60)} dk {int(gecen%60)} sn"
-            else:
-                gecen_str = f"{int(gecen)} sn"
-            progress.progress((i + 1) / toplam, text=f"{i+1}/{toplam} işlendi | Geçen: {gecen_str} | Kalan: ~{kalan_str}")
-            sure_tahmini.info(f"İşlem {ortalama:.1f} s/image | Tahmini bitiş: ~{kalan_str}")
+            ort = gecen / max(i + 1, 1)
+            kal = max(toplam - i - 1, 0) * ort
+            kstr = f"{int(kal//60)}d {int(kal%60)}s" if kal >= 60 else f"{int(kal)}s"
+            gstr = f"{int(gecen//60)}d {int(gecen%60)}s" if gecen >= 60 else f"{int(gecen)}s"
+            progress.progress((i + 1) / max(toplam, 1), text=f"{i+1}/{toplam} | {gstr} | ~{kstr}")
 
         st.session_state.results = all_results
         st.session_state.processed = True
