@@ -306,6 +306,51 @@ def ocr_image(img: Image.Image) -> str:
                     continue
     return en_iyi_text
 
+def ocr_gorsel_isle(img: Image.Image) -> str:
+    motor = st.session_state.get("ocr_motor", "Tesseract")
+    if motor == "GOT-OCR 2.0 (Colab)":
+        cfg = got_ocr_config()
+        url = cfg.get("api_url", "")
+        if not url:
+            return ""
+        return ocr_got_ocr(img, url)
+    return ocr_image(img)
+
+@st.cache_resource
+def got_ocr_config():
+    cfg_path = os.path.join(DATA_DIR, "got_ocr_config.json")
+    if os.path.exists(cfg_path):
+        try:
+            return dosya_oku(cfg_path)
+        except Exception:
+            pass
+    return {"api_url": ""}
+
+def got_ocr_kaydet(api_url):
+    cfg_path = os.path.join(DATA_DIR, "got_ocr_config.json")
+    dosya_yaz(cfg_path, {"api_url": api_url})
+
+def ocr_got_ocr(img: Image.Image, api_url: str) -> str:
+    import io, requests as req_lib
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG", quality=95)
+    buf.seek(0)
+    try:
+        r = req_lib.post(
+            f"{api_url.rstrip('/')}/ocr",
+            files={"file": ("z_raporu.jpg", buf, "image/jpeg")},
+            timeout=60,
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return data.get("text", "")
+        else:
+            log.error(f"GOT-OCR API hatasi: {r.status_code} {r.text[:200]}")
+            return ""
+    except Exception as e:
+        log.error(f"GOT-OCR API baglanti hatasi: {e}")
+        return ""
+
 def parse_tutar(s):
     if not s:
         return 0.0
@@ -772,6 +817,63 @@ def parse_z_raporu(text):
     if sonuc["toplam_tahsilat"] == 0:
         sonuc["toplam_tahsilat"] = sonuc["brut"]
 
+    return sonuc
+
+def parse_got_ocr(text):
+    if not text or not text.strip():
+        return {
+            "tarih": None, "belge_no": None, "z_no": None,
+            "nakit": 0, "kredi_karti": 0, "yemek_ceki": 0,
+            "toplam_tahsilat": 0, "iadeler": 0, "net_toplam": 0,
+            "kdv_kalemleri": [], "brut": 0, "urunler": [], "ham_text": text or "",
+            "banka_adi": None, "firma_adi": None, "toplam_kdv": 0,
+        }
+    t = text
+    for kesici in ["I HALK BANK", "I GARANTI", "I YAPI KREDI", "I IS BANK", "I ZIRAAT", "I AKBANK", "I QNB", "C ok ku sq"]:
+        idx = t.upper().find(kesici.upper())
+        if idx > 0:
+            t = t[:idx]
+            break
+    t_duz = " ".join(t.split())
+    bilinen = {
+        "TOPLAM": ["TO PLAM", "TOPL AM", "TOPLAM"],
+        "NAKİT": ["NAK IT", "NAKI T", "NAK İT"],
+        "KREDİ KARTI": ["K. KART I", "K.KART I", "K. KARTI", "KREDI KARTI"],
+        "SİGARA": ["SIG ARA", "SİG ARA", "SIGARA"],
+        "EKMEK": ["E KM EX", "E KME K", "EKMEK"],
+        "İPTAL": ["IPT AL", "İPT AL", "IPTAL", "İPTAL"],
+        "TOPKDV": ["TO PL D V", "TOPL D V", "TOPKDV", "TOPLDV"],
+        "Z RAPORU": ["Z RAP OUR", "Z RAPO R", "Z RAPORU"],
+        "Z NO": ["Z NO", "Z  NO"],
+        "T.GIDA": ["T. GID A", "T.GIDA"],
+    }
+    for standart, varyasyonlar in bilinen.items():
+        for v in varyasyonlar:
+            t_duz = re.sub(re.escape(v), standart, t_duz, flags=re.IGNORECASE)
+    sonuc = parse_z_raporu(t_duz)
+    sonuc["ham_text"] = text
+    if sonuc["firma_adi"]:
+        return sonuc
+    t_upper = t_duz.upper()
+    firma_patterns = [
+        (r'G[\s.]*[\s]*K[\s]*K[\s]*U[\s]*[\s]*[\s]*[\s]*[\s]*S[\s]*A[\s]*G[\s]*I', "GÖKKUŞAĞI"),
+        (r'H[\s]*A[\s]*K[\s]*A[\s]*N', "HAKAN"),
+        (r'Ü[\s]*M[\s]*İ[\s]*T[\s]*[\s]*K[\s]*A[\s]*Z[\s]*A[\s]*K', "ÜMİT KAZAK"),
+        (r'GÖKKUŞAĞI', "GÖKKUŞAĞI"),
+        (r'HAKAN', "HAKAN"),
+        (r'ÜMİT\s*KAZAK', "ÜMİT KAZAK"),
+        (r'YAZAN', "HAKAN/Yazan"),
+    ]
+    for pat, ad in firma_patterns:
+        if re.search(pat, t_upper):
+            sonuc["firma_adi"] = ad
+            break
+    if not sonuc["firma_adi"]:
+        try:
+            ml = mukellefler()
+            sonuc["firma_adi"] = salon_bul_fallback(t, ml)
+        except Exception:
+            pass
     return sonuc
 
 def varsayilan_kodlar():
@@ -1381,6 +1483,28 @@ with st.sidebar:
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
 
     st.divider()
+    st.header("OCR Motoru")
+    got_cfg = got_ocr_config()
+    ocr_motor = st.radio("OCR Seç", ["Tesseract", "GOT-OCR 2.0 (Colab)"], label_visibility="collapsed")
+    st.session_state.ocr_motor = ocr_motor
+    if ocr_motor == "GOT-OCR 2.0 (Colab)":
+        got_url = st.text_input("Colab API URL", value=got_cfg.get("api_url", ""), placeholder="https://xxxx.ngrok-free.app", help="Colab'da calistirdiginiz GOT-OCR API URL'si")
+        if got_url != got_cfg.get("api_url", ""):
+            got_ocr_kaydet(got_url)
+        if got_url:
+            try:
+                import requests as req_lib
+                r = req_lib.get(f"{got_url.rstrip('/')}/health", timeout=5)
+                if r.status_code == 200:
+                    st.success("Baglanti OK", icon="🟢")
+                else:
+                    st.error(f"API yanit vermedi: {r.status_code}", icon="🔴")
+            except Exception:
+                st.error("Baglanti kurulamadi", icon="🔴")
+        else:
+            st.info("Colab'da GOT-OCR notebook'unu calistirin")
+
+    st.divider()
     st.header("Mükellef")
     ml = mukellefler()
     mevcut_mod = st.session_state.get("mod", "Bilanço")
@@ -1694,16 +1818,18 @@ elif sayfa == "Z Raporu Yükle":
                 if uf.name.lower().endswith(".pdf"):
                     pages = convert_from_bytes(data, dpi=300)
                     for pi, page in enumerate(pages):
-                        ocr_text = ocr_image(page.convert("RGB"))
-                        parsed = parse_z_raporu(ocr_text)
+                        ocr_text = ocr_gorsel_isle(page.convert("RGB"))
+                        parser = parse_got_ocr if st.session_state.get("ocr_motor") == "GOT-OCR 2.0 (Colab)" else parse_z_raporu
+                        parsed = parser(ocr_text)
                         parsed["filename"] = f"{uf.name} - Syf {pi+1}"
                         parsed["ocr_text"] = ocr_text
                         parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
                         all_results.append(parsed)
                 else:
                     img = Image.open(io.BytesIO(data))
-                    ocr_text = ocr_image(img)
-                    parsed = parse_z_raporu(ocr_text)
+                    ocr_text = ocr_gorsel_isle(img)
+                    parser = parse_got_ocr if st.session_state.get("ocr_motor") == "GOT-OCR 2.0 (Colab)" else parse_z_raporu
+                    parsed = parser(ocr_text)
                     parsed["filename"] = uf.name
                     parsed["ocr_text"] = ocr_text
                     parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
@@ -1856,7 +1982,7 @@ elif sayfa == "Z Raporu Yükle":
                                         step=100.0, key=f"ed_yemek_{idx}", on_change=yemek_degistir)
 
                     if idx < len(duzeltilebilir) - 1:
-                        st.divider()
+                        continue
 
         kdv_eksik = [(i, r) for i, r in enumerate(results) if "error" not in r and not r.get("kdv_kalemleri")]
         if kdv_eksik:
