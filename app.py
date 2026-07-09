@@ -319,18 +319,25 @@ def ocr_easyocr(img: Image.Image) -> str:
         en_iyi_text = ""
         en_iyi_skor = -1
 
-        gorseller = [
-            gorsel_hazirla(img, threshold=200, target_h=3500, invert=False, sharp=True),
-            gorsel_hazirla(img, threshold=170, target_h=3500, invert=False, sharp=True),
-            gorsel_hazirla(img, threshold=220, target_h=4000, invert=False, sharp=True),
-            gorsel_hazirla(img, threshold=200, target_h=3500, invert=True, sharp=True),
-            img.convert("RGB"),
-        ]
+        orijinal = img.copy()
+        gorseller = []
+        try:
+            for angle in [0, -3, 3]:
+                if angle == 0:
+                    gorseller.append(orijinal.convert("RGB"))
+                else:
+                    gorseller.append(orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255)).convert("RGB"))
+        except Exception:
+            gorseller.append(orijinal.convert("RGB"))
 
         for gorsel in gorseller:
             try:
-                img_np = np.array(gorsel.convert("RGB"))
-                results = easyocr_reader.readtext(img_np, detail=0, paragraph=True, paragraph_separator="\n")
+                w, h = gorsel.size
+                if h < 2000:
+                    scale = 2000 / h
+                    gorsel = gorsel.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+                img_np = np.array(gorsel)
+                results = easyocr_reader.readtext(img_np, detail=0, paragraph=True, paragraph_separator="\n", width_ths=0.7, height_ths=0.5)
                 text = "\n".join(results)
                 text = ocr_duzelt(text.strip())
                 skor = ocr_skorla(text)
