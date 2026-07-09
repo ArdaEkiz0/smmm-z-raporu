@@ -1574,6 +1574,35 @@ elif sayfa == "Ayarlar":
     st.subheader("Tehlikeli İşlemler")
     if "sil_onay" not in st.session_state:
         st.session_state.sil_onay = False
+    if "fis_sil_onay" not in st.session_state:
+        st.session_state.fis_sil_onay = False
+
+    if not st.session_state.fis_sil_onay:
+        if st.button("TÜM FİŞLERİ SİL", type="secondary"):
+            st.session_state.fis_sil_onay = True
+            st.rerun()
+    else:
+        st.warning("Tüm fişler silinecek! Mükellefler ve ayarlar kalacak.")
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
+            if st.button("EMİNİM, FİŞLERİ SİL!", type="primary", width="stretch"):
+                try:
+                    for fp in glob.glob(os.path.join(GECMIS_KLASORU, "*.json")):
+                        os.remove(fp)
+                    for fp in glob.glob(os.path.join(FISLER_KLASORU, "*")):
+                        if os.path.isfile(fp):
+                            os.remove(fp)
+                        elif os.path.isdir(fp):
+                            shutil.rmtree(fp, ignore_errors=True)
+                    st.session_state.fis_sil_onay = False
+                    st.toast("Tüm fişler silindi!", icon="🗑️")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Silme hatası: {e}")
+        with col_f2:
+            if st.button("İptal", type="secondary", width="stretch"):
+                st.session_state.fis_sil_onay = False
+                st.rerun()
 
     if not st.session_state.sil_onay:
         if st.button("TÜM VERİLERİ SİL", type="secondary"):
