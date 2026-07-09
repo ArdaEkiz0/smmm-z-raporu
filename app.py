@@ -721,7 +721,7 @@ def generate_excel(all_rows):
     return output.getvalue()
 
 BASIT_USUL_KOLONLAR = [
-    "İŞLEM", "KATEGORİ", "BELGE TURU", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
+    "ISLEM", "KATEGORI", "BELGE TURU", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
     "EVRAK NO", "TCKN/VKN", "VERGİ DAİRESİ", "SOYADI ÜNVAN", "ADI DEVAMI", "ADRES",
     "CARİ HESAP", "KDV İSTİSNASI", "KOD", "BELGE TÜRÜ(DB)", "ALIŞ/SATIŞ TÜRÜ",
     "KAYIT ALT TÜRÜ", "MAL VE HİZMET KODU", "AÇIKLAMA", "MİKTAR",
@@ -776,8 +776,8 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
         def base_row():
             s = {k: "" for k in BASIT_USUL_KOLONLAR}
-            s["İŞLEM"] = "1"
-            s["KATEGORİ"] = "Defter Fişleri"
+            s["ISLEM"] = "1"
+            s["KATEGORI"] = "Defter Fişleri"
             s["EVRAK TARİHİ"] = evrak_tarihi
             s["KAYIT TARİHİ"] = kayit_tarihi
             s["EVRAK NO"] = evrak_no
