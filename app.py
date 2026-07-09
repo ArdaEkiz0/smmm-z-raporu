@@ -776,7 +776,6 @@ def generate_basit_usul_excel(results, mukellef_bilgi):
 
         def base_row():
             s = {k: "" for k in BASIT_USUL_KOLONLAR}
-            s["ISLEM"] = "1"
             s["KATEGORI"] = "Defter Fişleri"
             s["EVRAK TARIHI"] = evrak_tarihi
             s["KAYIT TARIHI"] = kayit_tarihi
