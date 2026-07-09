@@ -948,8 +948,16 @@ with st.sidebar:
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
 
     st.divider()
-    st.header("Mod")
-    st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
+    st.header("Mükellef")
+    ml = mukellefler()
+    secili = st.selectbox("Mükellef Seç", ["(Genel)"] + [m.get("kisa_adi", m["adi"]) for m in ml], label_visibility="collapsed")
+    if secili != "(Genel)":
+        for m in ml:
+            if m.get("kisa_adi", m["adi"]) == secili:
+                st.session_state.mod = m.get("mod", "Serbest Meslek")
+                break
+    else:
+        st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
 
     if st.session_state.get("mod") == "Serbest Meslek":
         with st.expander("LUCA Şablonu", expanded=False):
