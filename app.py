@@ -1030,6 +1030,7 @@ elif sayfa == "Z Raporu Yükle":
                     if idx < len(duzeltilebilir) - 1:
                         st.divider()
 
+        kdv_eksik = [(i, r) for i, r in enumerate(results) if "error" not in r and not r.get("kdv_kalemleri")]
         if kdv_eksik:
             st.warning(f"{len(kdv_eksik)} Z raporunda KDV oranı bulunamadı. Excel için KDV oranı seçin:")
             for idx, r in kdv_eksik:
