@@ -849,21 +849,7 @@ elif sayfa == "Z Raporu Yükle":
         if secili_mukellef == "(Mükellef yok)":
             secili_mukellef = ""
 
-    col_tara, _ = st.columns([1, 4])
-    with col_tara:
-        st.components.v1.html(
-            """
-            <button onclick="var f=document.createElement('iframe');
-                f.src='ms-scan:';f.style.display='none';
-                document.body.appendChild(f);
-                setTimeout(function(){document.body.removeChild(f)},2000);"
-                style="width:100%;padding:10px 0;background:#2e7d32;color:#fff;
-                       border:none;border-radius:6px;font-size:15px;font-weight:bold;cursor:pointer">
-                📡 Tara ve Kaydet
-            </button>
-            """,
-            height=45
-        )
+
 
     uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
 
