@@ -63,6 +63,9 @@ if not auth_ok():
                 st.error("Geçersiz şifre")
         st.stop()
 
+if "mod" not in st.session_state:
+    st.session_state.mod = "Bilanço"
+
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
 HESAP_FILE = os.path.join(DATA_DIR, "hesap_kodlari.json")
@@ -717,6 +720,128 @@ def generate_excel(all_rows):
     wb.save(output)
     return output.getvalue()
 
+BASIT_USUL_KOLONLAR = [
+    "İŞLEM", "KATEGORİ", "BELGE TÜRÜ", "EVRAK TARİHİ", "KAYIT TARİHİ", "SERİ NO",
+    "EVRAK NO", "TCKN/VKN", "VERGİ DAİRESİ", "SOYADI/ÜNVAN/ADI DEVAMI", "ADRES",
+    "CARİ HESAP", "KDV İSTİSNASI", "KOD", "BELGE TÜRÜ(DB)", "ALIŞ/SATIŞ TÜRÜ",
+    "KAYIT ALT TÜRÜ", "PLAKA NO", "MAL VE HİZMET KODU", "AÇIKLAMA", "MİKTAR",
+    "B.FİYAT", "TUTAR", "TEVKİFAT", "KDV ORANI", "İŞLEM BEDELİ",
+    "MATRAHTAN DÜŞÜLECEK TUTAR", "ÖZEL MATRAH ŞEKLİNE DAHİL OLMAYAN BEDEL",
+    "KDV TUTARI", "TOPLAM TUTAR", "KREDİLİ TUTAR", "STOPAJ KODU", "STOPAJ TUTARI",
+    "DÖNEMSELLIK İLKESİ", "FAALIYET KODU", "ÖDEME TÜRÜ", "OTOMATİK HESAP",
+]
+
+def generate_basit_usul_excel(results, mukellef_bilgi):
+    output = io.BytesIO()
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Basit Usul"
+    hfont = Font(bold=True, color="FFFFFF", size=10)
+    hfill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    halign = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin"))
+
+    for col_idx, header in enumerate(BASIT_USUL_KOLONLAR, 1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.font = hfont
+        cell.fill = hfill
+        cell.alignment = halign
+        cell.border = border
+
+    evrak_tarihi = ""
+    kayit_tarihi = ""
+    evrak_no = ""
+    tckn = (mukellef_bilgi or {}).get("vergi_no", "")
+    vd = (mukellef_bilgi or {}).get("vd", "")
+    unvan = (mukellef_bilgi or {}).get("adi", "")
+    adres = (mukellef_bilgi or {}).get("notlar", "")
+
+    def yaz_satir(satir):
+        nonlocal row_idx
+        for col_idx, header in enumerate(BASIT_USUL_KOLONLAR, 1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=satir.get(header, ""))
+            cell.border = border
+        row_idx += 1
+
+    row_idx = 2
+    for r in results:
+        if "error" in r:
+            continue
+        evrak_tarihi = r.get("tarih", "")
+        kayit_tarihi = r.get("tarih", "")
+        evrak_no = r.get("z_no", "") or r.get("belge_no", "")
+        kk_tutar = r.get("kredi_karti", 0) or 0
+        nakit_tutar = r.get("nakit", 0) or 0
+        toplam_tahsilat = r.get("toplam_tahsilat", 0) or (kk_tutar + nakit_tutar) or 1
+
+        def base_row():
+            s = {k: "" for k in BASIT_USUL_KOLONLAR}
+            s["EVRAK TARİHİ"] = evrak_tarihi
+            s["KAYIT TARİHİ"] = kayit_tarihi
+            s["EVRAK NO"] = evrak_no
+            s["TCKN/VKN"] = tckn
+            s["VERGİ DAİRESİ"] = vd
+            s["SOYADI/ÜNVAN/ADI DEVAMI"] = unvan
+            s["ADRES"] = adres
+            return s
+
+        def kk_orani(brut):
+            return round(brut * kk_tutar / toplam_tahsilat, 2) if toplam_tahsilat > 0 else 0
+
+        urunler = r.get("urunler", [])
+        kdv_kalemleri = r.get("kdv_kalemleri", [])
+
+        if not urunler and not kdv_kalemleri:
+            s = base_row()
+            s["AÇIKLAMA"] = f"Z Raporu {evrak_no}"
+            brut = r.get("brut", 0) or toplam_tahsilat or 0
+            s["TUTAR"] = brut
+            s["TOPLAM TUTAR"] = brut
+            s["KREDİLİ TUTAR"] = kk_orani(brut)
+            yaz_satir(s)
+            continue
+
+        if not urunler and kdv_kalemleri:
+            for kv in kdv_kalemleri:
+                s = base_row()
+                s["AÇIKLAMA"] = f"Z Raporu {evrak_no} %{kv['oran']} KDV"
+                s["MİKTAR"] = ""
+                s["B.FİYAT"] = ""
+                s["TUTAR"] = kv.get("matrah", 0)
+                s["KDV ORANI"] = kv.get("oran", 0)
+                s["KDV TUTARI"] = kv.get("kdv_tutari", 0)
+                toplam_t = (kv.get("matrah", 0) or 0) + (kv.get("kdv_tutari", 0) or 0)
+                s["TOPLAM TUTAR"] = toplam_t
+                s["KREDİLİ TUTAR"] = kk_orani(toplam_t)
+                yaz_satir(s)
+            continue
+
+        for urun in urunler:
+            s = base_row()
+            ua = urun.get("urun", "")
+            miktar = urun.get("miktar", 0) or 0
+            brut_tutar = urun.get("tutar", 0) or 0
+            oran = urun.get("oran", 0) or 0
+
+            s["AÇIKLAMA"] = ua
+            s["MİKTAR"] = miktar
+            if miktar > 0:
+                s["B.FİYAT"] = round(brut_tutar / miktar, 2)
+            s["TUTAR"] = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
+            s["KDV ORANI"] = oran
+            kdv_t = round(brut_tutar - (brut_tutar / (1 + oran / 100)), 2) if oran > 0 else 0
+            s["KDV TUTARI"] = kdv_t
+            s["TOPLAM TUTAR"] = brut_tutar
+            s["KREDİLİ TUTAR"] = kk_orani(brut_tutar)
+            yaz_satir(s)
+
+    for i, w in enumerate([10, 12, 14, 14, 14, 12, 14, 16, 16, 30, 20, 14, 16, 12, 14, 14, 14, 12, 16, 30, 10, 12, 14, 10, 10, 14, 16, 16, 14, 14, 14, 12, 12, 14, 14, 14, 14], 1):
+        col_letter = chr(64 + i) if i <= 26 else chr(64 + (i - 1) // 26) + chr(65 + (i - 1) % 26)
+        ws.column_dimensions[col_letter].width = w
+
+    wb.save(output)
+    return output.getvalue()
+
 def mukellefler():
     return dosya_oku(MUKELLEF_FILE, [])
 
@@ -784,6 +909,10 @@ st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
 with st.sidebar:
     st.header("Aygıtlar")
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
+
+    st.divider()
+    st.header("Mod")
+    st.session_state.mod = st.radio("Muhasebe Türü", ["Bilanço", "Basit Usul"], index=0 if st.session_state.get("mod", "Bilanço") == "Bilanço" else 1, label_visibility="collapsed")
 
     st.divider()
     st.header("Hesap Kodları")
@@ -1144,11 +1273,24 @@ elif sayfa == "Z Raporu Yükle":
 
         st.divider()
 
-        excel_data = generate_excel_cached(tuple(all_luca_rows))
-        st.download_button("EXCEL İNDİR (LUCA)", excel_data,
-            f"z_raporlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            type="primary", width="stretch")
+        mod = st.session_state.get("mod", "Bilanço")
+        if mod == "Basit Usul":
+            muk_bilgi = None
+            for m in mukellefler():
+                if m.get("adi") == secili_mukellef:
+                    muk_bilgi = m
+                    break
+            basit_excel = generate_basit_usul_excel(results, muk_bilgi)
+            st.download_button("EXCEL İNDİR (Basit Usul)", basit_excel,
+                f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary", width="stretch")
+        else:
+            excel_data = generate_excel_cached(tuple(all_luca_rows))
+            st.download_button("EXCEL İNDİR (LUCA)", excel_data,
+                f"z_raporlari_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                type="primary", width="stretch")
 
         with st.expander("OCR Ham Metinler"):
             for i, r in enumerate(results):
@@ -1211,16 +1353,29 @@ elif sayfa == "Fiş Geçmişi":
             } for f in filtered])
             st.dataframe(df, width="stretch", hide_index=True)
 
-            all_luca = []
-            fc = 1
-            for f in filtered:
-                all_luca.extend(data_to_luca_rows(f, hesap_kodlari, fc, urun_kodlari))
-                fc += 1
-            excel_data = generate_excel(all_luca)
-            st.download_button("Seçilenlerden Excel Oluştur", excel_data,
-                f"filtrelenmis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                width="stretch")
+            mod = st.session_state.get("mod", "Bilanço")
+            if mod == "Basit Usul":
+                muk_bilgi = None
+                for m in mukellefler():
+                    if m.get("adi") == secili_mukellef:
+                        muk_bilgi = m
+                        break
+                basit_excel = generate_basit_usul_excel(filtered, muk_bilgi)
+                st.download_button("Seçilenlerden Excel Oluştur (Basit Usul)", basit_excel,
+                    f"basit_usul_filtre_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    width="stretch")
+            else:
+                all_luca = []
+                fc = 1
+                for f in filtered:
+                    all_luca.extend(data_to_luca_rows(f, hesap_kodlari, fc, urun_kodlari))
+                    fc += 1
+                excel_data = generate_excel(all_luca)
+                st.download_button("Seçilenlerden Excel Oluştur (LUCA)", excel_data,
+                    f"filtrelenmis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    width="stretch")
 
 elif sayfa == "Mükellef Yönetimi":
     st.header("Mükellef Yönetimi")
@@ -1349,17 +1504,30 @@ elif sayfa == "KDV Özeti":
                 st.dataframe(pd.DataFrame(kdv_rows), width="stretch", hide_index=True)
                 st.metric("Toplam Hesaplanan KDV", f"{genel_kdv:,.2f} TL")
 
-            all_luca = []
-            fc = 1
-            for f in ay_fisler:
-                all_luca.extend(data_to_luca_rows(f, hesap_kodlari, fc, urun_kodlari))
-                fc += 1
-            if all_luca:
-                excel_data = generate_excel(all_luca)
-                st.download_button(f"{ay:02d}/{yil} Luca Excel", excel_data,
-                    f"luca_{yil}_{ay:02d}.xlsx",
+            mod = st.session_state.get("mod", "Bilanço")
+            if mod == "Basit Usul":
+                muk_bilgi = None
+                for m in mukellefler():
+                    if m.get("adi") == secili_mukellef:
+                        muk_bilgi = m
+                        break
+                basit_excel = generate_basit_usul_excel(ay_fisler, muk_bilgi)
+                st.download_button(f"{ay:02d}/{yil} Basit Usul Excel", basit_excel,
+                    f"basit_usul_{yil}_{ay:02d}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     type="primary", width="stretch")
+            else:
+                all_luca = []
+                fc = 1
+                for f in ay_fisler:
+                    all_luca.extend(data_to_luca_rows(f, hesap_kodlari, fc, urun_kodlari))
+                    fc += 1
+                if all_luca:
+                    excel_data = generate_excel(all_luca)
+                    st.download_button(f"{ay:02d}/{yil} Luca Excel", excel_data,
+                        f"luca_{yil}_{ay:02d}.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        type="primary", width="stretch")
 
 elif sayfa == "Ayarlar":
     st.header("Ayarlar")
