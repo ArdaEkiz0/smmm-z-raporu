@@ -19,6 +19,23 @@ log = logging.getLogger("smmm")
 
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
 
+if "auth_ok" not in st.session_state:
+    st.session_state.auth_ok = False
+
+AUTH_PASSWORDS = st.secrets.get("auth", {}).get("passwords", [])
+
+if AUTH_PASSWORDS and not st.session_state.auth_ok:
+    st.title("SMMM Z Raporu Sistemi")
+    st.markdown("Yetkili kullanıcı girişi")
+    pwd = st.text_input("Şifre", type="password", placeholder="Şifrenizi girin")
+    if st.button("Giriş", type="primary"):
+        if pwd in AUTH_PASSWORDS:
+            st.session_state.auth_ok = True
+            st.rerun()
+        else:
+            st.error("Geçersiz şifre")
+    st.stop()
+
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 HESAP_FILE = os.path.join(DATA_DIR, "hesap_kodlari.json")
 GECMIS_KLASORU = os.path.join(DATA_DIR, "gecmis")
