@@ -1338,10 +1338,8 @@ elif sayfa == "Z Raporu Yükle":
                 if m.get("adi") == secili_mukellef:
                     muk_bilgi = m
                     break
-            import csv
-            csv_buffer = io.StringIO()
-            writer = csv.writer(csv_buffer, delimiter=";")
-            writer.writerow(BASIT_USUL_KOLONLAR)
+            satirlar = []
+            satirlar.append(";".join(BASIT_USUL_KOLONLAR))
             for r in results:
                 if "error" in r:
                     continue
@@ -1370,7 +1368,7 @@ elif sayfa == "Z Raporu Yükle":
                     row[22] = brut
                     row[29] = brut
                     row[30] = kk_orani(brut)
-                    writer.writerow(row)
+                    satirlar.append(";".join(str(x) for x in row))
                     continue
                 for urun in urunler:
                     row = [""] * len(BASIT_USUL_KOLONLAR)
@@ -1395,11 +1393,20 @@ elif sayfa == "Z Raporu Yükle":
                     row[28] = round(brut_tutar - (brut_tutar / (1 + oran / 100)), 2) if oran > 0 else 0
                     row[29] = brut_tutar
                     row[30] = kk_orani(brut_tutar)
-                    writer.writerow(row)
-            csv_data = csv_buffer.getvalue().encode("utf-8-sig")
-            st.download_button("CSV İNDİR (LUCA için)", csv_data,
-                f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-                "text/csv; charset=utf-8", type="primary", use_container_width=True)
+                    satirlar.append(";".join(str(x) for x in row))
+            csv_icerik = "\r\n".join(satirlar)
+            csv_data = csv_icerik.encode("cp1254")
+            basit_excel = generate_basit_usul_excel(results, muk_bilgi, st.session_state.get("luca_sabloni"))
+            c1, c2 = st.columns(2)
+            with c1:
+                st.download_button("XLSX İNDİR (Basit Usul)", basit_excel,
+                    f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="primary", use_container_width=True)
+            with c2:
+                st.download_button("CSV İNDİR (LUCA için)", csv_data,
+                    f"basit_usul_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    "text/csv", use_container_width=True)
         else:
             excel_data = generate_excel_cached(tuple(all_luca_rows))
             st.download_button("EXCEL İNDİR (LUCA)", excel_data,
