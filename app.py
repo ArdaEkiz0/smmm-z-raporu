@@ -117,17 +117,18 @@ def dosya_yaz(filepath, veri):
         log.error(f"Dosya yazilamadi {filepath}: {e}")
         raise
 
-def gorsel_hazirla(img: Image.Image) -> Image.Image:
+def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False) -> Image.Image:
     img = img.convert("L")
     w, h = img.size
-    target_h = 3500
     if h < target_h:
         scale = target_h / h
         img = img.resize((int(w * scale), target_h), Image.LANCZOS)
+    if invert:
+        img = ImageOps.invert(img)
     img = img.filter(ImageFilter.MedianFilter(size=3))
-    img = ImageOps.autocontrast(img, cutoff=1)
+    img = ImageOps.autocontrast(img, cutoff=2)
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200))
-    img = img.point(lambda x: 0 if x < 200 else 255)
+    img = img.point(lambda x: 0 if x < threshold else 255)
     return img
 
 @st.cache_resource
@@ -157,20 +158,97 @@ def levenshtein(a, b):
         prev = cur
     return prev[-1]
 
+def ocr_skorla(text):
+    skor = 0
+    if not text:
+        return 0
+    t = text.upper()
+    if re.search(r'\d{2}[./-]\d{2}[./-]\d{4}', t): skor += 20
+    if re.search(r'Z\s*N', t): skor += 15
+    if 'TOPLAM' in t: skor += 10
+    if 'TOPKDV' in t: skor += 8
+    if 'NAKIT' in t or 'NAKИТ' in t: skor += 5
+    if 'KART' in t: skor += 5
+    sayilar = re.findall(r'\d{3,}', t)
+    skor += min(len(sayilar) * 2, 12)
+    satir_sayisi = len([s for s in text.split('\n') if s.strip()])
+    skor += min(satir_sayisi, 8)
+    return skor
+
+def ocr_duzelt(text):
+    if not text:
+        return text
+    t = text
+    t = re.sub(r'(?<!\w)TSA(?=\s)', 'İSA', t)
+    t = re.sub(r'(?<!\w)TSA CURA', 'İSA CURA', t)
+    t = re.sub(r'(?<!\w)TSA\s+CURA', 'İSA CURA', t)
+    t = re.sub(r'IKSPI BILGISA', 'GÖKKUŞAĞI', t)
+    t = re.sub(r'(?<!\w)GOKKUSAGI', 'GÖKKUŞAĞI', t)
+    t = re.sub(r'(?<!\w)GOKKUSAG', 'GÖKKUŞAĞI', t)
+    t = re.sub(r'is Bankas1', 'İş Bankası', t)
+    t = re.sub(r'(?<!\w)IS BANKASI(?!\w)', 'İş Bankası', t)
+    t = re.sub(r'(?<!\w)İS BANKAS1', 'İş Bankası', t)
+    t = re.sub(r'(?<!\w)TURKIYE FINANS(?!\w)', 'Türkiye Finans', t)
+    t = re.sub(r'(?<!\w)KUMULATIF(?!\w)', 'KÜMÜLATİF', t)
+    t = re.sub(r'(?<!\w)FPTAL(?!\w)', 'İPTAL', t)
+    t = re.sub(r'(?<!\w)IPTAL(?!\w)', 'İPTAL', t)
+    t = re.sub(r'(?<!\w)FIIS(?!\w)', 'FİŞ', t)
+    t = re.sub(r'(?<!\w)FIS(?!\w)', 'FİŞ', t)
+    t = re.sub(r'(?<!\w)NE[TI]\s+C[Iı][Rr][Oo](?!\w)', 'NET CİRO', t)
+    t = re.sub(r'(?<!\w)SATI[SŞ](?!\w)', 'SATIŞ', t)
+    t = re.sub(r'(?<!\w)TARIH(?!\w)', 'TARİH', t)
+    t = re.sub(r'(?<!\w)MUSTERI(?!\w)', 'MÜŞTERİ', t)
+    t = re.sub(r'(?<!\w)VERGI(?!\w)', 'VERGİ', t)
+    t = re.sub(r'(?<!\w)MALI(?!\w)', 'MALİ', t)
+    t = re.sub(r'(?<!\w)CIRO(?!\w)', 'CİRO', t)
+    t = re.sub(r'(?<!\w)GENEL(?!\w)', 'GENEL', t)
+    t = re.sub(r'(?<!\w)SAAT(?!\w)', 'SAAT', t)
+    t = re.sub(r'(?<!\w)ADET(?!\w)', 'ADET', t)
+    t = re.sub(r'(?<!\w)SAYI(?!\w)', 'SAYI', t)
+    t = re.sub(r'(?<!\w)EKU(?!\w)', 'EKÜ', t)
+    t = re.sub(r'(?<!\w)TURLERI(?!\w)', 'TÜRLERİ', t)
+    t = re.sub(r'(?<!\w)ODEME(?!\w)', 'ÖDEME', t)
+    t = re.sub(r'(?<!\w)SAYISI(?!\w)', 'SAYISI', t)
+    t = re.sub(r'(?<!\w)GECERLI(?!\w)', 'GEÇERLİ', t)
+    t = re.sub(r'(?<!\w)KREDI(?!\w)', 'KREDİ', t)
+    t = re.sub(r'(?<!\w)KARTI(?!\w)', 'KARTI', t)
+    t = re.sub(r'(?<!\w)SLIP(?!\w)', 'SLİP', t)
+    t = re.sub(r'(?<!\w)BANKA(?!\w)', 'BANKA', t)
+    t = re.sub(r'(\d)\s+(\d{3,})', r'\1\2', t)
+    t = re.sub(r'(\d{2,})\s*\.(\d{3})', r'\1.\2', t)
+    return t
+
 def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
-    hazir = gorsel_hazirla(img)
-    try:
-        configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3"]
-        en_iyi = ""
+    stratejiler = [
+        {"threshold": 200, "target_h": 3500, "invert": False},
+        {"threshold": 170, "target_h": 3500, "invert": False},
+        {"threshold": 220, "target_h": 4000, "invert": False},
+        {"threshold": 200, "target_h": 3500, "invert": True},
+        {"threshold": 150, "target_h": 4000, "invert": False},
+        {"threshold": 180, "target_h": 3000, "invert": False},
+    ]
+    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3", "--psm 3 --oem 3"]
+    en_iyi_text = ""
+    en_iyi_skor = -1
+    for strat in stratejiler:
+        try:
+            hazir = gorsel_hazirla(img, threshold=strat["threshold"],
+                                   target_h=strat["target_h"], invert=strat["invert"])
+        except Exception:
+            continue
         for cfg in configs:
-            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
-            if text.strip() and len(text.strip()) > len(en_iyi):
-                en_iyi = text.strip()
-        return en_iyi
-    except Exception:
-        return ""
+            try:
+                text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                text = ocr_duzelt(text.strip())
+                skor = ocr_skorla(text)
+                if skor > en_iyi_skor:
+                    en_iyi_skor = skor
+                    en_iyi_text = text
+            except Exception:
+                continue
+    return en_iyi_text
 
 def parse_tutar(s):
     if not s:
@@ -245,7 +323,7 @@ def salon_bul(text):
     if not text:
         return None
     satirlar = text.split("\n")
-    for i, satir in enumerate(satirlar[:10]):
+    for i, satir in enumerate(satirlar[:12]):
         s = satir.strip()
         if not s or len(s) < 3:
             continue
@@ -253,9 +331,13 @@ def salon_bul(text):
             continue
         if re.search(r'\d{2}[./-]\d{2}[./-]\d{4}', s):
             continue
-        if any(x in s.lower() for x in ["rapor", "z raporu", "gunluk", "günlük", "fiş no", "fis no", "saat"]):
+        if any(x in s.lower() for x in ["rapor", "z raporu", "gunluk", "günlük", "fiş no", "fis no", "saat", "tarih"]):
             continue
-        if len(s) > 5 and not re.match(r'^[\d\s*.,]+$', s):
+        if re.match(r'^[\d\s*.,]+$', s):
+            continue
+        if any(x in s.upper() for x in ["TOPLAM", "KDV", "NAKIT", "KART", "CIRO", "CİRO"]):
+            continue
+        if len(s) > 3:
             return s
     return None
 
@@ -327,12 +409,12 @@ def parse_z_raporu(text):
 
     iade_patterns = [
         r'Fi?s\s+[Ff]?[İiI]ptal\s+\d+\s*\*?\s*([\d.,]+)',
-        r'(?:FPTAL|IPTAL|fptal|iptal)\s+\d+\s*\*?\s*([\d.,]+)',
-        r'FIS\s+IPTAL\s+\d+\s*\*?\s*([\d.,]+)',
-        r'FIS\s+İPTAL\s+\d+\s*\*?\s*([\d.,]+)',
+        r'(?:FPTAL|İPTAL|IPTAL|fptal|iptal)\s+\d+\s*\*?\s*([\d.,]+)',
+        r'F[Iİ]S\s+İPTAL\s+\d+\s*\*?\s*([\d.,]+)',
+        r'F[Iİ]S\s+IPTAL\s+\d+\s*\*?\s*([\d.,]+)',
         r'Fiş\s+İptal\s+\d+\s*\*?\s*([\d.,]+)',
-        r'FIS\s+IPTAL\s*\*?\s*([\d.,]+)',
-        r'FIS\s+İPTAL\s*\*?\s*([\d.,]+)',
+        r'F[Iİ]S\s+İPTAL\s*\*?\s*([\d.,]+)',
+        r'F[Iİ]S\s+IPTAL\s*\*?\s*([\d.,]+)',
         r'Fiş\s+İptal\s*\*?\s*([\d.,]+)',
     ]
     for pat in iade_patterns:
@@ -403,12 +485,13 @@ def parse_z_raporu(text):
         sonuc["toplam_tahsilat"] = toplam_tahsilat
 
     URUN_CHARS = r'[A-Za-z\u011e\u011f\u015e\u015f\u0130\u0131\u00d6\u00f6\u00dc\u00fc\u00c7\u00e7& ]'
-    yanlis_kelimeler = ["TOPLAM", "KDV", "TOPKDV", "MALI", "SATIS", "KUM", "KUM",
-                        "VERGI", "ODEME", "FIS", "SLIP", "FPTAL", "IPTAL",
-                        "SAYI", "EKU", "MUSTERI", "RAPOR", "TURLERI",
-                        "CIRO", "GENEL", "TARIH", "SAAT", "NO:", "NAKIT",
-                        "BANKA", "ADET", "KARTI", "GECERLI", "SAYISI",
-                        "TOPLAM FIS", "FIIS", "KUMULATIF"]
+    yanlis_kelimeler = ["TOPLAM", "KDV", "TOPKDV", "MALİ", "SATIŞ", "KÜM", "KUM",
+                        "VERGİ", "ÖDEME", "FİŞ", "SLİP", "İPTAL", "FPTAL", "IPTAL",
+                        "SAYI", "EKÜ", "EKU", "MÜŞTERİ", "MUSTERI", "RAPOR", "TÜRLERİ", "TURLERI",
+                        "CİRO", "CIRO", "GENEL", "TARİH", "TARIH", "SAAT", "NO:", "NAKİT", "NAKIT",
+                        "BANKA", "ADET", "KARTI", "GEÇERLİ", "GECERLI", "SAYISI",
+                        "TOPLAM FİŞ", "FIIS", "KÜMÜLATİF", "KUMULATIF",
+                        "İŞLEM", "ISLEM", "KATEGORİ", "KATEGORI", "SERİ", "Seri"]
 
     urun_pattern1 = re.finditer(
         rf'({URUN_CHARS}{{2,}}?)\s*%(\d+)\s+(\d+)\s*\*?\s*([\d.,]+)',
@@ -943,7 +1026,7 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
         "sonuclar": []
     }
     for r in results:
-        entry = {k: v for k, v in r.items() if k not in ("ocr_text", "ham_text")}
+        entry = dict(r)
         entry["filename"] = r.get("filename", "")
         kayit["sonuclar"].append(entry)
     filepath = os.path.join(GECMIS_KLASORU, f"kayit_{timestamp}.json")
@@ -1142,30 +1225,46 @@ elif sayfa == "Z Raporu Yükle":
     if "secili_mukellef_idx" not in st.session_state:
         st.session_state.secili_mukellef_idx = 0
 
+    def turkce_normalize(s):
+        s = s.lower().strip()
+        s = s.replace('ı', 'i').replace('İ', 'i').replace('I', 'i')
+        s = s.replace('ş', 's').replace('Ş', 's')
+        s = s.replace('ğ', 'g').replace('Ğ', 'g')
+        s = s.replace('ç', 'c').replace('Ç', 'c')
+        s = s.replace('ö', 'o').replace('Ö', 'o')
+        s = s.replace('ü', 'u').replace('Ü', 'u')
+        return s
+
     def mukellef_eslestir(firma_adi):
         if not firma_adi:
             return None
         firma_lower = firma_adi.lower().strip()
+        firma_norm = turkce_normalize(firma_adi)
         en_iyi = None
         en_iyi_mesafe = 999
         for i, m in enumerate(ml):
-            adaylar = [m["adi"].lower()]
+            adaylar = [m["adi"].lower(), turkce_normalize(m["adi"])]
             ka = m.get("kisa_adi", "").lower().strip()
             if ka:
                 adaylar.append(ka)
+                adaylar.append(turkce_normalize(ka))
             for ad in adaylar:
                 if ad in firma_lower or firma_lower in ad:
                     return i
-                d = levenshtein(firma_lower, ad)
+                if ad in firma_norm or firma_norm in ad:
+                    return i
+                d1 = levenshtein(firma_lower, ad)
+                d2 = levenshtein(firma_norm, ad)
+                d = min(d1, d2)
                 oran = d / max(len(firma_lower), len(ad), 1)
-                if oran <= 0.35 and d < en_iyi_mesafe:
+                if oran <= 0.40 and d < en_iyi_mesafe:
                     en_iyi_mesafe = d
                     en_iyi = i
         if en_iyi is not None:
             return en_iyi
         for i, m in enumerate(ml):
-            kelimeler = m["adi"].lower().split()
-            if any(k in firma_lower for k in kelimeler if len(k) > 3):
+            kelimeler = turkce_normalize(m["adi"]).split()
+            if any(k in firma_norm for k in kelimeler if len(k) > 3):
                 return i
         return None
 
