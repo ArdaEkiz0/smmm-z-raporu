@@ -12,6 +12,11 @@ import shutil
 import logging
 from datetime import datetime, timedelta
 from PIL import Image, ImageFilter, ImageOps
+try:
+    from pyzbar.pyzbar import decode as barcode_decode
+    BARCODE_MEVCUT = True
+except ImportError:
+    BARCODE_MEVCUT = False
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -75,6 +80,7 @@ FISLER_KLASORU = os.path.join(DATA_DIR, "fisler")
 YEDEK_KLASORU = os.path.join(DATA_DIR, "yedekler")
 URUN_KODLARI_FILE = os.path.join(DATA_DIR, "urun_kodlari.json")
 SABLON_FILE = os.path.join(DATA_DIR, "luca_sablonu.xlsx")
+EMAIL_FILE = os.path.join(DATA_DIR, "email_config.json")
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
@@ -321,6 +327,21 @@ def banka_bul(text):
         if re.search(pat, text, re.IGNORECASE):
             return adi
     return None
+
+def barkod_oku(img):
+    if not BARCODE_MEVCUT:
+        return []
+    try:
+        decoded = barcode_decode(img)
+        sonuclar = []
+        for bc in decoded:
+            sonuclar.append({
+                "type": bc.type,
+                "data": bc.data.decode("utf-8", errors="replace"),
+            })
+        return sonuclar
+    except Exception:
+        return []
 
 def salon_bul(text):
     if not text:
@@ -673,6 +694,24 @@ def varsayilan_kodlar():
         "kdv_20": "391.04", "iadeler": "610.01",
     }
 
+HESAP_PLANLARI = {
+    "LUCA": varsayilan_kodlar(),
+    "Logo": {
+        "kredi_karti": "100.02", "nakit": "100.01", "yemek_ceki": "100.03",
+        "satis_1": "601.01", "satis_10": "601.02",
+        "satis_20": "601.03",
+        "kdv_1": "391.01", "kdv_10": "391.02",
+        "kdv_20": "391.03", "iadeler": "602.01",
+    },
+    "Netsis": {
+        "kredi_karti": "120.01", "nakit": "100.01", "yemek_ceki": "120.02",
+        "satis_1": "600.01", "satis_10": "600.02",
+        "satis_20": "600.03",
+        "kdv_1": "391.01", "kdv_10": "391.02",
+        "kdv_20": "391.03", "iadeler": "610.01",
+    },
+}
+
 def urun_kodlari_varsayilan():
     return [
         {"pattern": "EKMEK", "hesap_kodu": "600.06", "aciklama": "Ekmek Satışı", "kdv_orani": 1},
@@ -838,6 +877,67 @@ def hesapla_luca_rows(results, hesap_kodlari, urun_kodlari):
         all_luca_rows.extend(rows)
         fc += 1
     return all_luca_rows
+
+def generate_mukellef_rapor(fisler, mukellef_adi):
+    tum_toplam = sum(f.get("net_toplam", 0) or 0 for f in fisler)
+    brut_toplam = sum(f.get("brut", 0) or 0 for f in fisler)
+    nakit_toplam = sum(f.get("nakit", 0) or 0 for f in fisler)
+    kk_toplam = sum(f.get("kredi_karti", 0) or 0 for f in fisler)
+    iade_toplam = sum(f.get("iadeler", 0) or 0 for f in fisler)
+    tarihler = sorted(set(f.get("tarih", "") for f in fisler if f.get("tarih")))
+    tarih_aralik = f"{tarihler[0]} - {tarihler[-1]}" if tarihler else "Belirsiz"
+    satirlar = ""
+    for i, f in enumerate(fisler, 1):
+        satirlar += f"""<tr>
+<td>{i}</td><td>{f.get('tarih','')}</td><td>{f.get('z_no','')}</td>
+<td>{f.get('banka_adi','') or '-'}</td>
+<td style="text-align:right">{f.get('brut',0):,.2f}</td>
+<td style="text-align:right">{f.get('nakit',0):,.2f}</td>
+<td style="text-align:right">{f.get('kredi_karti',0):,.2f}</td>
+<td style="text-align:right">{f.get('iadeler',0):,.2f}</td>
+<td style="text-align:right"><b>{f.get('net_toplam',0):,.2f}</b></td>
+</tr>"""
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>{mukellef_adi} - Fiş Raporu</title>
+<style>
+body {{ font-family: Arial, sans-serif; margin: 20px; font-size: 12px; }}
+h1 {{ text-align: center; color: #1a5276; font-size: 18px; }}
+h2 {{ color: #2c3e50; font-size: 14px; }}
+.meta {{ text-align: center; color: #666; margin-bottom: 20px; }}
+table {{ width: 100%; border-collapse: collapse; margin: 10px 0; }}
+th, td {{ border: 1px solid #ddd; padding: 6px 8px; font-size: 11px; }}
+th {{ background: #1a5276; color: white; }}
+tr:nth-child(even) {{ background: #f8f9fa; }}
+.ozet {{ display: flex; justify-content: space-around; margin: 15px 0; }}
+.ozet div {{ text-align: center; }}
+.ozet .deger {{ font-size: 20px; font-weight: bold; color: #1a5276; }}
+.ozet .etiket {{ font-size: 11px; color: #666; }}
+.toplam satir {{ background: #e8f6f3 !important; font-weight: bold; }}
+@media print {{ body {{ margin: 10mm; }} }}
+</style></head><body>
+<h1>{mukellef_adi}</h1>
+<p class="meta">Fiş Raporu | {tarih_aralik} | {len(fisler)} Fiş</p>
+<div class="ozet">
+<div><div class="deger">{brut_toplam:,.2f} ₺</div><div class="etiket">Brüt Toplam</div></div>
+<div><div class="deger">{iade_toplam:,.2f} ₺</div><div class="etiket">İade</div></div>
+<div><div class="deger">{nakit_toplam:,.2f} ₺</div><div class="etiket">Nakit</div></div>
+<div><div class="deger">{kk_toplam:,.2f} ₺</div><div class="etiket">Kredi Kartı</div></div>
+<div><div class="deger">{tum_toplam:,.2f} ₺</div><div class="etiket">Net Toplam</div></div>
+</div>
+<table>
+<tr><th>#</th><th>Tarih</th><th>Z No</th><th>Banka</th><th>Brüt</th><th>Nakit</th><th>KK</th><th>İade</th><th>Net</th></tr>
+{satirlar}
+<tr class="toplam"><td colspan="4"><b>TOPLAM</b></td>
+<td style="text-align:right"><b>{brut_toplam:,.2f}</b></td>
+<td style="text-align:right"><b>{nakit_toplam:,.2f}</b></td>
+<td style="text-align:right"><b>{kk_toplam:,.2f}</b></td>
+<td style="text-align:right"><b>{iade_toplam:,.2f}</b></td>
+<td style="text-align:right"><b>{tum_toplam:,.2f}</b></td></tr>
+</table>
+<p style="text-align:center;color:#999;margin-top:30px">SMMM Z Raporu ve Fiş Yönetim Sistemi</p>
+</body></html>"""
+    return html.encode("utf-8")
 
 @st.cache_data
 def generate_excel_cached(all_luca_rows_tuple):
@@ -1096,6 +1196,95 @@ def fis_sil(kayit_yolu, fis_index):
         log.error(f"Fis silinemedi: {e}")
     return False
 
+def fis_kayit_bul(fis_verisi):
+    tarih = fis_verisi.get("tarih", "")
+    z_no = fis_verisi.get("z_no", "")
+    for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "*.json"))):
+        try:
+            kayit = dosya_oku(fp)
+            if not kayit:
+                continue
+            for idx, s in enumerate(kayit.get("sonuclar", [])):
+                if s.get("tarih") == tarih and s.get("z_no") == z_no:
+                    return fp, idx
+        except Exception:
+            continue
+    return None, -1
+
+def toplu_fis_sil(fis_listesi):
+    silinen = 0
+    for fis in fis_listesi:
+        fp, idx = fis_kayit_bul(fis)
+        if fp and idx >= 0:
+            if fis_sil(fp, idx):
+                silinen += 1
+    return silinen
+
+def email_gonder(konu, icerik):
+    try:
+        config = dosya_oku(EMAIL_FILE, {})
+        if not config.get("smtp_server") or not config.get("gonderen"):
+            return False
+        import smtplib
+        from email.mime.text import MIMEText
+        msg = MIMEText(icerik, "plain", "utf-8")
+        msg["Subject"] = konu
+        msg["From"] = config["gonderen"]
+        msg["To"] = config.get("alici", config["gonderen"])
+        port = config.get("port", 587)
+        with smtplib.SMTP(config["smtp_server"], port, timeout=10) as server:
+            server.starttls()
+            if config.get("sifre"):
+                server.login(config["gonderen"], config["sifre"])
+            server.send_message(msg)
+        return True
+    except Exception as e:
+        log.error(f"Email gonderilemedi: {e}")
+        return False
+
+def kdv_ogren(results, urun_kodlari):
+    guncellendi = False
+    for r in results:
+        if "error" in r:
+            continue
+        for urun in r.get("urunler", []):
+            urun_adi = (urun.get("urun") or "").strip()
+            oran = urun.get("oran", 0) or 0
+            if not urun_adi or oran == 0:
+                continue
+            eslesme = urun_kodu_bul(urun_adi, urun_kodlari)
+            if eslesme is None:
+                yeni = {
+                    "pattern": urun_adi.upper()[:20],
+                    "hesap_kodu": "600.01",
+                    "aciklama": f"Otomatik: {urun_adi}",
+                    "kdv_orani": oran
+                }
+                urun_kodlari.append(yeni)
+                guncellendi = True
+                log.info(f"KDV Ogren: '{urun_adi}' -> %{oran} eklendi")
+    if guncellendi:
+        urun_kodlari_kaydet([dict(k) for k in urun_kodlari])
+    return guncellendi
+
+def fis_guncelle(fis_verisi, yeni_veriler):
+    tarih = fis_verisi.get("tarih", "")
+    z_no = fis_verisi.get("z_no", "")
+    for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "*.json"))):
+        try:
+            kayit = dosya_oku(fp)
+            if not kayit:
+                continue
+            for idx, s in enumerate(kayit.get("sonuclar", [])):
+                if s.get("tarih") == tarih and s.get("z_no") == z_no:
+                    for k, v in yeni_veriler.items():
+                        kayit["sonuclar"][idx][k] = v
+                    dosya_yaz(fp, kayit)
+                    return True
+        except Exception:
+            continue
+    return False
+
 st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
 
 with st.sidebar:
@@ -1241,6 +1430,59 @@ if sayfa == "Dashboard":
             df_m = pd.DataFrame([{"Mükellef": k, "Toplam Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
             st.dataframe(df_m, width="stretch", hide_index=True)
 
+        st.divider()
+        st.subheader("Karşılaştırma")
+        now = datetime.now()
+        bu_ay = now.month
+        bu_yil = now.year
+        gecen_ay = bu_ay - 1 if bu_ay > 1 else 12
+        gecen_ay_yil = bu_yil if bu_ay > 1 else bu_yil - 1
+        bu_yil_ciro = 0
+        gecen_yil_ciro = 0
+        bu_ay_ciro = 0
+        gecen_ay_ciro = 0
+        for f in tum_fisler:
+            t = f.get("tarih", "")
+            try:
+                d = datetime.strptime(t, "%d.%m.%Y")
+                net = f.get("net_toplam", 0) or 0
+                if d.year == bu_yil:
+                    bu_yil_ciro += net
+                if d.year == bu_yil - 1:
+                    gecen_yil_ciro += net
+                if d.year == bu_yil and d.month == bu_ay:
+                    bu_ay_ciro += net
+                if d.year == gecen_ay_yil and d.month == gecen_ay:
+                    gecen_ay_ciro += net
+            except (ValueError, TypeError):
+                continue
+        ay_fark = bu_ay_ciro - gecen_ay_ciro
+        yil_fark = bu_yil_ciro - gecen_yil_ciro
+        ay_yuzde = (ay_fark / gecen_ay_ciro * 100) if gecen_ay_ciro > 0 else 0
+        yil_yuzde = (yil_fark / gecen_yil_ciro * 100) if gecen_yil_ciro > 0 else 0
+        comp1, comp2, comp3, comp4 = st.columns(4)
+        comp1.metric(f"Bu Ay ({bu_ay})", f"{bu_ay_ciro:,.0f} TL", f"{ay_fark:+,.0f} TL ({ay_yuzde:+.1f}%)")
+        comp2.metric(f"Geçen Ay ({gecen_ay})", f"{gecen_ay_ciro:,.0f} TL")
+        comp3.metric(f"Bu Yıl ({bu_yil})", f"{bu_yil_ciro:,.0f} TL", f"{yil_fark:+,.0f} TL ({yil_yuzde:+.1f}%)")
+        comp4.metric(f"Geçen Yıl ({bu_yil-1})", f"{gecen_yil_ciro:,.0f} TL")
+
+        st.divider()
+        st.subheader("Aylık Ciro Trendi")
+        aylik_ciro = {}
+        for f in tum_fisler:
+            t = f.get("tarih", "")
+            try:
+                d = datetime.strptime(t, "%d.%m.%Y")
+                ay_anahtar = d.strftime("%Y-%m")
+                aylik_ciro[ay_anahtar] = aylik_ciro.get(ay_anahtar, 0) + (f.get("net_toplam", 0) or 0)
+            except (ValueError, TypeError):
+                continue
+        if aylik_ciro:
+            sirali = sorted(aylik_ciro.items())
+            trend_df = pd.DataFrame(sirali, columns=["Ay", "Ciro"])
+            trend_df = trend_df.set_index("Ay")
+            st.line_chart(trend_df, height=300)
+
 elif sayfa == "Z Raporu Yükle":
     st.header("Z Raporu Fotoğraf Yükleme ve OCR")
 
@@ -1321,6 +1563,24 @@ elif sayfa == "Z Raporu Yükle":
                     st.image(img, caption=f.name[:20], width="stretch")
                     f.seek(0)
 
+    if BARCODE_MEVCUT and uploaded_files:
+        with st.expander("Barkod Okuma", expanded=False):
+            st.caption("Yüklenen görsellerde barkod/QR kodu varsa otomatik okunur")
+            for f in uploaded_files:
+                if not f.name.lower().endswith(".pdf"):
+                    f.seek(0)
+                    try:
+                        img = Image.open(f)
+                        barkodlar = barkod_oku(img)
+                        if barkodlar:
+                            for bd in barkodlar:
+                                st.success(f"**{bd['type']}**: {bd['data']}")
+                        f.seek(0)
+                    except Exception:
+                        pass
+    elif not BARCODE_MEVCUT and uploaded_files:
+        pass
+
     col_b1, col_b2 = st.columns(2)
     with col_b1:
         run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files or ocr_engine is None)
@@ -1389,6 +1649,20 @@ elif sayfa == "Z Raporu Yükle":
             gecmis_kaydet(all_results, hesap_kodlari, st.session_state.get("secili_mukellef", ""))
         except Exception as e:
             log.error(f"Gecmis kaydedilemedi: {e}")
+        try:
+            kdv_ogren(all_results, st.session_state.urun_kodlari)
+        except Exception as e:
+            log.error(f"KDV ogrenme hatası: {e}")
+        try:
+            basarili = sum(1 for r in all_results if "error" not in r)
+            if basarili > 0:
+                muk_adi = st.session_state.get("secili_mukellef", "Bilinmeyen")
+                toplam_ciro = sum(r.get("net_toplam", 0) or 0 for r in all_results if "error" not in r)
+                konu = f"SMMM Z Raporu - {muk_adi} - {basarili} Fiş"
+                icerik = f"Mükellef: {muk_adi}\nİşlenen: {basarili} fiş\nToplam Ciro: {toplam_ciro:,.2f} TL"
+                email_gonder(konu, icerik)
+        except Exception as e:
+            log.error(f"Email bildirim hatası: {e}")
         try:
             otomatik_yedekle()
         except Exception as e:
@@ -1701,6 +1975,52 @@ elif sayfa == "Fiş Geçmişi":
         st.info(f"{len(filtered)} fiş bulundu")
 
         if filtered:
+            with st.expander("Toplu İşlem", expanded=False):
+                col_del1, col_del2 = st.columns([3, 1])
+                with col_del1:
+                    secim = st.multiselect("Silmek istediklerinizi seçin",
+                        options=filtered,
+                        format_func=lambda x: f"{x.get('tarih','')} | {x.get('z_no','')} | {x.get('firma_adi', x.get('mukellef',''))} | ₺{x.get('net_toplam', 0):,.2f}")
+                with col_del2:
+                    st.write("")
+                    st.write("")
+                    if secim and st.button("Seçilenleri Sil", type="primary", key="toplu_sil"):
+                        silinen = toplu_fis_sil(secim)
+                        if silinen > 0:
+                            st.success(f"{silinen} fiş silindi!")
+                            st.rerun()
+                        else:
+                            st.error("Hiçbir fiş silinemedi.")
+
+            with st.expander("Fiş Düzenle", expanded=False):
+                secim_duzelt = st.selectbox("Düzenlenecek fişi seçin", filtered,
+                    format_func=lambda x: f"{x.get('tarih','')} | {x.get('z_no','')} | {x.get('firma_adi', x.get('mukellef',''))} | ₺{x.get('net_toplam', 0):,.2f}",
+                    key="duzelt_secim")
+                if secim_duzelt:
+                    col_d1, col_d2 = st.columns(2)
+                    with col_d1:
+                        yeni_tarih = st.text_input("Tarih", value=secim_duzelt.get("tarih", ""), key="ed_tarih_fis")
+                        yeni_brut = st.number_input("Brüt Tutar", value=float(secim_duzelt.get("brut", 0) or 0), step=100.0, key="ed_brut_fis")
+                        yeni_nakit = st.number_input("Nakit", value=float(secim_duzelt.get("nakit", 0) or 0), step=100.0, key="ed_nakit_fis")
+                    with col_d2:
+                        yeni_net = st.number_input("Net Tutar", value=float(secim_duzelt.get("net_toplam", 0) or 0), step=100.0, key="ed_net_fis")
+                        yeni_kk = st.number_input("Kredi Kartı", value=float(secim_duzelt.get("kredi_karti", 0) or 0), step=100.0, key="ed_kk_fis")
+                        yeni_iade = st.number_input("İade", value=float(secim_duzelt.get("iadeler", 0) or 0), step=100.0, key="ed_iade_fis")
+                    if st.button("Değişiklikleri Kaydet", type="primary", key="kaydet_duzelt"):
+                        yeni_veriler = {
+                            "tarih": yeni_tarih,
+                            "brut": yeni_brut,
+                            "net_toplam": yeni_net,
+                            "nakit": yeni_nakit,
+                            "kredi_karti": yeni_kk,
+                            "iadeler": yeni_iade,
+                        }
+                        if fis_guncelle(secim_duzelt, yeni_veriler):
+                            st.success("Fiş güncellendi!")
+                            st.rerun()
+                        else:
+                            st.error("Güncelleme başarısız oldu.")
+
             df = pd.DataFrame([{
                 "Tarih": f.get("tarih", "?"), "Z No": f.get("z_no", "?"),
                 "Firma": f.get("firma_adi", "") or f.get("mukellef", f.get("mukellef_adi", "")),
@@ -1734,6 +2054,13 @@ elif sayfa == "Fiş Geçmişi":
                     f"filtrelenmis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     width="stretch")
+
+            if filtre_mukellef != "Tümü":
+                rapor_html = generate_mukellef_rapor(filtered, filtre_mukellef)
+                st.download_button("PDF Rapor İndir (HTML)", rapor_html,
+                    f"{filtre_mukellef}_rapor_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html",
+                    "text/html", width="stretch",
+                    help="HTML dosyasını tarayıcıda açıp Ctrl+P ile PDF olarak kaydedin")
 
 elif sayfa == "Mükellef Yönetimi":
     st.header("Mükellef Yönetimi")
@@ -1801,10 +2128,13 @@ elif sayfa == "KDV Özeti":
     if not tum_fisler:
         st.info("Henüz fiş yok.")
     else:
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
-            ay = st.selectbox("Ay", range(1, 13), index=datetime.now().month - 1)
+            ml = mukellefler()
+            filtre_muk = st.selectbox("Mükellef", ["Tümü"] + [m["adi"] for m in ml])
         with col2:
+            ay = st.selectbox("Ay", range(1, 13), index=datetime.now().month - 1)
+        with col3:
             yil = st.selectbox("Yıl", range(datetime.now().year, datetime.now().year - 3, -1))
 
         ay_fisler = []
@@ -1812,6 +2142,10 @@ elif sayfa == "KDV Özeti":
             try:
                 t = datetime.strptime(f.get("tarih", ""), "%d.%m.%Y")
                 if t.month == ay and t.year == yil:
+                    if filtre_muk != "Tümü":
+                        m = f.get("mukellef", "") or f.get("mukellef_adi", "")
+                        if m != filtre_muk:
+                            continue
                     ay_fisler.append(f)
             except (ValueError, TypeError):
                 pass
@@ -1900,6 +2234,48 @@ elif sayfa == "KDV Özeti":
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         type="primary", width="stretch")
 
+            if kdv_toplamlari:
+                kdv_satirlar = ""
+                toplam_matrah = 0
+                toplam_kdv_tutari = 0
+                for oran in sorted(kdv_toplamlari.keys()):
+                    k = kdv_toplamlari[oran]
+                    toplam_matrah += k['matrah']
+                    toplam_kdv_tutari += k['kdv']
+                    kdv_satirlar += f"<tr><td>%{oran}</td><td style='text-align:right'>{k['brut']:,.2f}</td><td style='text-align:right'>{k['matrah']:,.2f}</td><td style='text-align:right'>{k['kdv']:,.2f}</td></tr>"
+                muk_baslik = filtre_muk if filtre_muk != "Tümü" else "Tüm Mükellefler"
+                kdv_html = f"""<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>KDV Beyanname Özeti - {ay:02d}/{yil}</title>
+<style>
+body {{ font-family: Arial, sans-serif; margin: 20px; }}
+h1 {{ text-align: center; color: #1a5276; }}
+.meta {{ text-align: center; color: #666; }}
+table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+th, td {{ border: 1px solid #ddd; padding: 8px; }}
+th {{ background: #1a5276; color: white; }}
+.toplam {{ background: #e8f6f3; font-weight: bold; }}
+@media print {{ body {{ margin: 10mm; }} }}
+</style></head><body>
+<h1>KDV Beyanname Özeti</h1>
+<p class="meta">{muk_baslik} | {ay:02d}/{yil} | {len(ay_fisler)} Fiş</p>
+<table>
+<tr><th>KDV Oranı</th><th>Brüt Tutar</th><th>Matrah</th><th>KDV Tutarı</th></tr>
+{kdv_satirlar}
+<tr class="toplam"><td>TOPLAM</td><td style="text-align:right">{toplam_ciro:,.2f}</td>
+<td style="text-align:right">{toplam_matrah:,.2f}</td>
+<td style="text-align:right">{toplam_kdv_tutari:,.2f}</td></tr>
+</table>
+<h3>Ödeme Türüne Göre</h3>
+<table>
+<tr><th>Nakit</th><th>Kredi Kartı</th><th>İade</th><th>Net Toplam</th></tr>
+<tr><td>{toplam_nakit:,.2f}</td><td>{toplam_kk:,.2f}</td><td>{toplam_iptal:,.2f}</td><td>{toplam_ciro:,.2f}</td></tr>
+</table>
+<p style="text-align:center;color:#999;margin-top:30px">SMMM Z Raporu ve Fiş Yönetim Sistemi</p>
+</body></html>"""
+                st.download_button(f"KDV Beyanname Raporu İndir ({ay:02d}/{yil})", kdv_html.encode("utf-8"),
+                    f"kdv_beyanname_{yil}_{ay:02d}.html", "text/html", width="stretch",
+                    help="HTML dosyasını tarayıcıda açıp Ctrl+P ile PDF olarak kaydedin")
+
 elif sayfa == "Ayarlar":
     st.header("Ayarlar")
 
@@ -1938,6 +2314,64 @@ elif sayfa == "Ayarlar":
                     st.error(f"Geri yükleme hatası: {e}")
         else:
             st.info("Henüz yedek yok")
+
+    st.divider()
+    st.subheader("Bulut Yedekleme (ZIP İndir)")
+    st.caption("Tüm verilerinizi ZIP olarak indirip Google Drive, OneDrive veya Dropbox'a yükleyebilirsiniz.")
+    if st.button("ZIP Yedek Oluştur ve İndir", type="primary", key="zip_yedek"):
+        import zipfile
+        import io
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for fp in [HESAP_FILE, MUKELLEF_FILE, URUN_KODLARI_FILE]:
+                if os.path.exists(fp):
+                    zf.write(fp, os.path.basename(fp))
+            for fp in glob.glob(os.path.join(GECMIS_KLASORU, "*.json")):
+                zf.write(fp, f"gecmis/{os.path.basename(fp)}")
+            for fp in glob.glob(os.path.join(YEDEK_KLASORU, "yedek_*", "*.json")):
+                zf.write(fp, f"yedekler/{os.path.basename(fp)}")
+        zip_buffer.seek(0)
+        st.download_button("ZIP Dosyasını İndir", zip_buffer,
+            f"yedek_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+            "application/zip", type="primary", key="zip_indir")
+
+    st.divider()
+    st.subheader("E-posta Bildirimi")
+    email_config = dosya_oku(EMAIL_FILE, {})
+    with st.form("email_form"):
+        col_e1, col_e2 = st.columns(2)
+        with col_e1:
+            smtp_server = st.text_input("SMTP Sunucu", value=email_config.get("smtp_server", ""), placeholder="smtp.gmail.com")
+            smtp_port = st.number_input("Port", value=email_config.get("port", 587), min_value=1, max_value=65535)
+            gonderen = st.text_input("Gönderen E-posta", value=email_config.get("gonderen", ""), placeholder="ornek@gmail.com")
+        with col_e2:
+            sifre = st.text_input("Uygulama Şifresi", value=email_config.get("sifre", ""), type="password", placeholder="Google Uygulama Şifresi")
+            alici = st.text_input("Alıcı E-posta", value=email_config.get("alici", ""), placeholder="Alıcı (boşsa gönderene gider)")
+        if st.form_submit_button("E-posta Ayarlarını Kaydet"):
+            yeni_config = {"smtp_server": smtp_server, "port": smtp_port, "gonderen": gonderen, "sifre": sifre, "alici": alici or gonderen}
+            dosya_yaz(EMAIL_FILE, yeni_config)
+            st.success("E-posta ayarları kaydedildi!")
+    if email_config.get("gonderen"):
+        if st.button("Test E-postası Gönder", key="test_email"):
+            if email_gonder("SMMM Z Raporu - Test", "Bu bir test e-postasıdır. E-posta bildirimi çalışıyor!"):
+                st.success("Test e-postası gönderildi!")
+            else:
+                st.error("E-posta gönderilemedi. Ayarları kontrol edin.")
+
+    st.divider()
+    st.subheader("Hesap Planı Seçimi")
+    mevcut_plan = st.session_state.get("hesap_plan_secenek", "LUCA")
+    yeni_plan = st.selectbox("Muhasebe Programı", ["LUCA", "Logo", "Netsis"],
+        index=["LUCA", "Logo", "Netsis"].index(mevcut_plan))
+    if yeni_plan != mevcut_plan:
+        st.session_state.hesap_plan_secenek = yeni_plan
+        yeni_kodlar = HESAP_PLANLARI[yeni_plan].copy()
+        dosya_yaz(HESAP_FILE, yeni_kodlar)
+        st.session_state.hesap_kodlari = yeni_kodlar
+        st.success(f"{yeni_plan} hesap planı yüklendi!")
+        st.rerun()
+    st.info(f"Aktif hesap planı: **{mevcut_plan}**")
+    st.json(st.session_state.get("hesap_kodlari", {}))
 
     st.divider()
     st.subheader("Tehlikeli İşlemler")
