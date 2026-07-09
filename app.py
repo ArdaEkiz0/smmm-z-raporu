@@ -123,7 +123,7 @@ def dosya_yaz(filepath, veri):
         log.error(f"Dosya yazilamadi {filepath}: {e}")
         raise
 
-def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False) -> Image.Image:
+def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False, sharp=True) -> Image.Image:
     img = img.convert("L")
     w, h = img.size
     if h < target_h:
@@ -132,8 +132,9 @@ def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False)
     if invert:
         img = ImageOps.invert(img)
     img = img.filter(ImageFilter.MedianFilter(size=3))
-    img = ImageOps.autocontrast(img, cutoff=2)
-    img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200))
+    img = ImageOps.autocontrast(img, cutoff=5)
+    if sharp:
+        img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200))
     img = img.point(lambda x: 0 if x < threshold else 255)
     return img
 
@@ -148,6 +149,19 @@ def load_ocr():
         return None
 
 ocr_engine = load_ocr()
+
+def turkce_normalize(s):
+    import unicodedata
+    s = s.lower().strip()
+    s = unicodedata.normalize('NFKD', s)
+    s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
+    s = s.replace('ı', 'i').replace('İ', 'i').replace('I', 'i')
+    s = s.replace('ş', 's').replace('Ş', 's')
+    s = s.replace('ğ', 'g').replace('Ğ', 'g')
+    s = s.replace('ç', 'c').replace('Ç', 'c')
+    s = s.replace('ö', 'o').replace('Ö', 'o')
+    s = s.replace('ü', 'u').replace('Ü', 'u')
+    return s
 
 def levenshtein(a, b):
     if a == b:
@@ -173,12 +187,23 @@ def ocr_skorla(text):
     if re.search(r'Z\s*N', t): skor += 15
     if 'TOPLAM' in t: skor += 10
     if 'TOPKDV' in t: skor += 8
-    if 'NAKIT' in t or 'NAKИТ' in t: skor += 5
+    if 'NAKIT' in t or 'NAKИТ' in t or 'NAKİT' in t: skor += 5
     if 'KART' in t: skor += 5
+    if 'BRUT' in t or 'B.RUT' in t: skor += 5
+    if 'NET' in t: skor += 3
+    if 'SATICI' in t or 'SATIST' in t: skor += 3
+    if 'VERGI' in t or 'VERGİ' in t: skor += 3
+    if 'HESAP' in t: skor += 2
+    if 'ADET' in t: skor += 2
+    if 'EKMEK' in t: skor += 2
+    if 'SIGARA' in t or 'SİGARA' in t: skor += 2
     sayilar = re.findall(r'\d{3,}', t)
     skor += min(len(sayilar) * 2, 12)
     satir_sayisi = len([s for s in text.split('\n') if s.strip()])
     skor += min(satir_sayisi, 8)
+    if re.search(r'RAPOR\s+SONU', t): skor += 5
+    if re.search(r'CIRO|CİRO', t): skor += 3
+    if re.search(r'1\s*\*?\+?\s*\d', t): skor += 2
     return skor
 
 def ocr_duzelt(text):
@@ -237,33 +262,48 @@ def ocr_duzelt(text):
 def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
+    orijinal = img.copy()
     stratejiler = [
-        {"threshold": 200, "target_h": 3500, "invert": False},
-        {"threshold": 170, "target_h": 3500, "invert": False},
-        {"threshold": 220, "target_h": 4000, "invert": False},
-        {"threshold": 200, "target_h": 3500, "invert": True},
-        {"threshold": 150, "target_h": 4000, "invert": False},
-        {"threshold": 180, "target_h": 3000, "invert": False},
+        {"threshold": 200, "target_h": 3500, "invert": False, "sharp": True},
+        {"threshold": 170, "target_h": 3500, "invert": False, "sharp": True},
+        {"threshold": 220, "target_h": 4000, "invert": False, "sharp": True},
+        {"threshold": 200, "target_h": 3500, "invert": True, "sharp": True},
+        {"threshold": 150, "target_h": 4000, "invert": False, "sharp": True},
+        {"threshold": 180, "target_h": 3000, "invert": False, "sharp": True},
+        {"threshold": 130, "target_h": 4500, "invert": False, "sharp": True},
+        {"threshold": 160, "target_h": 4500, "invert": False, "sharp": True},
+        {"threshold": 190, "target_h": 4000, "invert": False, "sharp": False},
+        {"threshold": 210, "target_h": 5000, "invert": False, "sharp": True},
+        {"threshold": 140, "target_h": 5000, "invert": True, "sharp": True},
     ]
-    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3", "--psm 3 --oem 3"]
+    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3", "--psm 3 --oem 3", "--psm 6 --oem 1"]
     en_iyi_text = ""
     en_iyi_skor = -1
-    for strat in stratejiler:
-        try:
-            hazir = gorsel_hazirla(img, threshold=strat["threshold"],
-                                   target_h=strat["target_h"], invert=strat["invert"])
-        except Exception:
-            continue
-        for cfg in configs:
+    tum_gorseller = [img]
+    try:
+        for angle in [-2, 2, -1, 1]:
+            dondurulmus = orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255))
+            tum_gorseller.append(dondurulmus)
+    except Exception:
+        pass
+    for gorsel in tum_gorseller:
+        for strat in stratejiler:
             try:
-                text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
-                text = ocr_duzelt(text.strip())
-                skor = ocr_skorla(text)
-                if skor > en_iyi_skor:
-                    en_iyi_skor = skor
-                    en_iyi_text = text
+                hazir = gorsel_hazirla(gorsel, threshold=strat["threshold"],
+                                       target_h=strat["target_h"], invert=strat["invert"],
+                                       sharp=strat.get("sharp", True))
             except Exception:
                 continue
+            for cfg in configs:
+                try:
+                    text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                    text = ocr_duzelt(text.strip())
+                    skor = ocr_skorla(text)
+                    if skor > en_iyi_skor:
+                        en_iyi_skor = skor
+                        en_iyi_text = text
+                except Exception:
+                    continue
     return en_iyi_text
 
 def parse_tutar(s):
@@ -354,6 +394,7 @@ def salon_bul(text):
     if not text:
         return None
     satirlar = text.split("\n")
+    aday_satirlar = []
     for i, satir in enumerate(satirlar[:15]):
         s = satir.strip()
         if not s or len(s) < 4:
@@ -375,7 +416,29 @@ def salon_bul(text):
         if re.match(r'^[a-zA-Z]\s+\d+\s+[a-zA-Z]$', s.strip()):
             continue
         if len(s) > 4:
-            return s
+            aday_satirlar.append(s)
+    if aday_satirlar:
+        return aday_satirlar[0]
+    return None
+
+def salon_bul_fallback(text, ml):
+    if not text:
+        return None
+    t_norm = turkce_normalize(text)
+    en_iyi = None
+    en_iyi_mesafe = 999
+    for m in ml:
+        adaylar = [m.get("adi", ""), m.get("kisa_adi", "")]
+        for ad in adaylar:
+            if not ad:
+                continue
+            ad_norm = turkce_normalize(ad)
+            d = levenshtein(t_norm, ad_norm)
+            if d < en_iyi_mesafe:
+                en_iyi_mesafe = d
+                en_iyi = m.get("adi")
+    if en_iyi and en_iyi_mesafe <= 8:
+        return en_iyi
     return None
 
 def parse_z_raporu(text):
@@ -400,6 +463,13 @@ def parse_z_raporu(text):
 
     sonuc["firma_adi"] = salon_bul(t)
     sonuc["banka_adi"] = banka_bul(t_duz)
+
+    if not sonuc["firma_adi"]:
+        try:
+            ml = mukellefler()
+            sonuc["firma_adi"] = salon_bul_fallback(t, ml)
+        except Exception:
+            pass
 
     tarih_match = re.search(r'(\d{2})[./-](\d{2})[./-](\d{4})', t_duz)
     if tarih_match:
