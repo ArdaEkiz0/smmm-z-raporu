@@ -1803,6 +1803,33 @@ elif sayfa == "Z Raporu Yükle":
                 st.session_state.pop(k, None)
             st.rerun()
 
+    st.divider()
+    st.subheader("veya GOT-OCR Çıktısını Yapıştır")
+    st.caption("Colab'da veya herhangi bir GOT-OCR arayüzünde okutup çıktıyı buraya yapıştırın")
+    got_text = st.text_area("GOT-OCR Ham Çıktısı", height=150, placeholder="GOT-OCR çıktısını buraya yapıştırın...", key="got_text_input")
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        got_mukellef = st.selectbox("Mükellef", ["(Otomatik)"] + [m.get("kisa_adi", m["adi"]) for m in ml], key="got_mukellef")
+    with col_g2:
+        pass
+    if st.button("GOT-OCR Çıktısını Ayrıştır", type="primary", disabled=not got_text, width="stretch"):
+        parsed = parse_got_ocr(got_text)
+        parsed["filename"] = "GOT-OCR Yapıştırma"
+        parsed["ocr_text"] = got_text
+        if got_mukellef != "(Otomatik)":
+            for m in ml:
+                if m.get("kisa_adi", m["adi"]) == got_mukellef:
+                    parsed["mukellef_adi"] = m["adi"]
+                    break
+        else:
+            parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
+        if "results" not in st.session_state:
+            st.session_state.results = []
+        st.session_state.results.append(parsed)
+        st.session_state.processed = True
+        st.success(f"Firma: {parsed.get('firma_adi', '?')} | Tarih: {parsed.get('tarih', '?')} | Z No: {parsed.get('z_no', '?')} | Brüt: {parsed.get('brut', 0):,.2f} TL")
+        st.rerun()
+
     if run_ocr and uploaded_files:
         import time as _time
         from pdf2image import convert_from_bytes
