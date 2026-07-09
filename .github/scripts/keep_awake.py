@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 
-APP_URL = os.environ.get("APP_URL", "https://smmm-z-raporu.streamlit.app")
+APP_URL = os.environ.get("APP_URL", "https://share.streamlit.io/ArdaEkiz0/smmm-z-raporu/main/app.py")
 
 def main():
     opts = Options()
