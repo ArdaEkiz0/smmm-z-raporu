@@ -26,7 +26,8 @@ AUTH_FILE = os.path.join(DATA_DIR, "auth_config.json")
 def auth_yukle():
     if os.path.exists(AUTH_FILE):
         try:
-            return dosya_oku(AUTH_FILE, {"passwords": []})
+            with open(AUTH_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
         except Exception:
             return {"passwords": []}
     return {"passwords": []}
