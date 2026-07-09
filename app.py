@@ -985,7 +985,7 @@ if sayfa == "Dashboard":
     if tum_fisler:
         st.divider()
         st.subheader("Son 10 Fiş")
-        son_fisler = sorted(tum_fisler, key=lambda x: x.get("tarih", ""), reverse=True)[:10]
+        son_fisler = sorted(tum_fisler, key=lambda x: x.get("tarih") or "", reverse=True)[:10]
         df = pd.DataFrame([{
             "Tarih": f.get("tarih", "?"), "Z No": f.get("z_no", "?"),
             "Firma": f.get("firma_adi", "") or f.get("mukellef", f.get("mukellef_adi", "")),
