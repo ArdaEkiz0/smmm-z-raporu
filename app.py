@@ -162,6 +162,31 @@ def duzeltme_ogren(yanlis, dogru):
     dosya_yaz(OGRENILEN_SOZLUK, sozluk)
     return True
 
+def ogrenci_alan_bul(ham_text, alan_adi, dogru_deger):
+    """Ham OCR metninde, dogru_deger'e en yakin satiri/kelimeyi bul.
+    Bulunan yanlis-ifadeyi, ogrenilen_sozluk'e yaz ki sonraki OCR'da otomatik duzeltilsin.
+    """
+    if not ham_text or not dogru_deger:
+        return None
+    temiz = dogru_deger.strip()
+    if len(temiz) < 2:
+        return None
+    adaylar = []
+    uzunluk = len(temiz)
+    for kelime in re.findall(r"[A-ZÇĞİÖŞÜa-zçğıöşü0-9./-]{2,}", ham_text):
+        if abs(len(kelime) - uzunluk) <= 4:
+            skor = levenshtein(turkce_normalize(kelime), turkce_normalize(temiz))
+            if skor <= max(2, uzunluk // 3):
+                adaylar.append((skor, kelime))
+    if not adaylar:
+        for kelime in re.findall(r"[A-ZÇĞİÖŞÜa-zçğıöşü0-9./-]{3,}", ham_text):
+            if turkce_normalize(temiz[:4]) in turkce_normalize(kelime) or turkce_normalize(kelime[:4]) in turkce_normalize(temiz):
+                adaylar.append((1, kelime))
+    if not adaylar:
+        return None
+    adaylar.sort(key=lambda x: (x[0], abs(len(x[1]) - uzunluk)))
+    return adaylar[0][1]
+
 def duzeltme_uygula(text):
     if not text:
         return text
@@ -2011,22 +2036,33 @@ elif sayfa == "Z Raporu Yükle":
                         if "Net Tutar" in eksik:
                             st.number_input("Net Tutar (TL)", key=f"duzelt_net_{idx}", value=float(r.get("net_toplam", 0)), step=100.0)
                 if st.button("✅ Düzeltmeleri Kaydet ve Öğret", type="primary", use_container_width=True):
+                    ogr_sayisi = 0
                     for idx, r, eksik in eksik_alanlar:
+                        ham = r.get("ham_text", "") or r.get("ocr_text", "")
                         if "Tarih" in eksik:
                             yeni = st.session_state.get(f"duzelt_tarih_{idx}", "")
                             if yeni:
                                 r["tarih"] = yeni
-                                duzeltme_ogren("TARIH_BULUNAMADI", yeni)
+                                yanlis = ogrenci_alan_bul(ham, "tarih", yeni)
+                                if yanlis and yanlis.upper() != yeni.strip().upper():
+                                    duzeltme_ogren(yanlis, yeni)
+                                    ogr_sayisi += 1
                         if "Z No" in eksik:
                             yeni = st.session_state.get(f"duzelt_zno_{idx}", "")
                             if yeni:
                                 r["z_no"] = yeni
-                                duzeltme_ogren("ZNO_BULUNAMADI", yeni)
+                                yanlis = ogrenci_alan_bul(ham, "z_no", yeni)
+                                if yanlis and yanlis.upper() != yeni.strip().upper():
+                                    duzeltme_ogren(yanlis, yeni)
+                                    ogr_sayisi += 1
                         if "Firma Adı" in eksik:
                             yeni = st.session_state.get(f"duzelt_firma_{idx}", "")
                             if yeni:
                                 r["firma_adi"] = yeni
-                                duzeltme_ogren("FIRMA_BULUNAMADI", yeni)
+                                yanlis = ogrenci_alan_bul(ham, "firma_adi", yeni)
+                                if yanlis and yanlis.upper() != yeni.strip().upper():
+                                    duzeltme_ogren(yanlis, yeni)
+                                    ogr_sayisi += 1
                         if "Brüt Tutar" in eksik:
                             yeni = st.session_state.get(f"duzelt_brut_{idx}", 0)
                             if yeni > 0:
@@ -2035,7 +2071,10 @@ elif sayfa == "Z Raporu Yükle":
                             yeni = st.session_state.get(f"duzelt_net_{idx}", 0)
                             if yeni > 0:
                                 r["net_toplam"] = yeni
-                    st.toast("Düzeltmeler kaydedildi! Sistem öğrendi.", icon="✅")
+                    if ogr_sayisi > 0:
+                        st.toast(f"{ogr_sayisi} yeni düzeltme öğrenildi! Bir dahaki sefere otomatik uygulanacak.", icon="✅")
+                    else:
+                        st.toast("Düzeltmeler kaydedildi.", icon="✅")
                     st.rerun()
 
         ozet_data = []
