@@ -10,6 +10,7 @@ import glob
 import json
 import shutil
 import logging
+import sys
 from datetime import datetime, timedelta
 from PIL import Image, ImageFilter, ImageOps
 try:
