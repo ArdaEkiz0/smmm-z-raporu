@@ -424,6 +424,46 @@ def ocr_duzelt(text):
     return t
 
 
+def _otsu_threshold(img_l):
+    hist = img_l.histogram()
+    total = sum(hist)
+    if total == 0:
+        return 128
+    sum_all = sum(i * h for i, h in enumerate(hist))
+    sumB = 0
+    wB = 0
+    maximum = 0.0
+    threshold = 128
+    for i in range(256):
+        wB += hist[i]
+        if wB == 0:
+            continue
+        wF = total - wB
+        if wF == 0:
+            break
+        sumB += i * hist[i]
+        mB = sumB / wB
+        mF = (sum_all - sumB) / wF
+        between = wB * wF * (mB - mF) ** 2
+        if between > maximum:
+            maximum = between
+            threshold = i
+    return threshold
+
+
+def _ocr_hazirla_otsu(img, target_h=3500, threshold_offset=0):
+    orijinal = img.copy().convert("L")
+    w, h = orijinal.size
+    scale = max(target_h / h, 1.0)
+    orijinal = orijinal.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+    orijinal = orijinal.filter(ImageFilter.MedianFilter(size=3))
+    orijinal = orijinal.filter(ImageFilter.UnsharpMask(radius=2, percent=200, threshold=3))
+    threshold = _otsu_threshold(orijinal)
+    threshold = max(80, min(220, threshold + threshold_offset))
+    orijinal = orijinal.point(lambda x, t=threshold: 0 if x < t else 255)
+    return orijinal
+
+
 def ocr_image(img: Image.Image) -> str:
     ocr_modu = st.session_state.get("ocr_modu", "Tesseract")
     if ocr_modu == "GOT-OCR API":
@@ -440,72 +480,46 @@ def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
     orijinal = img.copy()
-    hizli_stratejiler = [
-        {"threshold": 200, "target_h": 3500, "invert": False, "sharp": True},
-        {"threshold": 170, "target_h": 3500, "invert": False, "sharp": True},
-        {"threshold": 180, "target_h": 3000, "invert": False, "sharp": True},
-    ]
-    yavas_stratejiler = [
-        {"threshold": 220, "target_h": 4000, "invert": False, "sharp": True},
-        {"threshold": 150, "target_h": 4000, "invert": False, "sharp": True},
-        {"threshold": 140, "target_h": 5000, "invert": True, "sharp": True},
-    ]
-    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 6 --oem 1"]
     en_iyi_text = ""
     en_iyi_skor = -1
-    tum_gorseller = [img]
-    for gorsel in tum_gorseller:
-        stratejiler = hizli_stratejiler if en_iyi_skor < 30 else yavas_stratejiler
-        for strat in stratejiler:
+    for thr_offset in [-30, 0, 30]:
+        try:
+            hazir = _ocr_hazirla_otsu(orijinal, target_h=3500, threshold_offset=thr_offset)
+        except Exception:
+            continue
+        for psm in [6, 4]:
             try:
-                hazir = gorsel_hazirla(gorsel, threshold=strat["threshold"],
-                                       target_h=strat["target_h"], invert=strat["invert"],
-                                       sharp=strat.get("sharp", True))
+                text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=f"--psm {psm} --oem 1")
+                if not text.strip():
+                    text = ocr_engine.image_to_string(hazir, lang="tur", config=f"--psm {psm} --oem 1")
+                text = ocr_duzelt(text.strip())
+                skor = ocr_skorla(text)
+                if skor > en_iyi_skor:
+                    en_iyi_skor = skor
+                    en_iyi_text = text
+                    if skor >= 60:
+                        return en_iyi_text
             except Exception:
                 continue
-            for cfg in configs:
-                try:
-                    text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
-                    if not text.strip():
-                        text = ocr_engine.image_to_string(hazir, lang="tur", config=cfg)
-                    text = ocr_duzelt(text.strip())
-                    skor = ocr_skorla(text)
-                    if skor > en_iyi_skor:
-                        en_iyi_skor = skor
-                        en_iyi_text = text
-                        if skor >= 80:
-                            return en_iyi_text
-                        if skor >= 45:
-                            break
-                except Exception:
-                    continue
-            if en_iyi_skor >= 45:
-                break
     if en_iyi_skor < 30:
         try:
             for angle in [-2, 2]:
                 dondurulmus = orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255))
-                for strat in hizli_stratejiler:
+                hazir = _ocr_hazirla_otsu(dondurulmus, target_h=3500)
+                for psm in [6, 4]:
                     try:
-                        hazir = gorsel_hazirla(dondurulmus, threshold=strat["threshold"],
-                                               target_h=strat["target_h"], invert=strat["invert"],
-                                               sharp=strat.get("sharp", True))
+                        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=f"--psm {psm} --oem 1")
+                        if not text.strip():
+                            text = ocr_engine.image_to_string(hazir, lang="tur", config=f"--psm {psm} --oem 1")
+                        text = ocr_duzelt(text.strip())
+                        skor = ocr_skorla(text)
+                        if skor > en_iyi_skor:
+                            en_iyi_skor = skor
+                            en_iyi_text = text
+                            if skor >= 60:
+                                return en_iyi_text
                     except Exception:
                         continue
-                    for cfg in configs:
-                        try:
-                            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
-                            if not text.strip():
-                                text = ocr_engine.image_to_string(hazir, lang="tur", config=cfg)
-                            text = ocr_duzelt(text.strip())
-                            skor = ocr_skorla(text)
-                            if skor > en_iyi_skor:
-                                en_iyi_skor = skor
-                                en_iyi_text = text
-                                if skor >= 80:
-                                    return en_iyi_text
-                        except Exception:
-                            continue
         except Exception:
             pass
     return en_iyi_text
