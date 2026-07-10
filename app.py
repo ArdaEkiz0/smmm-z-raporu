@@ -81,6 +81,8 @@ YEDEK_KLASORU = os.path.join(DATA_DIR, "yedekler")
 URUN_KODLARI_FILE = os.path.join(DATA_DIR, "urun_kodlari.json")
 SABLON_FILE = os.path.join(DATA_DIR, "luca_sablonu.xlsx")
 EMAIL_FILE = os.path.join(DATA_DIR, "email_config.json")
+DUZELTME_SOZLUK = os.path.join(DATA_DIR, "duzeltme_sozlugu.json")
+OGRENILEN_SOZLUK = os.path.join(DATA_DIR, "ogrenilen_sozluk.json")
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
@@ -122,6 +124,52 @@ def dosya_yaz(filepath, veri):
     except Exception as e:
         log.error(f"Dosya yazilamadi {filepath}: {e}")
         raise
+
+def duzeltme_sozlugu():
+    sozluk = dosya_oku(DUZELTME_SOZLUK, {})
+    if not sozluk:
+        sozluk = {
+            "TSA CURA": "ĐSA CURA", "TSA": "ĐSA",
+            "IKSPI BILGISA": "GÖKKUŞAĞI",
+            "GOKKUSAGI": "GÖKKUŞAĞI", "GOKKUSAG": "GÖKKUŞAĞI",
+            "GOKKUSAGI MARKET": "GÖKKUŞAĞI MARKET", "GOKKUSAG MARKET": "GÖKKUŞAĞI MARKET",
+            "MIKAIL EKIZ ORTAKLIGI": "MĐKAIL EKĐZ ORTAKLIĞI",
+            "MIKAIL EKIZ": "MĐKAIL EKĐZ",
+            "HALKBANK": "Halkbank",
+            "is Bankas1": "Đş Bankası", "IS BANKASI": "Đş Bankası",
+            "TURKIYE FINANS": "Türkiye Finans",
+            "FPTAL": "ĐPTAL", "IPTAL": "ĐPTAL",
+            "FIIS": "FĐŞ", "FIS": "FĐŞ",
+            "KUMULATIF": "KÜMÜLATĐF",
+            "SATIS": "SATIŞ", "TARIH": "TARĐH",
+            "MUSTERI": "MÜŞTERĐ", "VERGI": "VERGĐ",
+            "MALI": "MALĐ", "CIRO": "CĐRO",
+            "ODEME": "ÖDEME", "GECERLI": "GEÇERLĐ",
+            "KREDI": "KREDĐ", "SLIP": "SLĐP",
+            "EKU": "EKÜ", "TURLERI": "TÜRLERĐ",
+        }
+        dosya_yaz(DUZELTME_SOZLUK, sozluk)
+    return sozluk
+
+def ogrenilen_sozluk():
+    return dosya_oku(OGRENILEN_SOZLUK, {})
+
+def duzeltme_ogren(yanlis, dogru):
+    sozluk = ogrenilen_sozluk()
+    sozluk[yanlis.strip().upper()] = dogru.strip()
+    dosya_yaz(OGRENILEN_SOZLUK, sozluk)
+    return True
+
+def duzeltme_uygula(text):
+    if not text:
+        return text
+    t = text
+    sozluk = duzeltme_sozlugu()
+    for yanlis, dogru in sorted(sozluk.items(), key=lambda x: -len(x[0])):
+        t = re.sub(rf'(?<!\w){re.escape(yanlis)}(?!\w)', dogru, t)
+    for yanlis, dogru in sorted(ogrenilen_sozluk().items(), key=lambda x: -len(x[0])):
+        t = re.sub(rf'(?<!\w){re.escape(yanlis)}(?!\w)', dogru, t)
+    return t
 
 def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False, sharp=True) -> Image.Image:
     img = img.convert("L")
@@ -272,6 +320,7 @@ def ocr_duzelt(text):
         prev = t
         t = re.sub(r'(\d)\s+(\d{2,})', r'\1\2', t)
     t = re.sub(r'(\d{2,})\s*\.(\d{3})', r'\1.\2', t)
+    t = duzeltme_uygula(t)
     return t
 
 def ocr_image(img: Image.Image) -> str:
@@ -1263,6 +1312,18 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
         kayit["sonuclar"].append(entry)
     filepath = os.path.join(GECMIS_KLASORU, f"kayit_{timestamp}.json")
     dosya_yaz(filepath, kayit)
+    for r in results:
+        ham_text = (r.get("ham_text") or r.get("ocr_text") or "").upper()
+        firma = (r.get("firma_adi") or "").strip().upper()
+        if firma and ham_text:
+            ham_kisa = ' '.join(ham_text.split())[:200]
+            if firma not in ham_text and len(firma) > 3:
+                for kelime in firma.split():
+                    if len(kelime) > 3 and kelime not in ham_text:
+                        ham_kelimeler = ham_kisa.split()
+                        en_yakin = min(ham_kelimeler, key=lambda x: sum(1 for a, b in zip(x, kelime) if a != b) + abs(len(x) - len(kelime))) if ham_kelimeler else ""
+                        if en_yakin and sum(1 for a, b in zip(en_yakin, kelime) if a != b) < 3:
+                            duzeltme_ogren(en_yakin, kelime)
     return filepath
 
 def gecmis_listele():
@@ -1388,6 +1449,17 @@ def fis_guncelle(fis_verisi, yeni_veriler):
                 continue
             for idx, s in enumerate(kayit.get("sonuclar", [])):
                 if s.get("tarih") == tarih and s.get("z_no") == z_no:
+                    yeni_firma = yeni_veriler.get("firma_adi", "").strip()
+                    eski_firma = s.get("firma_adi", "").strip()
+                    if yeni_firma and yeni_firma != eski_firma and len(yeni_firma) > 3:
+                        ham_text = (s.get("ham_text") or s.get("ocr_text") or "").upper()
+                        if ham_text:
+                            for kelime in yeni_firma.upper().split():
+                                if len(kelime) > 3 and kelime not in ham_text:
+                                    ham_kelimeler = ' '.join(ham_text.split()[:300]).split()
+                                    en_yakin = min(ham_kelimeler, key=lambda x: sum(1 for a, b in zip(x, kelime) if a != b) + abs(len(x) - len(kelime))) if ham_kelimeler else ""
+                                    if en_yakin and sum(1 for a, b in zip(en_yakin, kelime) if a != b) < 3:
+                                        duzeltme_ogren(en_yakin, kelime)
                     for k, v in yeni_veriler.items():
                         kayit["sonuclar"][idx][k] = v
                     dosya_yaz(fp, kayit)
@@ -2497,6 +2569,37 @@ elif sayfa == "Ayarlar":
         st.rerun()
     st.info(f"Aktif hesap planı: **{mevcut_plan}**")
     st.json(st.session_state.get("hesap_kodlari", {}))
+
+    st.divider()
+    st.subheader("OCR Düzeltme Sözlüğü")
+    st.caption("OCR'ın yanlış okuduğu kelimeleri buradan yönetebilirsiniz. Sistem kullanıcı düzeltmelerinden otomatik öğrenir.")
+    col_s1, col_s2 = st.columns(2)
+    with col_s1:
+        sozluk = duzeltme_sozlugu()
+        ogrenilen = ogrenilen_sozluk()
+        st.info(f"Ana sözlük: **{len(sozluk)}** kelime | Öğrenilen: **{len(ogrenilen)}** kelime")
+    with col_s2:
+        if ogrenilen:
+            if st.button("Öğrenilenleri Temizle", type="secondary"):
+                dosya_yaz(OGRENILEN_SOZLUK, {})
+                st.success("Öğrenilen düzeltmeler temizlendi!")
+                st.rerun()
+        if st.button("Ana Sözlüğü Sıfırla", type="secondary"):
+            if os.path.exists(DUZELTME_SOZLUK):
+                os.remove(DUZELTME_SOZLUK)
+            st.success("Ana sözlük sıfırlandı!")
+            st.rerun()
+    if ogrenilen:
+        st.caption("Öğrenilen Düzeltmeler (OCR'daki hatalı → Doğru):")
+        ogrenilen_liste = sorted(ogrenilen.items(), key=lambda x: x[0])
+        for i in range(0, len(ogrenilen_liste), 5):
+            cols = st.columns(5)
+            for j in range(5):
+                if i + j < len(ogrenilen_liste):
+                    yanlis, dogru = ogrenilen_liste[i + j]
+                    cols[j].caption(f"`{yanlis[:15]}` → `{dogru[:15]}`")
+    else:
+        st.caption("Henüz öğrenilmiş düzeltme yok. Fiş düzelttikçe otomatik öğrenilir.")
 
     st.divider()
     st.subheader("Tehlikeli İşlemler")
