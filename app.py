@@ -233,8 +233,35 @@ def ogr_alan_kaydet(alan, deger):
     sozluk[alan] = str(deger).strip()
     dosya_yaz(OGRENILEN_ALANLAR, sozluk)
 
+def _alan_copuk_mu(deger, referans=None):
+    """Bir alanin degerinin copuk/yanlis okunmus olup olmadigini kontrol et."""
+    if not deger:
+        return True
+    d = str(deger).strip()
+    if not d or d == "?" or d == "-":
+        return True
+    if len(d) < 2:
+        return True
+    if any(c in d for c in ['*', '&', '~', '<', '>', '|', '\\', '`', '^', '€', '$']):
+        return True
+    harf_sayisi = sum(1 for c in d if c.isalpha())
+    if harf_sayisi < 2:
+        return True
+    if referans:
+        r = str(referans).strip()
+        if r:
+            d_norm = turkce_normalize(d)
+            r_norm = turkce_normalize(r)
+            if r_norm:
+                skor = levenshtein(d_norm, r_norm)
+                if skor > max(3, len(r_norm) * 0.5):
+                    return True
+    return False
+
 def ogr_alanlari_uygula(sonuc):
-    """parse_z_raporu sonucuna ogrenilmis alan degerlerini uygula (bos olanlara)."""
+    """parse_z_raporu sonucuna ogrenilmis alan degerlerini uygula.
+    Bos alanlara ve OCR'in copuk okudugu alanlara ogrenilmis degeri koyar.
+    """
     ogr = ogrenilen_alanlar()
     if not ogr:
         return sonuc
@@ -247,8 +274,11 @@ def ogr_alanlari_uygula(sonuc):
     }
     for sonuc_anahtar, ogr_anahtar in alan_adlari.items():
         mevcut = sonuc.get(sonuc_anahtar)
-        if (not mevcut or mevcut == "?" or mevcut == 0) and ogr.get(ogr_anahtar):
-            sonuc[sonuc_anahtar] = ogr[ogr_anahtar]
+        ogr_deger = ogr.get(ogr_anahtar)
+        if not ogr_deger:
+            continue
+        if (not mevcut or mevcut == "?" or mevcut == 0) or _alan_copuk_mu(mevcut, ogr_deger):
+            sonuc[sonuc_anahtar] = ogr_deger
     return sonuc
 
 def duzeltme_uygula(text):
