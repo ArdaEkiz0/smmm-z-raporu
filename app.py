@@ -98,6 +98,7 @@ SABLON_FILE = os.path.join(DATA_DIR, "luca_sablonu.xlsx")
 EMAIL_FILE = os.path.join(DATA_DIR, "email_config.json")
 DUZELTME_SOZLUK = os.path.join(DATA_DIR, "duzeltme_sozlugu.json")
 OGRENILEN_SOZLUK = os.path.join(DATA_DIR, "ogrenilen_sozluk.json")
+OGRENILEN_ALANLAR = os.path.join(DATA_DIR, "ogrenilen_alanlar.json")
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
@@ -219,6 +220,36 @@ def ogrenci_alan_bul(ham_text, alan_adi, dogru_deger):
     if en_iyi:
         return en_iyi
     return None
+
+def ogrenilen_alanlar():
+    """Alan bazli ogrenilmis degerler (firma_adi, tarih, vb.)."""
+    return dosya_oku(OGRENILEN_ALANLAR, {})
+
+def ogr_alan_kaydet(alan, deger):
+    """Bir alanin ogrenilmis degerini kaydet."""
+    if not deger or not str(deger).strip():
+        return
+    sozluk = ogrenilen_alanlar()
+    sozluk[alan] = str(deger).strip()
+    dosya_yaz(OGRENILEN_ALANLAR, sozluk)
+
+def ogr_alanlari_uygula(sonuc):
+    """parse_z_raporu sonucuna ogrenilmis alan degerlerini uygula (bos olanlara)."""
+    ogr = ogrenilen_alanlar()
+    if not ogr:
+        return sonuc
+    alan_adlari = {
+        "firma_adi": "firma_adi",
+        "banka_adi": "banka_adi",
+        "tarih": "tarih",
+        "z_no": "z_no",
+        "belge_no": "belge_no",
+    }
+    for sonuc_anahtar, ogr_anahtar in alan_adlari.items():
+        mevcut = sonuc.get(sonuc_anahtar)
+        if (not mevcut or mevcut == "?" or mevcut == 0) and ogr.get(ogr_anahtar):
+            sonuc[sonuc_anahtar] = ogr[ogr_anahtar]
+    return sonuc
 
 def duzeltme_uygula(text):
     if not text:
@@ -1989,6 +2020,7 @@ elif sayfa == "Z Raporu Yükle":
                     for pi, page in enumerate(pages):
                         ocr_text = ocr_gorsel_isle(page.convert("RGB"))
                         parsed = parse_z_raporu(ocr_text)
+                        ogr_alanlari_uygula(parsed)
                         parsed["filename"] = f"{uf.name} - Syf {pi+1}"
                         parsed["ocr_text"] = ocr_text
                         parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
@@ -1997,6 +2029,7 @@ elif sayfa == "Z Raporu Yükle":
                     img = Image.open(io.BytesIO(data))
                     ocr_text = ocr_gorsel_isle(img)
                     parsed = parse_z_raporu(ocr_text)
+                    ogr_alanlari_uygula(parsed)
                     parsed["filename"] = uf.name
                     parsed["ocr_text"] = ocr_text
                     parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
@@ -2082,33 +2115,38 @@ elif sayfa == "Z Raporu Yükle":
                         yeni_firma = st.session_state.get(f"ed2_firma_{idx}", "").strip()
                         if yeni_firma and yeni_firma != eski_firma:
                             r["firma_adi"] = yeni_firma
+                            ogr_alan_kaydet("firma_adi", yeni_firma)
+                            ogr_sayisi += 1
                             yanlis = ogrenci_alan_bul(ham, "firma_adi", yeni_firma)
                             if yanlis and yanlis.upper() != yeni_firma.upper():
                                 duzeltme_ogren(yanlis, yeni_firma)
-                                ogr_sayisi += 1
                             else:
                                 eslesme_ekisik.append(("Firma", yeni_firma, yanlis))
                         yeni_tarih = st.session_state.get(f"ed2_tarih_{idx}", "").strip()
                         if yeni_tarih and yeni_tarih != (r.get("tarih") or ""):
                             r["tarih"] = yeni_tarih
+                            ogr_alan_kaydet("tarih", yeni_tarih)
+                            ogr_sayisi += 1
                             yanlis = ogrenci_alan_bul(ham, "tarih", yeni_tarih)
                             if yanlis and yanlis.upper() != yeni_tarih.upper():
                                 duzeltme_ogren(yanlis, yeni_tarih)
-                                ogr_sayisi += 1
                             else:
                                 eslesme_ekisik.append(("Tarih", yeni_tarih, yanlis))
                         yeni_banka = st.session_state.get(f"ed2_banka_{idx}", "").strip()
                         if yeni_banka and yeni_banka != (r.get("banka_adi") or ""):
                             r["banka_adi"] = yeni_banka
+                            ogr_alan_kaydet("banka_adi", yeni_banka)
+                            ogr_sayisi += 1
                             yanlis = ogrenci_alan_bul(ham, "banka_adi", yeni_banka)
                             if yanlis and yanlis.upper() != yeni_banka.upper():
                                 duzeltme_ogren(yanlis, yeni_banka)
-                                ogr_sayisi += 1
                             else:
                                 eslesme_ekisik.append(("Banka", yeni_banka, yanlis))
                         yeni_zno = st.session_state.get(f"ed2_zno_{idx}", "").strip()
                         if yeni_zno and yeni_zno != (r.get("z_no") or ""):
                             r["z_no"] = yeni_zno
+                            ogr_alan_kaydet("z_no", yeni_zno)
+                            ogr_sayisi += 1
                         yeni_brut = st.session_state.get(f"ed2_brut_{idx}", 0)
                         if yeni_brut > 0:
                             r["brut"] = yeni_brut
@@ -2125,14 +2163,14 @@ elif sayfa == "Z Raporu Yükle":
                         r["iadeler"] = yeni_iade
                     dosya_oku(OGRENILEN_SOZLUK, {})
                     if ogr_sayisi > 0:
-                        st.toast(f"✅ {ogr_sayisi} yeni düzeltme öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
+                        st.toast(f"✅ {ogr_sayisi} alan öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
                     else:
                         st.toast("✅ Düzeltmeler kaydedildi.", icon="✅")
                     if eslesme_ekisik:
-                        with st.expander("⚠️ Öğrenilemeyen düzeltmeler (ham OCR'da eşleşme bulunamadı)", expanded=False):
+                        with st.expander("⚠️ Öğrenilemeyen detay düzeltmeler (ham OCR'da eşleşme bulunamadı, ama alan varsayılanı kaydedildi)", expanded=False):
                             for alan, dogru, yanlis in eslesme_ekisik:
-                                st.write(f"- **{alan}**: '{dogru}' için ham OCR'da benzer satır bulunamadı (yanlis={yanlis!r})")
-                            st.info("Bir dahaki sefede aynı yanlış okuma gelirse, ham OCR metni farklıysa öğrenilemez. Bu durum firma adı değişikliği gibi genel eşleşmeler için sözlüğe bakabilirsiniz.")
+                                st.write(f"- **{alan}**: '{dogru}' için ham OCR'da benzer satır bulunamadı")
+                            st.info("Yine de alan varsayılanı kaydedildi — sonraki OCR'da otomatik uygulanacak.")
                     st.rerun()
 
         ozet_data = []
