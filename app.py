@@ -182,10 +182,30 @@ def ogrenci_alan_bul(ham_text, alan_adi, dogru_deger):
         for kelime in re.findall(r"[A-ZÇĞİÖŞÜa-zçğıöşü0-9./-]{3,}", ham_text):
             if turkce_normalize(temiz[:4]) in turkce_normalize(kelime) or turkce_normalize(kelime[:4]) in turkce_normalize(temiz):
                 adaylar.append((1, kelime))
-    if not adaylar:
-        return None
-    adaylar.sort(key=lambda x: (x[0], abs(len(x[1]) - uzunluk)))
-    return adaylar[0][1]
+    if adaylar:
+        adaylar.sort(key=lambda x: (x[0], abs(len(x[1]) - uzunluk)))
+        return adaylar[0][1]
+    satirlar = [s.strip() for s in ham_text.split("\n") if s.strip() and len(s.strip()) >= 3]
+    temiz_norm = turkce_normalize(temiz)
+    temiz_ilk = temiz_norm[:4] if len(temiz_norm) >= 4 else temiz_norm
+    en_iyi = None
+    en_iyi_skor = 999
+    for satir in satirlar:
+        satir_norm = turkce_normalize(satir)
+        if len(satir_norm) < 3 or len(satir) > uzunluk * 2 + 20:
+            continue
+        if temiz_ilk in satir_norm:
+            eslesen = min(len(satir), uzunluk)
+            skor = eslesen - len(temiz_ilk)
+            if skor < 0:
+                skor = 0
+            skor += abs(len(satir) - uzunluk)
+            if skor < en_iyi_skor:
+                en_iyi = satir
+                en_iyi_skor = skor
+    if en_iyi:
+        return en_iyi
+    return None
 
 def duzeltme_uygula(text):
     if not text:
@@ -2020,6 +2040,7 @@ elif sayfa == "Z Raporu Yükle":
                         st.number_input("İptal/İade (TL)", min_value=0.0, value=float(r.get("iadeler", 0)), step=100.0, key=f"ed2_iade_{idx}")
                 if st.button("✅ Kaydet ve Öğret", type="primary", use_container_width=True, key="ed2_kaydet"):
                     ogr_sayisi = 0
+                    eslesme_ekisik = []
                     for idx, r in duzeltilebilir:
                         ham = r.get("ham_text", "") or r.get("ocr_text", "")
                         eski_firma = r.get("firma_adi") or ""
@@ -2030,6 +2051,8 @@ elif sayfa == "Z Raporu Yükle":
                             if yanlis and yanlis.upper() != yeni_firma.upper():
                                 duzeltme_ogren(yanlis, yeni_firma)
                                 ogr_sayisi += 1
+                            else:
+                                eslesme_ekisik.append(("Firma", yeni_firma, yanlis))
                         yeni_tarih = st.session_state.get(f"ed2_tarih_{idx}", "").strip()
                         if yeni_tarih and yeni_tarih != (r.get("tarih") or ""):
                             r["tarih"] = yeni_tarih
@@ -2037,6 +2060,8 @@ elif sayfa == "Z Raporu Yükle":
                             if yanlis and yanlis.upper() != yeni_tarih.upper():
                                 duzeltme_ogren(yanlis, yeni_tarih)
                                 ogr_sayisi += 1
+                            else:
+                                eslesme_ekisik.append(("Tarih", yeni_tarih, yanlis))
                         yeni_banka = st.session_state.get(f"ed2_banka_{idx}", "").strip()
                         if yeni_banka and yeni_banka != (r.get("banka_adi") or ""):
                             r["banka_adi"] = yeni_banka
@@ -2044,6 +2069,8 @@ elif sayfa == "Z Raporu Yükle":
                             if yanlis and yanlis.upper() != yeni_banka.upper():
                                 duzeltme_ogren(yanlis, yeni_banka)
                                 ogr_sayisi += 1
+                            else:
+                                eslesme_ekisik.append(("Banka", yeni_banka, yanlis))
                         yeni_zno = st.session_state.get(f"ed2_zno_{idx}", "").strip()
                         if yeni_zno and yeni_zno != (r.get("z_no") or ""):
                             r["z_no"] = yeni_zno
@@ -2061,10 +2088,16 @@ elif sayfa == "Z Raporu Yükle":
                         r["yemek_ceki"] = yeni_yemek
                         yeni_iade = st.session_state.get(f"ed2_iade_{idx}", 0)
                         r["iadeler"] = yeni_iade
+                    dosya_oku(OGRENILEN_SOZLUK, {})
                     if ogr_sayisi > 0:
-                        st.toast(f"{ogr_sayisi} yeni düzeltme öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
+                        st.toast(f"✅ {ogr_sayisi} yeni düzeltme öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
                     else:
-                        st.toast("Düzeltmeler kaydedildi.", icon="✅")
+                        st.toast("✅ Düzeltmeler kaydedildi.", icon="✅")
+                    if eslesme_ekisik:
+                        with st.expander("⚠️ Öğrenilemeyen düzeltmeler (ham OCR'da eşleşme bulunamadı)", expanded=False):
+                            for alan, dogru, yanlis in eslesme_ekisik:
+                                st.write(f"- **{alan}**: '{dogru}' için ham OCR'da benzer satır bulunamadı (yanlis={yanlis!r})")
+                            st.info("Bir dahaki sefede aynı yanlış okuma gelirse, ham OCR metni farklıysa öğrenilemez. Bu durum firma adı değişikliği gibi genel eşleşmeler için sözlüğe bakabilirsiniz.")
                     st.rerun()
 
         ozet_data = []
