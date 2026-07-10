@@ -24,6 +24,18 @@ import requests
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
 
+# Tum hatalari dosyaya yaz (browser'da gorunmeyen runtime exception'lari yakalamak icin)
+import traceback as _tb
+def _global_excepthook(exc_type, exc_value, exc_tb):
+    _msg = "".join(_tb.format_exception(exc_type, exc_value, exc_tb))
+    try:
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "crash_log.txt"), "a", encoding="utf-8") as _f:
+            _f.write(f"\n=== {datetime.now().isoformat()} ===\n{_msg}\n")
+    except Exception:
+        pass
+    sys.stderr.write(_msg)
+sys.excepthook = _global_excepthook
+
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
 
 st.components.v1.html("""
