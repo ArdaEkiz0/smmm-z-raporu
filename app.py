@@ -331,16 +331,15 @@ def ocr_image(img: Image.Image) -> str:
     if ocr_engine is None:
         return ""
     orijinal = img.copy()
-    stratejiler = [
+    hizli_stratejiler = [
         {"threshold": 200, "target_h": 3500, "invert": False, "sharp": True},
         {"threshold": 170, "target_h": 3500, "invert": False, "sharp": True},
+    ]
+    yavas_stratejiler = [
         {"threshold": 220, "target_h": 4000, "invert": False, "sharp": True},
         {"threshold": 200, "target_h": 3500, "invert": True, "sharp": True},
         {"threshold": 150, "target_h": 4000, "invert": False, "sharp": True},
         {"threshold": 180, "target_h": 3000, "invert": False, "sharp": True},
-        {"threshold": 130, "target_h": 4500, "invert": False, "sharp": True},
-        {"threshold": 160, "target_h": 4500, "invert": False, "sharp": True},
-        {"threshold": 190, "target_h": 4000, "invert": False, "sharp": False},
         {"threshold": 210, "target_h": 5000, "invert": False, "sharp": True},
         {"threshold": 140, "target_h": 5000, "invert": True, "sharp": True},
     ]
@@ -349,12 +348,13 @@ def ocr_image(img: Image.Image) -> str:
     en_iyi_skor = -1
     tum_gorseller = [img]
     try:
-        for angle in [-2, 2, -1, 1]:
+        for angle in [-2, 2]:
             dondurulmus = orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255))
             tum_gorseller.append(dondurulmus)
     except Exception:
         pass
     for gorsel in tum_gorseller:
+        stratejiler = hizli_stratejiler if en_iyi_skor < 20 else yavas_stratejiler
         for strat in stratejiler:
             try:
                 hazir = gorsel_hazirla(gorsel, threshold=strat["threshold"],
@@ -364,22 +364,16 @@ def ocr_image(img: Image.Image) -> str:
                 continue
             for cfg in configs:
                 try:
-                    text = ocr_guvenli(hazir, cfg, min_conf=25.0)
-                    if not text:
-                        for dil in ["tur+eng", "tur"]:
-                            try:
-                                text = ocr_engine.image_to_string(hazir, lang=dil, config=cfg)
-                                if text.strip():
-                                    break
-                            except Exception:
-                                continue
-                        text = ocr_duzelt(text.strip())
-                    else:
-                        text = ocr_duzelt(text)
+                    text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                    if not text.strip():
+                        text = ocr_engine.image_to_string(hazir, lang="tur", config=cfg)
+                    text = ocr_duzelt(text.strip())
                     skor = ocr_skorla(text)
                     if skor > en_iyi_skor:
                         en_iyi_skor = skor
                         en_iyi_text = text
+                        if skor >= 60:
+                            return en_iyi_text
                 except Exception:
                     continue
     return en_iyi_text
