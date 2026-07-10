@@ -18,6 +18,8 @@ try:
 except ImportError:
     BARCODE_MEVCUT = False
 
+import requests
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
@@ -209,6 +211,21 @@ def ocr_guvenli(img: Image.Image, cfg: str, min_conf: float = 30.0) -> str:
 def load_ocr():
     try:
         import pytesseract
+        import shutil
+        # Windows'ta binary PATH'te olmayabilir, acikca goster
+        if os.name == "nt":
+            adaylar = [
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Tesseract-OCR\tesseract.exe",
+            ]
+            for aday in adaylar:
+                if os.path.exists(aday):
+                    pytesseract.pytesseract.tesseract_cmd = aday
+                    break
+            if "tesseract" not in pytesseract.pytesseract.tesseract_cmd.lower():
+                bulunan = shutil.which("tesseract")
+                if bulunan:
+                    pytesseract.pytesseract.tesseract_cmd = bulunan
         pytesseract.get_tesseract_version()
         return pytesseract
     except Exception as e:
@@ -216,6 +233,40 @@ def load_ocr():
         return None
 
 ocr_engine = load_ocr()
+
+GOT_OCR_API = "got_ocr_api_url"
+
+def got_ocr_api(image_bytes: bytes, api_url: str, timeout: int = 60) -> str:
+    if not api_url:
+        return ""
+    api_url = api_url.rstrip("/")
+    try:
+        r = requests.post(
+            f"{api_url}/ocr",
+            files={"file": ("image.jpg", image_bytes, "image/jpeg")},
+            timeout=timeout,
+        )
+        if r.status_code == 200:
+            return r.json().get("text", "")
+        else:
+            log.warning(f"GOT-OCR API hatasi: {r.status_code} {r.text}")
+            return ""
+    except requests.exceptions.Timeout:
+        log.warning("GOT-OCR API timeout")
+        return ""
+    except Exception as e:
+        log.warning(f"GOT-OCR API hatasi: {e}")
+        return ""
+
+def got_ocr_api_saglik(api_url: str) -> bool:
+    if not api_url:
+        return False
+    api_url = api_url.rstrip("/")
+    try:
+        r = requests.get(f"{api_url}/health", timeout=5)
+        return r.status_code == 200 and r.json().get("status") == "ok"
+    except Exception:
+        return False
 
 def turkce_normalize(s):
     import unicodedata
@@ -327,34 +378,39 @@ def ocr_duzelt(text):
     t = duzeltme_uygula(t)
     return t
 
+
 def ocr_image(img: Image.Image) -> str:
+    ocr_modu = st.session_state.get("ocr_modu", "Tesseract")
+    if ocr_modu == "GOT-OCR API":
+        api_url = st.session_state.get(GOT_OCR_API, "")
+        if not api_url:
+            st.warning("GOT-OCR API URL ayarlanmamis! Ayarlar sayfasindan ekleyin.")
+            return ""
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=95)
+        text = got_ocr_api(buf.getvalue(), api_url)
+        if text:
+            text = ocr_duzelt(text.strip())
+        return text
     if ocr_engine is None:
         return ""
     orijinal = img.copy()
     hizli_stratejiler = [
         {"threshold": 200, "target_h": 3500, "invert": False, "sharp": True},
         {"threshold": 170, "target_h": 3500, "invert": False, "sharp": True},
+        {"threshold": 180, "target_h": 3000, "invert": False, "sharp": True},
     ]
     yavas_stratejiler = [
         {"threshold": 220, "target_h": 4000, "invert": False, "sharp": True},
-        {"threshold": 200, "target_h": 3500, "invert": True, "sharp": True},
         {"threshold": 150, "target_h": 4000, "invert": False, "sharp": True},
-        {"threshold": 180, "target_h": 3000, "invert": False, "sharp": True},
-        {"threshold": 210, "target_h": 5000, "invert": False, "sharp": True},
         {"threshold": 140, "target_h": 5000, "invert": True, "sharp": True},
     ]
-    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 11 --oem 3", "--psm 3 --oem 3", "--psm 6 --oem 1"]
+    configs = ["--psm 6 --oem 3", "--psm 4 --oem 3", "--psm 6 --oem 1"]
     en_iyi_text = ""
     en_iyi_skor = -1
     tum_gorseller = [img]
-    try:
-        for angle in [-2, 2]:
-            dondurulmus = orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255))
-            tum_gorseller.append(dondurulmus)
-    except Exception:
-        pass
     for gorsel in tum_gorseller:
-        stratejiler = hizli_stratejiler if en_iyi_skor < 20 else yavas_stratejiler
+        stratejiler = hizli_stratejiler if en_iyi_skor < 30 else yavas_stratejiler
         for strat in stratejiler:
             try:
                 hazir = gorsel_hazirla(gorsel, threshold=strat["threshold"],
@@ -372,10 +428,41 @@ def ocr_image(img: Image.Image) -> str:
                     if skor > en_iyi_skor:
                         en_iyi_skor = skor
                         en_iyi_text = text
-                        if skor >= 60:
+                        if skor >= 80:
                             return en_iyi_text
+                        if skor >= 45:
+                            break
                 except Exception:
                     continue
+            if en_iyi_skor >= 45:
+                break
+    if en_iyi_skor < 30:
+        try:
+            for angle in [-2, 2]:
+                dondurulmus = orijinal.rotate(angle, expand=True, fillcolor=(255, 255, 255))
+                for strat in hizli_stratejiler:
+                    try:
+                        hazir = gorsel_hazirla(dondurulmus, threshold=strat["threshold"],
+                                               target_h=strat["target_h"], invert=strat["invert"],
+                                               sharp=strat.get("sharp", True))
+                    except Exception:
+                        continue
+                    for cfg in configs:
+                        try:
+                            text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                            if not text.strip():
+                                text = ocr_engine.image_to_string(hazir, lang="tur", config=cfg)
+                            text = ocr_duzelt(text.strip())
+                            skor = ocr_skorla(text)
+                            if skor > en_iyi_skor:
+                                en_iyi_skor = skor
+                                en_iyi_text = text
+                                if skor >= 80:
+                                    return en_iyi_text
+                        except Exception:
+                            continue
+        except Exception:
+            pass
     return en_iyi_text
 
 def ocr_gorsel_isle(img: Image.Image) -> str:
@@ -1480,10 +1567,28 @@ with st.sidebar:
 
     st.divider()
     st.header("OCR Motoru")
-    if ocr_engine:
-        st.success("Tesseract OCR hazir", icon="🟢")
+    ocr_modu = st.session_state.get("ocr_modu", "Tesseract")
+    ocr_secenek = st.radio("OCR Motoru Seç", ["Tesseract", "GOT-OCR API"], index=0 if ocr_modu == "Tesseract" else 1, label_visibility="collapsed")
+    st.session_state.ocr_modu = ocr_secenek
+    if ocr_secenek == "Tesseract":
+        if ocr_engine:
+            st.success("Tesseract OCR hazir", icon="🟢")
+        else:
+            st.error("Tesseract OCR bulunamadi! packages.txt kontrol edin.", icon="🔴")
     else:
-        st.error("Tesseract OCR bulunamadi! packages.txt kontrol edin.", icon="🔴")
+        api_url = st.session_state.get(GOT_OCR_API, "")
+        yeni_url = st.text_input("GOT-OCR API URL", value=api_url, placeholder="https://xxx.trycloudflare.com", label_visibility="collapsed", key="got_api_url_input")
+        if yeni_url != api_url:
+            if yeni_url and not yeni_url.startswith("http"):
+                st.warning("URL http:// veya https:// ile baslamali")
+            else:
+                st.session_state[GOT_OCR_API] = yeni_url
+        if yeni_url:
+            saglik = got_ocr_api_saglik(yeni_url)
+            if saglik:
+                st.success("GOT-OCR API bagli", icon="🟢")
+            else:
+                st.warning("GOT-OCR API baglanamiyor! Kaggle/Colab notebook'unu calistirin.", icon="🟡")
 
     st.divider()
     st.header("Mükellef")
@@ -1822,9 +1927,22 @@ elif sayfa == "Z Raporu Yükle":
             gecen = _time.time() - baslama
             ort = gecen / max(i + 1, 1)
             kal = max(toplam - i - 1, 0) * ort
-            kstr = f"{int(kal//60)}d {int(kal%60)}s" if kal >= 60 else f"{int(kal)}s"
-            gstr = f"{int(gecen//60)}d {int(gecen%60)}s" if gecen >= 60 else f"{int(gecen)}s"
-            progress.progress((i + 1) / max(toplam, 1), text=f"{i+1}/{toplam} | {gstr} | ~{kstr}")
+            if kal >= 60:
+                kstr = f"{int(kal//60)}dk {int(kal%60)}sn"
+            else:
+                kstr = f"{int(kal)}sn"
+            if gecen >= 60:
+                gstr = f"{int(gecen//60)}dk {int(gecen%60)}sn"
+            else:
+                gstr = f"{gecen:.1f}sn"
+            progress.progress((i + 1) / max(toplam, 1), text=f"{i+1}/{toplam} | {gstr} geçtı | ~{kstr} kaldı")
+
+        toplam_sure = _time.time() - baslama
+        if toplam_sure >= 60:
+            sure_metni = f"{int(toplam_sure//60)}dk {int(toplam_sure%60)}sn"
+        else:
+            sure_metni = f"{toplam_sure:.1f}sn"
+        progress.progress(1.0, text=f"✅ OCR tamamlandı! Toplam: {sure_metni} ({toplam} dosya)")
 
         st.session_state.results = all_results
         st.session_state.processed = True
@@ -1854,6 +1972,71 @@ elif sayfa == "Z Raporu Yükle":
         results = st.session_state.results
         st.divider()
         st.subheader(f"Sonuçlar ({len(results)} Z Raporu)")
+
+        # Etkileşimli Öğrenme: Boş/sahte alanları tespit et
+        eksik_alanlar = []
+        for i, r in enumerate(results):
+            if "error" in r:
+                continue
+            eksik = []
+            if not r.get("tarih") or r.get("tarih") == "?":
+                eksik.append("Tarih")
+            if not r.get("z_no") or r.get("z_no") == "?":
+                eksik.append("Z No")
+            if not r.get("firma_adi"):
+                eksik.append("Firma Adı")
+            if not r.get("brut") or r.get("brut") == 0:
+                eksik.append("Brüt Tutar")
+            if not r.get("net_toplam") or r.get("net_toplam") == 0:
+                eksik.append("Net Tutar")
+            if eksik:
+                eksik_alanlar.append((i, r, eksik))
+
+        if eksik_alanlar:
+            with st.expander("⚠️ OCR'nin Bulamadığı Alanları Düzeltin (Sistem Öğrenecek)", expanded=True):
+                st.info("Aşağıdaki alanları OCR bulamadı. Siz doldurun, sistem bir dahaki sefere hatırlayacak!")
+                for idx, r, eksik in eksik_alanlar:
+                    st.markdown(f"**{r.get('filename', 'Dosya')}** — Eksik: {', '.join(eksik)}")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if "Tarih" in eksik:
+                            st.text_input("Tarih (GG.AA.YYYY)", key=f"duzelt_tarih_{idx}", value=r.get("tarih", "") or "")
+                        if "Z No" in eksik:
+                            st.text_input("Z Numarası", key=f"duzelt_zno_{idx}", value=r.get("z_no", "") or "")
+                        if "Firma Adı" in eksik:
+                            st.text_input("Firma Adı", key=f"duzelt_firma_{idx}", value=r.get("firma_adi", "") or "")
+                    with col2:
+                        if "Brüt Tutar" in eksik:
+                            st.number_input("Brüt Tutar (TL)", key=f"duzelt_brut_{idx}", value=float(r.get("brut", 0)), step=100.0)
+                        if "Net Tutar" in eksik:
+                            st.number_input("Net Tutar (TL)", key=f"duzelt_net_{idx}", value=float(r.get("net_toplam", 0)), step=100.0)
+                if st.button("✅ Düzeltmeleri Kaydet ve Öğret", type="primary", use_container_width=True):
+                    for idx, r, eksik in eksik_alanlar:
+                        if "Tarih" in eksik:
+                            yeni = st.session_state.get(f"duzelt_tarih_{idx}", "")
+                            if yeni:
+                                r["tarih"] = yeni
+                                duzeltme_ogren("TARIH_BULUNAMADI", yeni)
+                        if "Z No" in eksik:
+                            yeni = st.session_state.get(f"duzelt_zno_{idx}", "")
+                            if yeni:
+                                r["z_no"] = yeni
+                                duzeltme_ogren("ZNO_BULUNAMADI", yeni)
+                        if "Firma Adı" in eksik:
+                            yeni = st.session_state.get(f"duzelt_firma_{idx}", "")
+                            if yeni:
+                                r["firma_adi"] = yeni
+                                duzeltme_ogren("FIRMA_BULUNAMADI", yeni)
+                        if "Brüt Tutar" in eksik:
+                            yeni = st.session_state.get(f"duzelt_brut_{idx}", 0)
+                            if yeni > 0:
+                                r["brut"] = yeni
+                        if "Net Tutar" in eksik:
+                            yeni = st.session_state.get(f"duzelt_net_{idx}", 0)
+                            if yeni > 0:
+                                r["net_toplam"] = yeni
+                    st.toast("Düzeltmeler kaydedildi! Sistem öğrendi.", icon="✅")
+                    st.rerun()
 
         ozet_data = []
         all_luca_rows = []
