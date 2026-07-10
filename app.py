@@ -1966,7 +1966,11 @@ elif sayfa == "Z Raporu Yükle":
             st.error("Tesseract OCR yuklu degil! Lutfen Tesseract-OCR kurulumunu kontrol edin.")
             st.stop()
         import time as _time
-        from pdf2image import convert_from_bytes
+        try:
+            from pdf2image import convert_from_bytes
+            PDF2IMAGE_MEVCUT = True
+        except ImportError:
+            PDF2IMAGE_MEVCUT = False
         all_results = []
         toplam = len(uploaded_files)
         progress = st.progress(0, text="OCR yapılıyor...")
@@ -1977,6 +1981,10 @@ elif sayfa == "Z Raporu Yükle":
             try:
                 data = uf.read()
                 if uf.name.lower().endswith(".pdf"):
+                    if not PDF2IMAGE_MEVCUT:
+                        st.error(f"'{uf.name}' PDF dosyasi icin pdf2image/poppler gerekli. JPG/PNG olarak yukleyin.")
+                        all_results.append({"filename": uf.name, "error": "pdf2image yok", "ocr_text": ""})
+                        continue
                     pages = convert_from_bytes(data, dpi=300)
                     for pi, page in enumerate(pages):
                         ocr_text = ocr_gorsel_isle(page.convert("RGB"))
