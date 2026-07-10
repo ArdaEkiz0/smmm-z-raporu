@@ -1998,81 +1998,71 @@ elif sayfa == "Z Raporu Yükle":
         st.divider()
         st.subheader(f"Sonuçlar ({len(results)} Z Raporu)")
 
-        # Etkileşimli Öğrenme: Boş/sahte alanları tespit et
-        eksik_alanlar = []
-        for i, r in enumerate(results):
-            if "error" in r:
-                continue
-            eksik = []
-            if not r.get("tarih") or r.get("tarih") == "?":
-                eksik.append("Tarih")
-            if not r.get("z_no") or r.get("z_no") == "?":
-                eksik.append("Z No")
-            if not r.get("firma_adi"):
-                eksik.append("Firma Adı")
-            if not r.get("brut") or r.get("brut") == 0:
-                eksik.append("Brüt Tutar")
-            if not r.get("net_toplam") or r.get("net_toplam") == 0:
-                eksik.append("Net Tutar")
-            if eksik:
-                eksik_alanlar.append((i, r, eksik))
-
-        if eksik_alanlar:
-            with st.expander("⚠️ OCR'nin Bulamadığı Alanları Düzeltin (Sistem Öğrenecek)", expanded=True):
-                st.info("Aşağıdaki alanları OCR bulamadı. Siz doldurun, sistem bir dahaki sefere hatırlayacak!")
-                for idx, r, eksik in eksik_alanlar:
-                    st.markdown(f"**{r.get('filename', 'Dosya')}** — Eksik: {', '.join(eksik)}")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        if "Tarih" in eksik:
-                            st.text_input("Tarih (GG.AA.YYYY)", key=f"duzelt_tarih_{idx}", value=r.get("tarih", "") or "")
-                        if "Z No" in eksik:
-                            st.text_input("Z Numarası", key=f"duzelt_zno_{idx}", value=r.get("z_no", "") or "")
-                        if "Firma Adı" in eksik:
-                            st.text_input("Firma Adı", key=f"duzelt_firma_{idx}", value=r.get("firma_adi", "") or "")
-                    with col2:
-                        if "Brüt Tutar" in eksik:
-                            st.number_input("Brüt Tutar (TL)", key=f"duzelt_brut_{idx}", value=float(r.get("brut", 0)), step=100.0)
-                        if "Net Tutar" in eksik:
-                            st.number_input("Net Tutar (TL)", key=f"duzelt_net_{idx}", value=float(r.get("net_toplam", 0)), step=100.0)
-                if st.button("✅ Düzeltmeleri Kaydet ve Öğret", type="primary", use_container_width=True):
+        duzeltilebilir = [(i, r) for i, r in enumerate(results) if "error" not in r]
+        if duzeltilebilir:
+            with st.expander("📝 Sonuçları Düzenle & Öğret (Tüm Alanlar — Sistem Hatırlar)", expanded=True):
+                st.info("Yanlış okunan alanları düzeltin. 'Kaydet ve Öğret' basınca sistem bir dahaki sefere otomatik düzeltir.")
+                for idx, r in duzeltilebilir:
+                    st.markdown(f"---\n**{idx+1}. {r.get('filename','')}**")
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        st.text_input("Tarih (GG.AA.YYYY)", value=r.get("tarih") or "", key=f"ed2_tarih_{idx}")
+                        st.text_input("Firma Adı", value=r.get("firma_adi") or "", key=f"ed2_firma_{idx}", help="Yanlış okunduysa düzeltin — sistem hatırlar")
+                        st.text_input("Banka", value=r.get("banka_adi") or "", key=f"ed2_banka_{idx}")
+                        st.text_input("Z No", value=r.get("z_no") or "", key=f"ed2_zno_{idx}")
+                    with c2:
+                        st.number_input("Brüt (TL)", min_value=0.0, value=float(r.get("brut", 0)), step=100.0, key=f"ed2_brut_{idx}")
+                        st.number_input("Net (TL)", min_value=0.0, value=float(r.get("net_toplam", 0)), step=100.0, key=f"ed2_net_{idx}")
+                        st.number_input("Nakit (TL)", min_value=0.0, value=float(r.get("nakit", 0)), step=100.0, key=f"ed2_nakit_{idx}")
+                    with c3:
+                        st.number_input("Kredi Kartı (TL)", min_value=0.0, value=float(r.get("kredi_karti", 0)), step=100.0, key=f"ed2_kk_{idx}")
+                        st.number_input("Yemek Çeki (TL)", min_value=0.0, value=float(r.get("yemek_ceki", 0)), step=100.0, key=f"ed2_yemek_{idx}")
+                        st.number_input("İptal/İade (TL)", min_value=0.0, value=float(r.get("iadeler", 0)), step=100.0, key=f"ed2_iade_{idx}")
+                if st.button("✅ Kaydet ve Öğret", type="primary", use_container_width=True, key="ed2_kaydet"):
                     ogr_sayisi = 0
-                    for idx, r, eksik in eksik_alanlar:
+                    for idx, r in duzeltilebilir:
                         ham = r.get("ham_text", "") or r.get("ocr_text", "")
-                        if "Tarih" in eksik:
-                            yeni = st.session_state.get(f"duzelt_tarih_{idx}", "")
-                            if yeni:
-                                r["tarih"] = yeni
-                                yanlis = ogrenci_alan_bul(ham, "tarih", yeni)
-                                if yanlis and yanlis.upper() != yeni.strip().upper():
-                                    duzeltme_ogren(yanlis, yeni)
-                                    ogr_sayisi += 1
-                        if "Z No" in eksik:
-                            yeni = st.session_state.get(f"duzelt_zno_{idx}", "")
-                            if yeni:
-                                r["z_no"] = yeni
-                                yanlis = ogrenci_alan_bul(ham, "z_no", yeni)
-                                if yanlis and yanlis.upper() != yeni.strip().upper():
-                                    duzeltme_ogren(yanlis, yeni)
-                                    ogr_sayisi += 1
-                        if "Firma Adı" in eksik:
-                            yeni = st.session_state.get(f"duzelt_firma_{idx}", "")
-                            if yeni:
-                                r["firma_adi"] = yeni
-                                yanlis = ogrenci_alan_bul(ham, "firma_adi", yeni)
-                                if yanlis and yanlis.upper() != yeni.strip().upper():
-                                    duzeltme_ogren(yanlis, yeni)
-                                    ogr_sayisi += 1
-                        if "Brüt Tutar" in eksik:
-                            yeni = st.session_state.get(f"duzelt_brut_{idx}", 0)
-                            if yeni > 0:
-                                r["brut"] = yeni
-                        if "Net Tutar" in eksik:
-                            yeni = st.session_state.get(f"duzelt_net_{idx}", 0)
-                            if yeni > 0:
-                                r["net_toplam"] = yeni
+                        eski_firma = r.get("firma_adi") or ""
+                        yeni_firma = st.session_state.get(f"ed2_firma_{idx}", "").strip()
+                        if yeni_firma and yeni_firma != eski_firma:
+                            r["firma_adi"] = yeni_firma
+                            yanlis = ogrenci_alan_bul(ham, "firma_adi", yeni_firma)
+                            if yanlis and yanlis.upper() != yeni_firma.upper():
+                                duzeltme_ogren(yanlis, yeni_firma)
+                                ogr_sayisi += 1
+                        yeni_tarih = st.session_state.get(f"ed2_tarih_{idx}", "").strip()
+                        if yeni_tarih and yeni_tarih != (r.get("tarih") or ""):
+                            r["tarih"] = yeni_tarih
+                            yanlis = ogrenci_alan_bul(ham, "tarih", yeni_tarih)
+                            if yanlis and yanlis.upper() != yeni_tarih.upper():
+                                duzeltme_ogren(yanlis, yeni_tarih)
+                                ogr_sayisi += 1
+                        yeni_banka = st.session_state.get(f"ed2_banka_{idx}", "").strip()
+                        if yeni_banka and yeni_banka != (r.get("banka_adi") or ""):
+                            r["banka_adi"] = yeni_banka
+                            yanlis = ogrenci_alan_bul(ham, "banka_adi", yeni_banka)
+                            if yanlis and yanlis.upper() != yeni_banka.upper():
+                                duzeltme_ogren(yanlis, yeni_banka)
+                                ogr_sayisi += 1
+                        yeni_zno = st.session_state.get(f"ed2_zno_{idx}", "").strip()
+                        if yeni_zno and yeni_zno != (r.get("z_no") or ""):
+                            r["z_no"] = yeni_zno
+                        yeni_brut = st.session_state.get(f"ed2_brut_{idx}", 0)
+                        if yeni_brut > 0:
+                            r["brut"] = yeni_brut
+                        yeni_net = st.session_state.get(f"ed2_net_{idx}", 0)
+                        if yeni_net > 0:
+                            r["net_toplam"] = yeni_net
+                        yeni_nakit = st.session_state.get(f"ed2_nakit_{idx}", 0)
+                        r["nakit"] = yeni_nakit
+                        yeni_kk = st.session_state.get(f"ed2_kk_{idx}", 0)
+                        r["kredi_karti"] = yeni_kk
+                        yeni_yemek = st.session_state.get(f"ed2_yemek_{idx}", 0)
+                        r["yemek_ceki"] = yeni_yemek
+                        yeni_iade = st.session_state.get(f"ed2_iade_{idx}", 0)
+                        r["iadeler"] = yeni_iade
                     if ogr_sayisi > 0:
-                        st.toast(f"{ogr_sayisi} yeni düzeltme öğrenildi! Bir dahaki sefere otomatik uygulanacak.", icon="✅")
+                        st.toast(f"{ogr_sayisi} yeni düzeltme öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
                     else:
                         st.toast("Düzeltmeler kaydedildi.", icon="✅")
                     st.rerun()
@@ -2134,59 +2124,7 @@ elif sayfa == "Z Raporu Yükle":
 
         duzeltilebilir = [(i, r) for i, r in enumerate(results) if "error" not in r]
         if duzeltilebilir:
-            with st.expander("Sonuçları Düzenle (Tarih, Tutar, KDV)", expanded=False):
-                for idx, r in duzeltilebilir:
-                    st.markdown(f"**{idx+1}. {r.get('filename','')}**")
-
-                    def tarih_degistir(_r=r, _key=f"ed_tarih_{idx}"):
-                        _r["tarih"] = st.session_state[_key] if st.session_state[_key] else None
-
-                    def brut_degistir(_r=r, _key=f"ed_brut_{idx}"):
-                        val = st.session_state[_key]
-                        if val > 0:
-                            _r["brut"] = val
-                            if _r["net_toplam"] == 0 or _r["net_toplam"] == _r.get("brut", 0):
-                                _r["net_toplam"] = val
-                            if _r["toplam_tahsilat"] == 0:
-                                _r["toplam_tahsilat"] = val
-
-                    def nakit_degistir(_r=r, _key=f"ed_nakit_{idx}"):
-                        _r["nakit"] = st.session_state[_key]
-
-                    def kk_degistir(_r=r, _key=f"ed_kk_{idx}"):
-                        _r["kredi_karti"] = st.session_state[_key]
-
-                    def yemek_degistir(_r=r, _key=f"ed_yemek_{idx}"):
-                        _r["yemek_ceki"] = st.session_state[_key]
-
-                    def net_degistir(_r=r, _key=f"ed_net_{idx}"):
-                        _r["net_toplam"] = st.session_state[_key]
-
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        tarih_val = r.get("tarih") or ""
-                        st.text_input("Tarih (GG.AA.YYYY)", value=tarih_val,
-                                      key=f"ed_tarih_{idx}", on_change=tarih_degistir)
-                    with c2:
-                        st.number_input("Brüt (TL)", min_value=0.0, value=float(r.get("brut", 0)),
-                                        step=100.0, key=f"ed_brut_{idx}", on_change=brut_degistir)
-                    with c3:
-                        st.number_input("Net (TL)", min_value=0.0, value=float(r.get("net_toplam", 0)),
-                                        step=100.0, key=f"ed_net_{idx}", on_change=net_degistir)
-
-                    c4, c5, c6 = st.columns(3)
-                    with c4:
-                        st.number_input("Nakit (TL)", min_value=0.0, value=float(r.get("nakit", 0)),
-                                        step=100.0, key=f"ed_nakit_{idx}", on_change=nakit_degistir)
-                    with c5:
-                        st.number_input("Kredi Kartı (TL)", min_value=0.0, value=float(r.get("kredi_karti", 0)),
-                                        step=100.0, key=f"ed_kk_{idx}", on_change=kk_degistir)
-                    with c6:
-                        st.number_input("Yemek Çeki (TL)", min_value=0.0, value=float(r.get("yemek_ceki", 0)),
-                                        step=100.0, key=f"ed_yemek_{idx}", on_change=yemek_degistir)
-
-                    if idx < len(duzeltilebilir) - 1:
-                        continue
+            pass  # Yeni form yukarida (Sonucları Düzenle & Oğret)
 
         kdv_eksik = [(i, r) for i, r in enumerate(results) if "error" not in r and not r.get("kdv_kalemleri")]
         if kdv_eksik:
