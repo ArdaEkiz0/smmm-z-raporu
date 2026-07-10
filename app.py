@@ -189,17 +189,21 @@ def gorsel_hazirla(img: Image.Image, threshold=200, target_h=3500, invert=False,
 def ocr_guvenli(img: Image.Image, cfg: str, min_conf: float = 30.0) -> str:
     if ocr_engine is None:
         return ""
-    try:
-        data = ocr_engine.image_to_data(img, lang="tur+eng", config=cfg, output_type=ocr_engine.Output.DICT)
-        kelimeler = []
-        for i in range(len(data["text"])):
-            conf = float(data["conf"][i])
-            word = data["text"][i].strip()
-            if conf >= min_conf and word:
-                kelimeler.append(word)
-        return " ".join(kelimeler)
-    except Exception:
-        return ""
+    diller = ["tur+eng", "tur"]
+    for dil in diller:
+        try:
+            data = ocr_engine.image_to_data(img, lang=dil, config=cfg, output_type=ocr_engine.Output.DICT)
+            kelimeler = []
+            for i in range(len(data["text"])):
+                conf = float(data["conf"][i])
+                word = data["text"][i].strip()
+                if conf >= min_conf and word:
+                    kelimeler.append(word)
+            if kelimeler:
+                return " ".join(kelimeler)
+        except Exception:
+            continue
+    return ""
 
 @st.cache_resource
 def load_ocr():
@@ -362,7 +366,13 @@ def ocr_image(img: Image.Image) -> str:
                 try:
                     text = ocr_guvenli(hazir, cfg, min_conf=25.0)
                     if not text:
-                        text = ocr_engine.image_to_string(hazir, lang="tur+eng", config=cfg)
+                        for dil in ["tur+eng", "tur"]:
+                            try:
+                                text = ocr_engine.image_to_string(hazir, lang=dil, config=cfg)
+                                if text.strip():
+                                    break
+                            except Exception:
+                                continue
                         text = ocr_duzelt(text.strip())
                     else:
                         text = ocr_duzelt(text)
@@ -1479,7 +1489,7 @@ with st.sidebar:
     if ocr_engine:
         st.success("Tesseract OCR hazir", icon="🟢")
     else:
-        st.error("Tesseract yuklenemedi", icon="🔴")
+        st.error("Tesseract OCR bulunamadi! packages.txt kontrol edin.", icon="🔴")
 
     st.divider()
     st.header("Mükellef")
@@ -1773,7 +1783,7 @@ elif sayfa == "Z Raporu Yükle":
 
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files or ocr_engine is None)
+        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files)
     with col_b2:
         if st.button("Temizle", width="stretch"):
             for k in ["results", "processed"]:
@@ -1781,6 +1791,9 @@ elif sayfa == "Z Raporu Yükle":
             st.rerun()
 
     if run_ocr and uploaded_files:
+        if ocr_engine is None:
+            st.error("Tesseract OCR yuklu degil! Lutfen Tesseract-OCR kurulumunu kontrol edin.")
+            st.stop()
         import time as _time
         from pdf2image import convert_from_bytes
         all_results = []
