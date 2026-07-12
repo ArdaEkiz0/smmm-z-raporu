@@ -30,7 +30,11 @@ def otomatik_yedekle():
 
 
 def mukellefler():
-    return dosya_oku(MUKELLEF_FILE, [])
+    import streamlit as st
+    @st.cache_data(ttl=30)
+    def _yukle():
+        return dosya_oku(MUKELLEF_FILE, [])
+    return _yukle()
 
 
 def _mukellef_eslestir(firma_adi, mukellef_listesi, ml=None):
@@ -84,27 +88,35 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
 
 
 def gecmis_listele():
-    kayitlar = []
-    for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")), reverse=True):
-        try:
-            kayit = dosya_oku(fp, {})
-            if kayit:
-                kayit["_dosya"] = fp
-                kayitlar.append(kayit)
-        except Exception:
-            log.warning("Geçmiş dosyası okunamadı: %s", fp, exc_info=True)
-            continue
-    return kayitlar
+    import streamlit as st
+    @st.cache_data(ttl=30)
+    def _yukle():
+        kayitlar = []
+        for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")), reverse=True):
+            try:
+                kayit = dosya_oku(fp, {})
+                if kayit:
+                    kayit["_dosya"] = fp
+                    kayitlar.append(kayit)
+            except Exception:
+                log.warning("Geçmiş dosyası okunamadı: %s", fp, exc_info=True)
+                continue
+        return kayitlar
+    return _yukle()
 
 
 def tum_fisleri_yukle():
-    tumu = []
-    for kayit in gecmis_listele():
-        for f in kayit.get("fisler", []):
-            if "error" not in f:
-                f["mukellef"] = kayit.get("mukellef", kayit.get("mukellef_adi", ""))
-                tumu.append(f)
-    return tumu
+    import streamlit as st
+    @st.cache_data(ttl=30)
+    def _yukle():
+        tumu = []
+        for kayit in gecmis_listele():
+            for f in kayit.get("fisler", []):
+                if "error" not in f:
+                    f["mukellef"] = kayit.get("mukellef", kayit.get("mukellef_adi", ""))
+                    tumu.append(f)
+        return tumu
+    return _yukle()
 
 
 def fis_kayit_bul(tarih, z_no):

@@ -132,7 +132,10 @@ with st.sidebar:
             else:
                 st.session_state[GOT_OCR_API] = yeni_url
         if yeni_url:
-            saglik = got_ocr_api_saglik(yeni_url)
+            @st.cache_data(ttl=60)
+            def _saglik_kontrol(url):
+                return got_ocr_api_saglik(url)
+            saglik = _saglik_kontrol(yeni_url)
             if saglik:
                 st.success("GOT-OCR API bagli", icon="🟢")
             else:
@@ -190,21 +193,22 @@ with st.sidebar:
         ("kdv_20", "KDV %20"),
         ("iadeler", "Fiş İptal"),
     ]
-    hesap_kodlari = {}
-    for key, label in kod_etiketleri:
-        hesap_kodlari[key] = st.text_input(label, value=st.session_state.hesap_kodlari.get(key, ""), key=f"hk_{key}")
+    with st.expander("Hesap Kodları", expanded=False):
+        hesap_kodlari = {}
+        for key, label in kod_etiketleri:
+            hesap_kodlari[key] = st.text_input(label, value=st.session_state.hesap_kodlari.get(key, ""), key=f"hk_{key}")
 
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Kaydet", width="stretch"):
-            dosya_yaz(HESAP_FILE, hesap_kodlari)
-            st.session_state.hesap_kodlari = hesap_kodlari
-            st.toast("Hesap kodları kaydedildi!", icon="✅")
-    with col2:
-        if st.button("Sıfırla", width="stretch"):
-            st.session_state.hesap_kodlari = varsayilan_kodlar()
-            dosya_yaz(HESAP_FILE, st.session_state.hesap_kodlari)
-            st.rerun()
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Kaydet", width="stretch"):
+                dosya_yaz(HESAP_FILE, hesap_kodlari)
+                st.session_state.hesap_kodlari = hesap_kodlari
+                st.toast("Hesap kodları kaydedildi!", icon="✅")
+        with col2:
+            if st.button("Sıfırla", width="stretch"):
+                st.session_state.hesap_kodlari = varsayilan_kodlar()
+                dosya_yaz(HESAP_FILE, st.session_state.hesap_kodlari)
+                st.rerun()
 
     st.divider()
     st.header("Ürün Kodları")
