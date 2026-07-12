@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+.git
+.gitignore
+.opencode/
+.playwright-mcp/
+streamlit_app/
+sample_*.jpeg
+*.png
+crash_log.txt
+cf_*.txt
+ngrok_*.txt
