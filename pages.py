@@ -239,6 +239,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 if st.button("✅ Kaydet ve Öğret", type="primary", use_container_width=True, key="ed_kaydet"):
                     ogr_sayisi = 0
                     eslesme_ekisik = []
+                    degisiklik = []
                     for idx, r in duzeltilebilir:
                         ham = r.get("ham_text", "") or r.get("ocr_text", "")
                         eski_firma = r.get("firma_adi") or ""
@@ -247,6 +248,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             r["firma_adi"] = yeni_firma
                             ogr_alan_kaydet("firma_adi", yeni_firma)
                             ogr_sayisi += 1
+                            degisiklik.append(f"Firma: {eski_firma} → {yeni_firma}")
                             yanlis = ogrenci_alan_bul(ham, "firma_adi", yeni_firma)
                             if yanlis and yanlis.upper() != yeni_firma.upper():
                                 duzeltme_ogren(yanlis, yeni_firma)
@@ -257,6 +259,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             r["tarih"] = yeni_tarih
                             ogr_alan_kaydet("tarih", yeni_tarih)
                             ogr_sayisi += 1
+                            degisiklik.append(f"Tarih: {r.get('tarih','')} → {yeni_tarih}")
                             yanlis = ogrenci_alan_bul(ham, "tarih", yeni_tarih)
                             if yanlis and yanlis.upper() != yeni_tarih.upper():
                                 duzeltme_ogren(yanlis, yeni_tarih)
@@ -267,6 +270,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             r["banka_adi"] = yeni_banka
                             ogr_alan_kaydet("banka_adi", yeni_banka)
                             ogr_sayisi += 1
+                            degisiklik.append(f"Banka: {r.get('banka_adi','')} → {yeni_banka}")
                             yanlis = ogrenci_alan_bul(ham, "banka_adi", yeni_banka)
                             if yanlis and yanlis.upper() != yeni_banka.upper():
                                 duzeltme_ogren(yanlis, yeni_banka)
@@ -277,25 +281,41 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             r["z_no"] = yeni_zno
                             ogr_alan_kaydet("z_no", yeni_zno)
                             ogr_sayisi += 1
+                            degisiklik.append(f"Z No: {r.get('z_no','')} → {yeni_zno}")
                         yeni_brut = st.session_state.get(f"ed_brut_{idx}", 0)
-                        if yeni_brut > 0:
-                            r["brut"] = yeni_brut
+                        if yeni_brut != r.get("brut", 0):
+                            degisiklik.append(f"Brüt: {r.get('brut',0):.2f} → {yeni_brut:.2f}")
+                        r["brut"] = yeni_brut
                         yeni_net = st.session_state.get(f"ed_net_{idx}", 0)
-                        if yeni_net > 0:
-                            r["net_toplam"] = yeni_net
+                        if yeni_net != r.get("net_toplam", 0):
+                            degisiklik.append(f"Net: {r.get('net_toplam',0):.2f} → {yeni_net:.2f}")
+                        r["net_toplam"] = yeni_net
                         yeni_nakit = st.session_state.get(f"ed_nakit_{idx}", 0)
+                        if yeni_nakit != r.get("nakit", 0):
+                            degisiklik.append(f"Nakit: {r.get('nakit',0):.2f} → {yeni_nakit:.2f}")
                         r["nakit"] = yeni_nakit
                         yeni_kk = st.session_state.get(f"ed_kk_{idx}", 0)
+                        if yeni_kk != r.get("kredi_karti", 0):
+                            degisiklik.append(f"K.Kartı: {r.get('kredi_karti',0):.2f} → {yeni_kk:.2f}")
                         r["kredi_karti"] = yeni_kk
                         yeni_yemek = st.session_state.get(f"ed_yemek_{idx}", 0)
+                        if yeni_yemek != r.get("yemek_ceki", 0):
+                            degisiklik.append(f"Yemek: {r.get('yemek_ceki',0):.2f} → {yeni_yemek:.2f}")
                         r["yemek_ceki"] = yeni_yemek
                         yeni_iade = st.session_state.get(f"ed_iade_{idx}", 0)
+                        if yeni_iade != r.get("iadeler", 0):
+                            degisiklik.append(f"İade: {r.get('iadeler',0):.2f} → {yeni_iade:.2f}")
                         r["iadeler"] = yeni_iade
-                    dosya_oku(OGRENILEN_SOZLUK, {})
+                    # session_state'i guncelle (referans ayni, degisiklikler zaten kaydedildi)
+                    st.session_state.results = results
                     if ogr_sayisi > 0:
                         st.toast(f"✅ {ogr_sayisi} alan öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
                     else:
-                        st.toast("✅ Düzeltmeler kaydedildi.", icon="✅")
+                        st.toast(f"✅ {len(degisiklik)} tutar güncellendi.", icon="✅")
+                    if degisiklik:
+                        with st.expander("📋 Yapılan değişiklikler", expanded=True):
+                            for d in degisiklik:
+                                st.write(f"- {d}")
                     if eslesme_ekisik:
                         with st.expander("⚠️ Öğrenilemeyen detay düzeltmeler (ham OCR'da eşleşme bulunamadı, ama alan varsayılanı kaydedildi)", expanded=False):
                             for alan, dogru, yanlis in eslesme_ekisik:
