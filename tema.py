@@ -268,10 +268,11 @@ DARK_CSS = """
 def tema_uygula():
     """Mevcut tema tercihine göre CSS enjekte et."""
     tema = st.session_state.get("tema", "light")
-    if tema == "dark":
-        st.markdown(DARK_CSS, unsafe_allow_html=True)
-    else:
-        st.markdown(LIGHT_CSS, unsafe_allow_html=True)
+    css = DARK_CSS if tema == "dark" else LIGHT_CSS
+    st.components.v1.html(
+        "<head>" + css + "</head>",
+        height=0,
+    )
 
 
 def tema_degistirici():
