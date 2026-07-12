@@ -568,106 +568,117 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     st.divider()
 
 
+def _tarih_esles(fis, yil, ay):
+    t = fis.get("tarih", "")
+    try:
+        d = datetime.strptime(t, "%d.%m.%Y")
+        return d.year == yil and d.month == ay
+    except (ValueError, TypeError):
+        return False
+
+
 def _page_dashboard():
-    st.header("Genel Bakış")
+    st.header("Genel Bakis")
 
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
     ml = mukellefler()
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Toplam Kayıt", f"{len(kayitlar)}")
-    c2.metric("Toplam Fiş", f"{len(tum_fisler)}")
-    c3.metric("Aktif Mükellef", f"{len(ml)}")
+    c1.metric("Toplam Kayit", f"{len(kayitlar)}")
+    c2.metric("Toplam Fis", f"{len(tum_fisler)}")
+    c3.metric("Aktif Mukellef", f"{len(ml)}")
     toplam_ciro = sum(f.get("net_toplam", 0) or 0 for f in tum_fisler)
     c4.metric("Toplam Ciro", f"{toplam_ciro:,.0f} TL")
 
-    if tum_fisler:
-        st.divider()
-        st.subheader("Son 10 Fiş")
-        son_fisler = sorted(tum_fisler, key=lambda x: x.get("tarih") or "", reverse=True)[:10]
-        df = pd.DataFrame([{
-            "Tarih": f.get("tarih", "?"), "Z No": f.get("z_no", "?"),
-            "Firma": f.get("firma_adi", "") or f.get("mukellef", f.get("mukellef_adi", "")),
-            "Banka": f.get("banka_adi", "") or "-",
-            "Brüt": f.get("brut", 0), "Net": f.get("net_toplam", 0),
-            "KK": f.get("kredi_karti", 0), "Nakit": f.get("nakit", 0),
-            "Fiş İptal": f.get("iadeler", 0)
-        } for f in son_fisler])
-        st.dataframe(df, width="stretch", hide_index=True)
+    if not tum_fisler:
+        st.info("Henuz fis yok. Z Raporu yukleyin.")
+        return
 
-        st.divider()
-        col_banka, col_mukellef = st.columns(2)
-        with col_banka:
-            st.subheader("Banka Bazlı Ciro")
-            banka_ciro = {}
-            for f in tum_fisler:
-                b = f.get("banka_adi", "") or "Belirsiz/Nakit"
-                banka_ciro[b] = banka_ciro.get(b, 0) + (f.get("net_toplam", 0) or 0)
-            df_b = pd.DataFrame([{"Banka": k, "Toplam Ciro": v} for k, v in sorted(banka_ciro.items(), key=lambda x: -x[1])])
-            st.dataframe(df_b, width="stretch", hide_index=True)
+    st.divider()
 
-        with col_mukellef:
-            st.subheader("Mükellef Bazlı Ciro")
-            musteri_ciro = {}
-            for f in tum_fisler:
-                m = f.get("mukellef", "") or f.get("mukellef_adi", "") or "Bilinmeyen"
-                musteri_ciro[m] = musteri_ciro.get(m, 0) + (f.get("net_toplam", 0) or 0)
-            df_m = pd.DataFrame([{"Mükellef": k, "Toplam Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
-            st.dataframe(df_m, width="stretch", hide_index=True)
+    now = datetime.now()
+    ay_isimleri = ["Oca", "Sub", "Mar", "Nis", "May", "Haz", "Tem", "Agu", "Eyl", "Eki", "Kas", "Ara"]
 
-        st.divider()
-        st.subheader("Karşılaştırma")
-        now = datetime.now()
-        bu_ay = now.month
-        bu_yil = now.year
-        gecen_ay = bu_ay - 1 if bu_ay > 1 else 12
-        gecen_ay_yil = bu_yil if bu_ay > 1 else bu_yil - 1
-        bu_yil_ciro = 0
-        gecen_yil_ciro = 0
-        bu_ay_ciro = 0
-        gecen_ay_ciro = 0
+    ay_ciro = {}
+    ay_fis_sayisi = {}
+    for f in tum_fisler:
+        t = f.get("tarih", "")
+        try:
+            d = datetime.strptime(t, "%d.%m.%Y")
+            ay_key = f"{d.year}-{d.month:02d}"
+            net = f.get("net_toplam", 0) or 0
+            ay_ciro[ay_key] = ay_ciro.get(ay_key, 0) + net
+            ay_fis_sayisi[ay_key] = ay_fis_sayisi.get(ay_key, 0) + 1
+        except (ValueError, TypeError):
+            continue
+
+    if ay_ciro:
+        st.subheader("Aylik Ciro Trendi")
+        sorted_aylar = sorted(ay_ciro.keys())
+        df_ay = pd.DataFrame({
+            "Ay": [f"{ay_isimleri[int(a.split('-')[1])-1]} {a.split('-')[0]}" for a in sorted_aylar],
+            "Ciro (TL)": [ay_ciro[a] for a in sorted_aylar],
+            "Fis Sayisi": [ay_fis_sayisi.get(a, 0) for a in sorted_aylar],
+        })
+        st.bar_chart(df_ay.set_index("Ay")[["Ciro (TL)"]], use_container_width=True)
+
+    col_banka, col_mukellef = st.columns(2)
+    with col_banka:
+        st.subheader("Banka Bazli Ciro")
+        banka_ciro = {}
         for f in tum_fisler:
-            t = f.get("tarih", "")
-            try:
-                d = datetime.strptime(t, "%d.%m.%Y")
-                net = f.get("net_toplam", 0) or 0
-                if d.year == bu_yil:
-                    bu_yil_ciro += net
-                if d.year == bu_yil - 1:
-                    gecen_yil_ciro += net
-                if d.year == bu_yil and d.month == bu_ay:
-                    bu_ay_ciro += net
-                if d.year == gecen_ay_yil and d.month == gecen_ay:
-                    gecen_ay_ciro += net
-            except (ValueError, TypeError):
-                continue
-        ay_fark = bu_ay_ciro - gecen_ay_ciro
-        yil_fark = bu_yil_ciro - gecen_yil_ciro
-        ay_yuzde = (ay_fark / gecen_ay_ciro * 100) if gecen_ay_ciro > 0 else 0
-        yil_yuzde = (yil_fark / gecen_yil_ciro * 100) if gecen_yil_ciro > 0 else 0
-        comp1, comp2, comp3, comp4 = st.columns(4)
-        comp1.metric(f"Bu Ay ({bu_ay})", f"{bu_ay_ciro:,.0f} TL", f"{ay_fark:+,.0f} TL ({ay_yuzde:+.1f}%)")
-        comp2.metric(f"Geçen Ay ({gecen_ay})", f"{gecen_ay_ciro:,.0f} TL")
-        comp3.metric(f"Bu Yıl ({bu_yil})", f"{bu_yil_ciro:,.0f} TL", f"{yil_fark:+,.0f} TL ({yil_yuzde:+.1f}%)")
-        comp4.metric(f"Geçen Yıl ({bu_yil-1})", f"{gecen_yil_ciro:,.0f} TL")
+            b = f.get("banka_adi", "") or "Belirsiz/Nakit"
+            banka_ciro[b] = banka_ciro.get(b, 0) + (f.get("net_toplam", 0) or 0)
+        if banka_ciro:
+            df_b = pd.DataFrame([{"Banka": k, "Ciro": v} for k, v in sorted(banka_ciro.items(), key=lambda x: -x[1])])
+            st.bar_chart(df_b.set_index("Banka"), use_container_width=True)
 
-        st.divider()
-        st.subheader("Aylık Ciro Trendi")
-        aylik_ciro = {}
+    with col_mukellef:
+        st.subheader("Mukellef Bazli Ciro")
+        musteri_ciro = {}
         for f in tum_fisler:
-            t = f.get("tarih", "")
-            try:
-                d = datetime.strptime(t, "%d.%m.%Y")
-                ay_anahtar = d.strftime("%Y-%m")
-                aylik_ciro[ay_anahtar] = aylik_ciro.get(ay_anahtar, 0) + (f.get("net_toplam", 0) or 0)
-            except (ValueError, TypeError):
-                continue
-        if aylik_ciro:
-            sirali = sorted(aylik_ciro.items())
-            trend_df = pd.DataFrame(sirali, columns=["Ay", "Ciro"])
-            trend_df = trend_df.set_index("Ay")
-            st.line_chart(trend_df, height=300)
+            m = f.get("mukellef", "") or f.get("mukellef_adi", "") or "Bilinmeyen"
+            musteri_ciro[m] = musteri_ciro.get(m, 0) + (f.get("net_toplam", 0) or 0)
+        if musteri_ciro:
+            df_m = pd.DataFrame([{"Mukellef": k, "Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
+            st.bar_chart(df_m.set_index("Mukellef"), use_container_width=True)
+
+    st.divider()
+    st.subheader("Karsilastirma")
+    bu_yil = now.year
+    gecen_ay = now.month - 1 if now.month > 1 else 12
+    gecen_ay_yil = bu_yil if now.month > 1 else bu_yil - 1
+    bu_yil_ciro = 0
+    gecen_yil_ciro = 0
+    bu_ay_ciro = 0
+    gecen_ay_ciro = 0
+    for f in tum_fisler:
+        t = f.get("tarih", "")
+        try:
+            d = datetime.strptime(t, "%d.%m.%Y")
+            net = f.get("net_toplam", 0) or 0
+            if d.year == bu_yil:
+                bu_yil_ciro += net
+            if d.year == bu_yil - 1:
+                gecen_yil_ciro += net
+            if d.year == bu_yil and d.month == now.month:
+                bu_ay_ciro += net
+            if d.year == gecen_ay_yil and d.month == gecen_ay:
+                gecen_ay_ciro += net
+        except (ValueError, TypeError):
+            continue
+    ay_fark = bu_ay_ciro - gecen_ay_ciro
+    yil_fark = bu_yil_ciro - gecen_yil_ciro
+    ay_yuzde = (ay_fark / gecen_ay_ciro * 100) if gecen_ay_ciro > 0 else 0
+    yil_yuzde = (yil_fark / gecen_yil_ciro * 100) if gecen_yil_ciro > 0 else 0
+    comp1, comp2 = st.columns(2)
+    comp1.metric(f"Bu Ay ({ay_isimleri[now.month-1]})", f"{bu_ay_ciro:,.0f} TL", f"{ay_fark:+,.0f} TL ({ay_yuzde:+.1f}%)")
+    comp2.metric(f"Bu Yil ({bu_yil})", f"{bu_yil_ciro:,.0f} TL", f"{yil_fark:+,.0f} TL ({yil_yuzde:+.1f}%)")
+
+    fis_sayisi_ay = len([f for f in tum_fisler if _tarih_esles(f, bu_yil, now.month)])
+    fis_sayisi_gecen = len([f for f in tum_fisler if _tarih_esles(f, gecen_ay_yil, gecen_ay)])
+    st.caption(f"Bu ay {fis_sayisi_ay} fis, gecen ay {fis_sayisi_gecen} fis")
 
 
 def _page_fis_gecmisi(hesap_kodlari):
