@@ -23,6 +23,7 @@ from ocr import (
     ogr_alan_kaydet, got_ocr_api_saglik, turkce_normalize, duzeltme_sozlugu,
     ogrenilen_sozluk
 )
+from ocr_cache import ocr_gorsel_isle_cached, ocr_cache_istatistik, ocr_cache_temizle
 from veritabani import (
     mukellefler, _mukellef_eslestir, gecmis_kaydet, gecmis_listele,
     tum_fisleri_yukle, fis_guncelle, toplu_fis_sil, otomatik_yedekle,
@@ -121,7 +122,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         continue
                     pages = convert_from_bytes(data, dpi=300)
                     for pi, page in enumerate(pages):
-                        ocr_text = ocr_gorsel_isle(page.convert("RGB"))
+                        ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
                         parsed = parse_z_raporu(ocr_text)
                         ogr_alanlari_uygula(parsed)
                         parsed["filename"] = f"{uf.name} - Syf {pi+1}"
@@ -130,7 +131,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         all_results.append(parsed)
                 else:
                     img = Image.open(io.BytesIO(data))
-                    ocr_text = ocr_gorsel_isle(img)
+                    ocr_text = ocr_gorsel_isle_cached(img)
                     parsed = parse_z_raporu(ocr_text)
                     ogr_alanlari_uygula(parsed)
                     parsed["filename"] = uf.name
@@ -159,6 +160,11 @@ def _page_z_raporu_yukle(hesap_kodlari):
         else:
             sure_metni = f"{toplam_sure:.1f}sn"
         progress.progress(1.0, text=f"✅ OCR tamamlandı! Toplam: {sure_metni} ({toplam} dosya)")
+
+        cache_stats = ocr_cache_istatistik()
+        cache_ratio = (cache_stats["hits"] * 100 // max(cache_stats["hits"] + cache_stats["misses"], 1))
+        if cache_stats["hits"] > 0 or cache_stats["misses"] > 0:
+            st.caption(f"⚡ OCR Cache: {cache_stats['hits']} isabet / {cache_stats['misses']} yeni (%{cache_ratio} isabet) — {cache_stats['boyut']}/{cache_stats['limit']} dolu")
 
         st.session_state.results = all_results
         st.session_state.processed = True
