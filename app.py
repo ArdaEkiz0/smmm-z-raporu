@@ -168,12 +168,12 @@ with st.sidebar:
                     f.write(data)
                 st.session_state["luca_sabloni"] = data
                 st.toast("Şablon kaydedildi!", icon="✅")
-            if st.button("Şablonu Kaldır"):
-                if os.path.exists(SABLON_FILE):
-                    os.remove(SABLON_FILE)
-                if "luca_sabloni" in st.session_state:
-                    del st.session_state["luca_sabloni"]
-                st.rerun()
+        if st.button("Şablonu Kaldır", key="sablon_kaldir"):
+            if os.path.exists(SABLON_FILE):
+                os.remove(SABLON_FILE)
+            if "luca_sabloni" in st.session_state:
+                del st.session_state["luca_sabloni"]
+            st.rerun()
             if os.path.exists(SABLON_FILE) and "luca_sabloni" not in st.session_state:
                 with open(SABLON_FILE, "rb") as f:
                     st.session_state["luca_sabloni"] = f.read()
@@ -193,19 +193,19 @@ with st.sidebar:
         ("kdv_20", "KDV %20"),
         ("iadeler", "Fiş İptal"),
     ]
+    hesap_kodlari = dict(st.session_state.hesap_kodlari)
     with st.expander("Hesap Kodları", expanded=False):
-        hesap_kodlari = {}
         for key, label in kod_etiketleri:
             hesap_kodlari[key] = st.text_input(label, value=st.session_state.hesap_kodlari.get(key, ""), key=f"hk_{key}")
 
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("Kaydet", width="stretch"):
+            if st.button("Kaydet", width="stretch", key="hk_kaydet"):
                 dosya_yaz(HESAP_FILE, hesap_kodlari)
-                st.session_state.hesap_kodlari = hesap_kodlari
+                st.session_state.hesap_kodlari = dict(hesap_kodlari)
                 st.toast("Hesap kodları kaydedildi!", icon="✅")
         with col2:
-            if st.button("Sıfırla", width="stretch"):
+            if st.button("Sıfırla", width="stretch", key="hk_sifirla"):
                 st.session_state.hesap_kodlari = varsayilan_kodlar()
                 dosya_yaz(HESAP_FILE, st.session_state.hesap_kodlari)
                 st.rerun()
@@ -228,7 +228,7 @@ with st.sidebar:
             width="stretch",
         )
 
-        if st.button("Kaydet", width="stretch", type="primary"):
+        if st.button("Kaydet", width="stretch", type="primary", key="uk_kaydet"):
             st.session_state.urun_kodlari = edited
             urun_kodlari_kaydet([dict(k) for k in edited])
             st.toast("Ürün kodları kaydedildi!", icon="✅")

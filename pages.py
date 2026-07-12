@@ -88,9 +88,9 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
     col_b1, col_b2 = st.columns(2)
     with col_b1:
-        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files)
+        run_ocr = st.button("HEPSİNİ OKU (OCR)", type="primary", width="stretch", disabled=not uploaded_files, key="ocr_baslat")
     with col_b2:
-        if st.button("Temizle", width="stretch"):
+        if st.button("Temizle", width="stretch", key="ocr_temizle"):
             for k in ["results", "processed"]:
                 st.session_state.pop(k, None)
             st.rerun()
@@ -348,7 +348,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             key=session_key,
                             help="Fiş iptali/iade tutarı varsa girin, yoksa 0 bırakın"
                         )
-                if st.button("İade Tutarlarını Kaydet", type="primary", use_container_width=True):
+                if st.button("İade Tutarlarını Kaydet", type="primary", use_container_width=True, key="iade_kaydet"):
                     for idx, r in iade_eksik:
                         r["iadeler"] = st.session_state.get(f"iade_{idx}", 0)
                     st.toast("İade tutarları kaydedildi!", icon="✅")
@@ -982,7 +982,7 @@ def _page_ayarlar():
     st.subheader("Yedekleme")
     col_y1, col_y2 = st.columns(2)
     with col_y1:
-        if st.button("Yedek Oluştur", width="stretch", type="primary"):
+        if st.button("Yedek Oluştur", width="stretch", type="primary", key="yedek_olustur"):
             try:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 yedek_klasor = os.path.join(YEDEK_KLASORU, f"yedek_{timestamp}")
@@ -1001,7 +1001,7 @@ def _page_ayarlar():
         yedekler = sorted(glob.glob(os.path.join(YEDEK_KLASORU, "yedek_*")), reverse=True)
         if yedekler:
             secilen_yedek = st.selectbox("Yedek Seç", yedekler)
-            if st.button("Geri Yükle", width="stretch"):
+            if st.button("Geri Yükle", width="stretch", key="geri_yukle"):
                 try:
                     for fp in glob.glob(os.path.join(secilen_yedek, "*.json")):
                         shutil.copy2(fp, DATA_DIR)
@@ -1082,11 +1082,11 @@ def _page_ayarlar():
         st.info(f"Ana sözlük: **{len(sozluk)}** kelime | Öğrenilen: **{len(ogrenilen)}** kelime")
     with col_s2:
         if ogrenilen:
-            if st.button("Öğrenilenleri Temizle", type="secondary"):
+            if st.button("Öğrenilenleri Temizle", type="secondary", key="ogrenilen_temizle"):
                 dosya_yaz(OGRENILEN_SOZLUK, {})
                 st.success("Öğrenilen düzeltmeler temizlendi!")
                 st.rerun()
-        if st.button("Ana Sözlüğü Sıfırla", type="secondary"):
+        if st.button("Ana Sözlüğü Sıfırla", type="secondary", key="ana_sozluk_sifirla"):
             if os.path.exists(DUZELTME_SOZLUK):
                 os.remove(DUZELTME_SOZLUK)
             st.success("Ana sözlük sıfırlandı!")
@@ -1111,14 +1111,14 @@ def _page_ayarlar():
         st.session_state.fis_sil_onay = False
 
     if not st.session_state.fis_sil_onay:
-        if st.button("TÜM FİŞLERİ SİL", type="secondary"):
+        if st.button("TÜM FİŞLERİ SİL", type="secondary", key="tum_fisleri_sil"):
             st.session_state.fis_sil_onay = True
             st.rerun()
     else:
         st.warning("Tüm fişler silinecek! Mükellefler ve ayarlar kalacak.")
         col_f1, col_f2 = st.columns(2)
         with col_f1:
-            if st.button("EMİNİM, FİŞLERİ SİL!", type="primary", width="stretch"):
+            if st.button("EMİNİM, FİŞLERİ SİL!", type="primary", width="stretch", key="fis_sil_onayla"):
                 try:
                     for fp in glob.glob(os.path.join(GECMIS_KLASORU, "*.json")):
                         os.remove(fp)
@@ -1133,19 +1133,19 @@ def _page_ayarlar():
                 except Exception as e:
                     st.error(f"Silme hatası: {e}")
         with col_f2:
-            if st.button("İptal", type="secondary", width="stretch"):
+            if st.button("İptal", type="secondary", width="stretch", key="fis_sil_iptal"):
                 st.session_state.fis_sil_onay = False
                 st.rerun()
 
     if not st.session_state.sil_onay:
-        if st.button("TÜM VERİLERİ SİL", type="secondary"):
+        if st.button("TÜM VERİLERİ SİL", type="secondary", key="tum_verileri_sil"):
             st.session_state.sil_onay = True
             st.rerun()
     else:
         st.warning("Tüm veriler silinecek! Bu işlem geri alınamaz.")
         col_onay, col_iptal = st.columns(2)
         with col_onay:
-            if st.button("EMİNİM, SİL!", type="primary", width="stretch"):
+            if st.button("EMİNİM, SİL!", type="primary", width="stretch", key="veri_sil_onayla"):
                 try:
                     shutil.rmtree(GECMIS_KLASORU, ignore_errors=True)
                     shutil.rmtree(FISLER_KLASORU, ignore_errors=True)
@@ -1160,7 +1160,7 @@ def _page_ayarlar():
                 except Exception as e:
                     st.error(f"Silme hatası: {e}")
         with col_iptal:
-            if st.button("İptal", type="secondary", width="stretch"):
+            if st.button("İptal", type="secondary", width="stretch", key="veri_sil_iptal"):
                 st.session_state.sil_onay = False
                 st.rerun()
 
