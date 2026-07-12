@@ -101,70 +101,89 @@ def _page_z_raporu_yukle(hesap_kodlari):
             st.error("Tesseract OCR yuklu degil! Lutfen Tesseract-OCR kurulumunu kontrol edin.")
             st.stop()
         import time as _time
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         try:
             from pdf2image import convert_from_bytes
             PDF2IMAGE_MEVCUT = True
         except ImportError:
             PDF2IMAGE_MEVCUT = False
-        all_results = []
-        toplam = len(uploaded_files)
+
+        dosya_verileri = []
+        for uf in uploaded_files:
+            uf.seek(0)
+            dosya_verileri.append((uf.name, uf.read()))
+
+        toplam = len(dosya_verileri)
         progress = st.progress(0, text="OCR yapılıyor...")
         baslama = _time.time()
+        tamamlanan = [0]
+        all_results = [None] * toplam
 
-        for i, uf in enumerate(uploaded_files):
-            uf.seek(0)
+        def _tek_ocr(idx, fname, data):
             try:
-                data = uf.read()
-                if uf.name.lower().endswith(".pdf"):
+                if fname.lower().endswith(".pdf"):
                     if not PDF2IMAGE_MEVCUT:
-                        st.error(f"'{uf.name}' PDF dosyasi icin pdf2image/poppler gerekli. JPG/PNG olarak yukleyin.")
-                        all_results.append({"filename": uf.name, "error": "pdf2image yok", "ocr_text": ""})
-                        continue
+                        return idx, {"filename": fname, "error": "pdf2image yok", "ocr_text": ""}
                     pages = convert_from_bytes(data, dpi=300)
+                    sonuclar = []
                     for pi, page in enumerate(pages):
                         ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
                         parsed = parse_z_raporu(ocr_text)
                         ogr_alanlari_uygula(parsed)
-                        parsed["filename"] = f"{uf.name} - Syf {pi+1}"
+                        parsed["filename"] = f"{fname} - Syf {pi+1}"
                         parsed["ocr_text"] = ocr_text
-                        parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
-                        all_results.append(parsed)
+                        parsed["mukellef_adi"] = ""
+                        sonuclar.append(parsed)
+                    return idx, sonuclar
                 else:
                     img = Image.open(io.BytesIO(data))
                     ocr_text = ocr_gorsel_isle_cached(img)
                     parsed = parse_z_raporu(ocr_text)
                     ogr_alanlari_uygula(parsed)
-                    parsed["filename"] = uf.name
+                    parsed["filename"] = fname
                     parsed["ocr_text"] = ocr_text
-                    parsed["mukellef_adi"] = st.session_state.get("secili_mukellef", "")
-                    all_results.append(parsed)
+                    parsed["mukellef_adi"] = ""
+                    return idx, parsed
             except Exception as e:
-                log.error(f"OCR hatasi {uf.name}: {e}")
-                all_results.append({"filename": uf.name, "error": str(e), "ocr_text": ""})
-            gecen = _time.time() - baslama
-            ort = gecen / max(i + 1, 1)
-            kal = max(toplam - i - 1, 0) * ort
-            if kal >= 60:
-                kstr = f"{int(kal//60)}dk {int(kal%60)}sn"
+                log.error(f"OCR hatasi {fname}: {e}")
+                return idx, {"filename": fname, "error": str(e), "ocr_text": ""}
+
+        max_workers = min(4, toplam)
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {
+                executor.submit(_tek_ocr, i, fname, data): i
+                for i, (fname, data) in enumerate(dosya_verileri)
+            }
+            for future in as_completed(futures):
+                idx, result = future.result()
+                tamamlanan[0] += 1
+                if isinstance(result, list):
+                    all_results[idx] = result
+                else:
+                    all_results[idx] = result
+                gecen = _time.time() - baslama
+                ort = gecen / max(tamamlanan[0], 1)
+                kal = max(toplam - tamamlanan[0], 0) * ort
+                kstr = f"{int(kal//60)}dk {int(kal%60)}sn" if kal >= 60 else f"{int(kal)}sn"
+                gstr = f"{int(gecen//60)}dk {int(gecen%60)}sn" if gecen >= 60 else f"{gecen:.1f}sn"
+                progress.progress(tamamlanan[0] / max(toplam, 1), text=f"{tamamlanan[0]}/{toplam} | {gstr} gecti | ~{kstr} kaldi")
+
+        flat_results = []
+        for r in all_results:
+            if isinstance(r, list):
+                flat_results.extend(r)
             else:
-                kstr = f"{int(kal)}sn"
-            if gecen >= 60:
-                gstr = f"{int(gecen//60)}dk {int(gecen%60)}sn"
-            else:
-                gstr = f"{gecen:.1f}sn"
-            progress.progress((i + 1) / max(toplam, 1), text=f"{i+1}/{toplam} | {gstr} geçtı | ~{kstr} kaldı")
+                flat_results.append(r)
+        all_results = flat_results
 
         toplam_sure = _time.time() - baslama
-        if toplam_sure >= 60:
-            sure_metni = f"{int(toplam_sure//60)}dk {int(toplam_sure%60)}sn"
-        else:
-            sure_metni = f"{toplam_sure:.1f}sn"
-        progress.progress(1.0, text=f"✅ OCR tamamlandı! Toplam: {sure_metni} ({toplam} dosya)")
+        sure_metni = f"{int(toplam_sure//60)}dk {int(toplam_sure%60)}sn" if toplam_sure >= 60 else f"{toplam_sure:.1f}sn"
+        progress.progress(1.0, text=f"OCR tamamlandi! Toplam: {sure_metni} ({toplam} dosya, {max_workers} paralel)")
 
         cache_stats = ocr_cache_istatistik()
         cache_ratio = (cache_stats["hits"] * 100 // max(cache_stats["hits"] + cache_stats["misses"], 1))
         if cache_stats["hits"] > 0 or cache_stats["misses"] > 0:
-            st.caption(f"⚡ OCR Cache: {cache_stats['hits']} isabet / {cache_stats['misses']} yeni (%{cache_ratio} isabet) — {cache_stats['boyut']}/{cache_stats['limit']} dolu")
+            st.caption(f"OCR Cache: {cache_stats['hits']} isabet / {cache_stats['misses']} yeni (%{cache_ratio} isabet) — {cache_stats['boyut']}/{cache_stats['limit']} dolu")
 
         st.session_state.results = all_results
         st.session_state.processed = True
