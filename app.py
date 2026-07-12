@@ -41,6 +41,7 @@ from pages import (
     _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
     _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar
 )
+from tema import tema_uygula, tema_degistirici
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -104,6 +105,11 @@ if not auth_ok():
 if "mod" not in st.session_state:
     st.session_state.mod = "Bilanço"
 
+if "tema" not in st.session_state:
+    st.session_state.tema = "light"
+
+tema_uygula()
+
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
 
@@ -112,6 +118,8 @@ st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
 with st.sidebar:
     st.header("Aygıtlar")
     sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
+
+    tema_degistirici()
 
     st.divider()
     st.header("OCR Motoru")
