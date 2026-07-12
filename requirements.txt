@@ -6,3 +6,4 @@ numpy
 pytesseract
 pdf2image
 requests
+opencv-python-headless
