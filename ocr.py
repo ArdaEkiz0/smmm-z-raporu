@@ -560,7 +560,13 @@ def salon_bul(text):
         r'(?:MLZ|ALIM|SATIM|TOPTAN|PERAKENDE|T[İI]C)',
         r'(?:FATURA|TAHS[İI]LAT|ÖDEME|F[İI]ŞNO|SAYACI|SAYAC)',
         r'^\d{1,2}[\.\s]*[A-Z]{3,}',
-        r'ORTAKLIĞI|ORTAKLI[GĞ][İI]|LTD|ŞT[İI]|A\.Ş\.|SAN\.',
+        r'(?:MH\.|SK\.|CD\.|CAD\.|SOK\.|MAH\.)',
+        r'^\d{2,}',
+        r'(?:K[İI]RAZ|[İI]ZM[İI]R|[İI]STANBUL|ANKARA)',
+        r'(?:RAPOR|G[ÜU]N|G[ÜU]NL[ÜU]K|Z\s*G[ÜU]N|F[İI]Ş|TOPLAM|NAK[İI]T|KART|TUTAR|SAYI)',
+        r'(?:VD|TC|VKN)',
+        r'(?:PINAR|CADDE|SOKAK|MEZBAH|ÇAY|KAHVE|TEMEL|GIDA|MESRUBAT|TOST|T\.GIDA|T\.EKMEK|SIGARA|YA[PĞ]|MEYVE|SEBZE|MEYVE&SEBZE|SEBZESMEYVE)',
+        r'.*[^\x20-\x7E\xc0-\xff].*',  # Garbled chars (binary noise)
     ]
 
     firma_adaylari = []
@@ -573,7 +579,13 @@ def salon_bul(text):
         harf_sayisi = len(re.findall(r'[a-zA-ZİıŞşĞğÜüÖöÇç]', s))
         if harf_sayisi < 4:
             continue
+        # Skip if has too many garbled chars
+        garbled_sayisi = len(re.findall(r'[^\x20-\x7E\xc0-\xff]', s))
+        if garbled_sayisi > 2:
+            continue
         if s.isupper() or s.istitle():
+            firma_adaylari.append(s)
+        elif len(s.split()) <= 4 and harf_sayisi >= 5:
             firma_adaylari.append(s)
 
     if firma_adaylari:
@@ -587,6 +599,9 @@ def salon_bul(text):
                 puan -= 50
             if any(c in aday for c in [':', '/']):
                 puan -= 30
+            # Bonus for having only letters and spaces
+            if re.match(r'^[A-ZÇĞIİÖŞÜa-zçğıöşü\s]+$', aday):
+                puan += 30
             oncelik.append((puan, aday))
 
         en_iyi = max(oncelik)[1]
@@ -640,7 +655,7 @@ def parse_z_raporu(text):
 
     # Tarih
     tarih_pat = [
-        (r'TAR[İI]H[İI]?[:\-]?\s*(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})', True),
+        (r'TAR[İI]H[İIİl1]?[:\-]?\s*([0-9IlKkSs]{1,2})[\s./\-]+([0-9OoQq]{1,2})[\s./\-]+(\d{2,4})', True),
         (r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\s*(?:TAR[İI]H|SAAT)', True),
         (r'TAR[\.\s]*[:\-]?\s*(\d{1,2})[\s./\-]+(\d{1,2})[\s./\-]+(\d{2,4})', True),
         (r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})', True),
@@ -735,14 +750,14 @@ def parse_z_raporu(text):
 
     # Brüt
     brut_patterns = [
-        r'BR[UÜ]T[:\-]?\s*\d+\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
-        r'BR[UÜ]T\s*[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'BR[UÜ]T\s*[:\-]?\s*([\d,.]+)',
-        r'BR[UÜ]T\s*[:\-]?\s+\*?\+?\s*([\d][\d.,]*[\d.,])',
-        r'B\s*R\s*[UÜ]\s*T[:\-]?\s*([\d][\d.,\s]*[\d.,])',
-        r'B\s*R\s*[UÜ]\s*T[:\-]?\s*([\d,.]+)',
-        r'MAL[İI]\s*VER[İI][\s\S]{0,80}?TOPLAM\s*[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'BR[UÜ]T\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BR[UÜ]T[:\-]?\s*\d+\s*\*?\s*\+?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'BR[UÜ]T\s*[:\-]?\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'BR[UÜ]T\s*[:\-]?\s*([\d,.BOoIl]+)',
+        r'BR[UÜ]T\s*[:\-]?\s+\*?\+?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'B\s*R\s*[UÜ]\s*T[:\-]?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'B\s*R\s*[UÜ]\s*T[:\-]?\s*([\d,.BOoIl]+)',
+        r'MAL[İI]\s*VER[İI][\s\S]{0,80}?TOPLAM\s*[:\-]?\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'BR[UÜ]T\s+\*?\s*([\d][\d.,\sBOoIl]*[\d.,])',
     ]
     for pat in brut_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -776,12 +791,23 @@ def parse_z_raporu(text):
                 sonuc["brut"] = val
 
     if sonuc["brut"] == 0:
-        basit_toplam = re.search(r'\bTOPLAM\s+(?!F[İI]Ş)(?!KDV)(?!M[ÜU]KELLEF)(?![%])\s*\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        basit_toplam = re.search(r'\bTOPLAM\s+(?!F[İI]Ş)(?!KDV)(?!M[ÜU]KELLEF)(?![%])\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
         if basit_toplam:
             val_str = basit_toplam.group(1).replace(" ", "")
             val = parse_tutar(val_str)
             if val > 0:
                 sonuc["brut"] = val
+
+    # En buyuk TOPLAM (genellikle KDV-blok toplamlarindan buyuk olan)
+    if sonuc["brut"] == 0 or sonuc["brut"] < 100:
+        tum_toplamlar = re.findall(r'\bTOPLAM\b[\s\S]{0,30}?\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
+        en_buyuk = 0
+        for tm in tum_toplamlar:
+            v = parse_tutar(tm.replace(" ", ""))
+            if v > en_buyuk:
+                en_buyuk = v
+        if en_buyuk > sonuc["brut"] and en_buyuk > 100:
+            sonuc["brut"] = en_buyuk
 
     if sonuc["brut"] == 0 and sonuc["nakit"] > 0:
         sonuc["brut"] = sonuc["nakit"]
@@ -804,7 +830,7 @@ def parse_z_raporu(text):
                 break
 
     if sonuc["net_toplam"] == 0:
-        brut_match = re.search(r'(?:BR[UÜ]T|NET\s*S?AT[İI]Ş|MAL[İI]\s*VER[İI]|TOPLAM)\s*[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        brut_match = re.search(r'(?:BR[UÜ]T|NET\s*S?AT[İI]Ş|MAL[İI]\s*VER[İI]|TOPLAM)\s*[:\-]?\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
         if brut_match:
             val = parse_tutar(brut_match.group(1).replace(" ", ""))
             if val > 0:
@@ -817,34 +843,104 @@ def parse_z_raporu(text):
             oran = int(m.group(1))
             if 0 < oran <= 90:
                 tutar = parse_tutar(m.group(2)) if m.group(2) else 0
-                # Try to find the corresponding brut amount nearby
                 sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": 0, "kdv_tutari": tutar})
         except ValueError:
             pass
 
-    # Ürün satırları
-    satir_liste = t_duz.split("\n")
-    for satir in satir_liste:
-        satir = satir.strip()
-        if not satir:
-            continue
-        # skip header-like lines
-        if re.match(r'^(URUN|MALZEME|SIRA|TOPLAM|ARA\s*TOPLAM)', satir, re.IGNORECASE):
-            continue
-        # pattern: product_name miktar birim_fiyat tutar kdv_orani?
-        urun_pat = r'^(.+?)\s+(\d+[.,]?\d*)\s+(\d+[.,]?\d*)\s+(\d+[.,]?\d*)(?:\s+(\d+))?$'
-        m = re.match(urun_pat, satir)
-        if m:
+    # TOPLAM X1, X10, X20 KDV bloklari (Z raporu formatinda)
+    # Ornek: "TOPLAM Zi *17. 864, 90" (Zi = Z1), "TOPKDV X1 *176, 91"
+    kdv_x_pat = r'TOPLAM\s*([ZXz][Il1i]?[0O]?)\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(kdv_x_pat, t_duz, re.IGNORECASE):
+        try:
+            oran_str = m.group(1).upper().replace('Z', '2').replace('I', '1').replace('O', '0').replace('L', '1')
+            oran_str = re.sub(r'[^0-9]', '', oran_str)
+            if oran_str:
+                oran = int(oran_str)
+                if 0 < oran <= 90:
+                    tutar = parse_tutar(m.group(2).replace(" ", ""))
+                    if tutar > 0:
+                        sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": tutar, "kdv_tutari": 0})
+        except (ValueError, IndexError):
+            pass
+
+    # TOPKDV X1, X10, X20 (KDV tutarlari)
+    topkdv_x_pat = r'TOPKDV\s*[XZ]\s*([Il1iO0]{1,2})\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(topkdv_x_pat, t_duz, re.IGNORECASE):
+        try:
+            oran_str = m.group(1).replace('I', '1').replace('l', '1').replace('O', '0').replace('o', '0')
+            oran = int(oran_str)
+            if 0 < oran <= 90:
+                tutar = parse_tutar(m.group(2).replace(" ", ""))
+                if tutar > 0:
+                    mevcut = next((k for k in sonuc["kdv_kalemleri"] if k.get("oran") == oran), None)
+                    if mevcut:
+                        mevcut["kdv_tutari"] = tutar
+                    else:
+                        sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": 0, "kdv_tutari": tutar})
+        except (ValueError, IndexError):
+            pass
+
+    # Ürün satırları (hem satir satir hem tek satirdan parse)
+    satir_liste = t_duz.replace('\r', '\n').split("\n")
+    skip_urunler = re.compile(
+        r'^(URUN|MALZEME|SIRA|TOPLAM|ARA|MAHSUP|KDV|NAK[İI]?T|K\.?\s*KART|F[İI][ŞS]?\s*[İI]PTAL|GE[CÇ]ERL[İI]|MAL[İI]\s*F[İI][ŞS]|SL[İI]P|TOPLAM\s*F[İI][ŞS]|VERG[İI]|M[ÜU]ŞTER[İI]|M[ÜU]KELLEF|TAR[İI]H|SAAT|EK[ÜU]|BELGE|Z\s*NO|Z\s*SAYA[CÇ]|TOPKDV|AT\s+\d+|F[İI]Ş|ISYER[İI]|TER[İI]M[İI]NAL|TC\s*NO|VKN|TOPLAR|TUTAR|TOPKDV|KUM|M[ÜU]KELLEF)',
+        re.IGNORECASE
+    )
+    if len(satir_liste) <= 1:
+        # Tek satırsa, urun pattern'i için findall kullan
+        urun_pat_inline = r'([A-ZÇĞIİÖŞÜa-zçğıöşü][A-ZÇĞIİÖŞÜa-zçğıöşü\s\.\-]{2,30}?)\s+%?(\d{1,2})?\s*(\d+[.,]?\d*)\s+\*?\s*([\d][\d.,\sBOoIl]*[\d.,BOoIl])'
+        for m in re.finditer(urun_pat_inline, t_duz):
             ad = m.group(1).strip()
-            miktar = parse_tutar(m.group(2))
-            birim_fiyat = parse_tutar(m.group(3))
-            tutar = parse_tutar(m.group(4))
-            kdv_orani = int(m.group(5)) if m.group(5) else 0
-            sonuc["urunler"].append({
-                "urun": ad, "miktar": miktar,
-                "birim_fiyat": birim_fiyat, "tutar": tutar,
-                "oran": kdv_orani,
-            })
+            if skip_urunler.match(ad):
+                continue
+            if len(ad) < 2 or ad.isdigit():
+                continue
+            kdv_orani = 0
+            try:
+                kdv_orani = int(m.group(2)) if m.group(2) else 0
+            except (ValueError, TypeError):
+                pass
+            miktar = parse_tutar(m.group(3))
+            tutar = parse_tutar(m.group(4).replace(" ", ""))
+            if tutar > 0 and len(ad) > 1 and not ad.isdigit() and tutar < 10000000:
+                sonuc["urunler"].append({
+                    "urun": ad, "miktar": miktar,
+                    "birim_fiyat": 0, "tutar": tutar,
+                    "oran": kdv_orani,
+                })
+    else:
+        for satir in satir_liste:
+            satir = satir.strip()
+            if not satir or len(satir) < 5:
+                continue
+            if skip_urunler.match(satir):
+                continue
+            urun_pat = r'^(.+?)\s+%?(\d{1,2})?\s*(\d+[.,]?\d*)\s+\*?\s*([\d][\d.,\sBOoIl]*[\d.,BOoIl])$'
+            m = re.match(urun_pat, satir)
+            if m:
+                ad = m.group(1).strip()
+                kdv_orani = int(m.group(2)) if m.group(2) else 0
+                miktar = parse_tutar(m.group(3))
+                tutar = parse_tutar(m.group(4).replace(" ", ""))
+                if tutar > 0 and len(ad) > 1 and not ad.isdigit() and tutar < 10000000:
+                    sonuc["urunler"].append({
+                        "urun": ad, "miktar": miktar,
+                        "birim_fiyat": 0, "tutar": tutar,
+                        "oran": kdv_orani,
+                    })
+                    continue
+            urun_pat2 = r'^(.+?)\s+(\d+[.,]?\d*)\s+\*?\s*([\d][\d.,\sBOoIl]*[\d.,BOoIl])$'
+            m = re.match(urun_pat2, satir)
+            if m:
+                ad = m.group(1).strip()
+                miktar = parse_tutar(m.group(2))
+                tutar = parse_tutar(m.group(3).replace(" ", ""))
+                if tutar > 0 and len(ad) > 1 and not ad.isdigit() and tutar < 10000000:
+                    sonuc["urunler"].append({
+                        "urun": ad, "miktar": miktar,
+                        "birim_fiyat": 0, "tutar": tutar,
+                        "oran": 0,
+                    })
 
     # Tahsilat TOPLAM
     tahsilat_pat = [
@@ -874,13 +970,13 @@ def parse_z_raporu(text):
         r'NAK[İiI]?T\s*[:\-]?\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
         r'NAKIT\s*[:\-]?\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
         r'[Nn]akit\s*[:\-]?\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'NAK[İiI]?T\s*[:\-]?\s*\d+\s+[\dxX\*\+]*\s*([\d][\d.,\s]*[\d.,])',
-        r'NAKIT\s*[:\-]?\s*\d+\s+[\dxX\*\+]*\s*([\d][\d.,\s]*[\d.,])',
+        r'NAK[İiI]?T\s*[:\-]?\s*\d+\s+[\dxX\*\+\-]*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'NAKIT\s*[:\-]?\s*\d+\s+[\dxX\*\+\-]*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KASA\s*NAK[İiI]?T[\s\S]{0,40}?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KASA\s*NAKIT[\s\S]{0,40}?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'NAK[İiI]?T\s*VE\s*NAK[İiI]?T\s*[\s\S]{0,40}?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'NAK[İiI]?T\s*[:\-]?\s+\d+\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'NAK[İiI]?T\s*[:\-]?\s+\d+[.,]?\d*\s*[\dxX\*]?\s*([\d][\d.,\s]*[\d.,])',
+        r'NAK[İiI]?T\s*[:\-]?\s+\d+[.,]?\d*\s*[\dxX\*]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in nakit_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -923,25 +1019,25 @@ def parse_z_raporu(text):
 
     # Kredi Kartı
     kart_patterns = [
-        r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KRED[İI]?\s*KART[İIı]?[:\-]?\s+([\d,.]+)',
-        r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Kredi\s*Kart[ıi]?[:\-]?\s*([\d,.]+)',
         r'Banka\s*Kart[ıi]?\s*[ıi]?le[:\-]?\s*([\d,.]+)',
-        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*([\d][\d.,\s]*[\d.,])',
-        r'BANKA\s*[/\-]\s*KART[İIı]?[:\-/]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'KASA\s*Nakit[\s\S]{0,40}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*([\d][\d.,\s]*[\d.,])',
-        r'POS\s*CIRO\s*VE\s*TAHS[İI]LAT[\s\S]{0,80}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]?[İI]?[sS]?\s*Bankas[ıiıİI][:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]\s*BANKAS[İI][:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]\s*Bankas[ıi][:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'Is\s*Bankas[ıiıİI][:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]\s*KART[İIı]?[:\-/]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'KASA\s*Nakit[\s\S]{0,40}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'POS\s*CIRO\s*VE\s*TAHS[İI]LAT[\s\S]{0,80}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'[İI][ŞS]?[İI]?[sS]?\s*Bankas[ıiıİI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'[İI][ŞS]\s*BANKAS[İI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'[İI][ŞS]\s*Bankas[ıi][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'Is\s*Bankas[ıiıİI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Banka\s*POS[\s\S]{0,30}?\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'K\s*[\.\s]?\s*KART[İIı]?[\s:]\s*\d+\s+[\dxX\*]?\s*([\d][\d.,\s]*[\d.,])',
-        r'K\s*[\.\s]\s*KART[İIı]?[\s:]\s*[\dxX\*]?\s*([\d][\d.,\s]*[\d.,])',
+        r'K\s*[\.\s]?\s*KART[İIı]?[\s:]\s*[\dxX]*\s+[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'K\s*[\.\s]\s*KART[İIı]?[\s:]\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in kart_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -960,7 +1056,7 @@ def parse_z_raporu(text):
             val_str = kk_satiri.group(1).replace(" ", "")
             if "," in val_str or "." in val_str:
                 val = parse_tutar(val_str)
-                if val > 0:
+                if val > 50 and val > sonuc["kredi_karti"]:
                     sonuc["kredi_karti"] = val
 
     if sonuc["kredi_karti"] == 0:
@@ -969,16 +1065,26 @@ def parse_z_raporu(text):
             val_str = banka_satiri.group(1).replace(" ", "")
             if "," in val_str or "." in val_str:
                 val = parse_tutar(val_str)
-                if val > 0:
+                if val > 50 and val > sonuc["kredi_karti"]:
                     sonuc["kredi_karti"] = val
 
     if sonuc["kredi_karti"] == 0:
-        kart_fallback = re.search(r'K\.?\s*KART[İIı]?[\s\S]{0,30}?[\dxX\*]?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        kart_fallback = re.search(r'K\.?\s*KART[İIı]?[\s\S]{0,30}?[\dxX\*\-\.\s]*?\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
         if kart_fallback:
             val_str = kart_fallback.group(1).replace(" ", "")
             if "," in val_str or "." in val_str:
                 val = parse_tutar(val_str)
-                if val > 0:
+                if val > 50 and val > sonuc["kredi_karti"]:
+                    sonuc["kredi_karti"] = val
+
+    # KART sonrasi * tutar (son care)
+    if sonuc["kredi_karti"] == 0 or sonuc["kredi_karti"] < 100:
+        kart_yakin = re.search(r'KART[IiıIİ][\s\S]{0,80}?\*\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        if kart_yakin:
+            val_str = kart_yakin.group(1).replace(" ", "")
+            if "," in val_str or "." in val_str:
+                val = parse_tutar(val_str)
+                if val > 50 and val > sonuc["kredi_karti"]:
                     sonuc["kredi_karti"] = val
 
     if sonuc["kredi_karti"] == 0:
@@ -1002,6 +1108,10 @@ def parse_z_raporu(text):
         r'Yemek\s*[ÇC]ek[ıi][:\-]?\s*([\d,.]+)',
         r'YEMEK\s*[ÇC]EK[İI][\s/][Kk][Aa][Rr][Tt][İIı][:\-/]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Yemek\s*[ÇC]ek[ıi][\s/][Kk][Aa][Rr][Tt][ıiı][:\-/]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'TICKET\s*RESTAURANT[:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'MULTINET[:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'SODEXO[:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'SETCARD[:\-]?\s*\d*\s*\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in yemek_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)

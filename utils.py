@@ -34,6 +34,12 @@ def parse_tutar(val):
         return 0.0
     try:
         s = str(val).strip()
+        # OCR hata duzeltmeleri: B -> 8 (digit context), O -> 0 (digit context)
+        s = re.sub(r'(\d)B', r'\g<1>8', s)
+        s = re.sub(r'B(\d)', r'8\1', s)
+        s = re.sub(r'(\d)O(?=\d)', r'\g<1>0', s)
+        s = re.sub(r'O(?=\d)', '0', s)
+        s = s.replace('I', '1').replace('l', '1')
         s = re.sub(r'[^\d,.\-]', '', s)
         if not s:
             return 0.0
