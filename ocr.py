@@ -422,24 +422,40 @@ def _ocr_hazirla_otsu(img, offset=0):
 
 
 def ocr_image(img):
-    """Ana OCR pipeline - PSM 6'yı tercih eder, birden fazla mod ve threshold ile en iyi sonucu seçer."""
+    """Ana OCR pipeline - Hızlı: önce az deneme, iyi sonuç yoksa genişlet."""
     candidates = []
 
     modes = [
-        ("default", [-10, -5, 0, 5, 10]),
-        ("kalin", [-10, 0, 10]),
+        ("default", [0, -5, 5]),
+        ("kalin", [0]),
     ]
 
     for mode_name, offsets in modes:
         hazir = gorsel_hazirla(img, mode=mode_name)
         for offset in offsets:
             otsu = _ocr_hazirla_otsu(hazir, offset)
-            for psm in [6, 4, 3]:
+            for psm in [6, 4]:
                 text = ocr_guvenli(otsu, psm=psm)
                 if text:
                     text = ocr_duzelt(text)
                     score = ocr_skorla(text)
                     candidates.append((score, psm, mode_name, len(text), text))
+                    if score >= 200:
+                        return text
+
+    if not candidates or (candidates and candidates[0][0] < 100):
+        for mode_name, offsets in [("default", [-10, 10]), ("sayisal", [0])]:
+            hazir = gorsel_hazirla(img, mode=mode_name)
+            for offset in offsets:
+                otsu = _ocr_hazirla_otsu(hazir, offset)
+                for psm in [6, 4, 3]:
+                    text = ocr_guvenli(otsu, psm=psm)
+                    if text:
+                        text = ocr_duzelt(text)
+                        score = ocr_skorla(text)
+                        candidates.append((score, psm, mode_name, len(text), text))
+                        if score >= 200:
+                            return text
 
     if candidates:
         candidates.sort(key=lambda x: (-x[0], -x[3]))
@@ -460,11 +476,11 @@ def ocr_image(img):
             best_text = "\n".join(lines)
 
     if best_score < 50:
-        for rot in [90, 270, 180]:
+        for rot in [90, 270]:
             rotated = gorsel_hazirla(img.rotate(rot, expand=True), mode="default")
-            for offset in [-10, 0, 10]:
+            for offset in [0]:
                 otsu = _ocr_hazirla_otsu(rotated, offset)
-                for psm in [4, 6]:
+                for psm in [6]:
                     text = ocr_guvenli(otsu, psm=psm)
                     if text:
                         text = ocr_duzelt(text)
