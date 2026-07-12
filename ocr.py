@@ -804,6 +804,9 @@ def parse_z_raporu(text):
         en_buyuk = 0
         for tm in tum_toplamlar:
             v = parse_tutar(tm.replace(" ", ""))
+            # YEKÜN/KÜM. değerleri genelde çok büyük, atla
+            if v > 100000 or v < 100:
+                continue
             if v > en_buyuk:
                 en_buyuk = v
         if en_buyuk > sonuc["brut"] and en_buyuk > 100:
@@ -811,6 +814,12 @@ def parse_z_raporu(text):
 
     if sonuc["brut"] == 0 and sonuc["nakit"] > 0:
         sonuc["brut"] = sonuc["nakit"]
+
+    # Brut mantikli degilse (cok buyuk veya nakit+kk ile uyumsuz), nakit+kk yap
+    if sonuc["brut"] > 100000 and (sonuc["nakit"] + sonuc["kredi_karti"]) > 0:
+        beklenen = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"] + sonuc["iadeler"]
+        if abs(sonuc["brut"] - beklenen) > 100000:
+            sonuc["brut"] = beklenen
 
     # Net Ciro / Net Tutar
     net_pat = [
@@ -833,8 +842,12 @@ def parse_z_raporu(text):
         brut_match = re.search(r'(?:BR[UÜ]T|NET\s*S?AT[İI]Ş|MAL[İI]\s*VER[İI]|TOPLAM)\s*[:\-]?\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
         if brut_match:
             val = parse_tutar(brut_match.group(1).replace(" ", ""))
-            if val > 0:
+            if val > 0 and val < 100000:
                 sonuc["net_toplam"] = val
+
+    # Net cok buyukse duzelt
+    if sonuc["net_toplam"] > 100000 and sonuc["brut"] > 0 and sonuc["brut"] < 100000:
+        sonuc["net_toplam"] = sonuc["brut"]
 
     # KDV Kalemleri (parsedaki inline urun kdv kalemleri)
     kdv_blok_pat = r'KDV[:\-]?\s*(?:ORAN[İI]?|MATRAH)?[:\-]?\s*(\d+)[\s,.]*(\d+[.,]\d+)?'
