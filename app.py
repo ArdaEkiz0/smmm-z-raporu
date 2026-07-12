@@ -145,18 +145,33 @@ with st.sidebar:
     st.header("Mükellef")
     ml = mukellefler()
     mevcut_mod = st.session_state.get("mod", "Bilanço")
-    secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed")
+    secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed", key="mod_radio")
     st.session_state.mod = secili_mod
 
-    filtreli_ml = [m for m in ml if m.get("mod", "Serbest Meslek") == secili_mod]
-    secili_kisa = st.selectbox("Mükellef Seç", ["(Genel)"] + [m.get("kisa_adi", m["adi"]) for m in filtreli_ml], label_visibility="collapsed")
-    if secili_kisa != "(Genel)":
+    def _mod_eslesir(m, secili):
+        m_mod = m.get("mod", "Serbest Meslek")
+        if secili == "Bilanço":
+            return "Bilan" in m_mod
+        return "Serbest" in m_mod or m_mod == "Serbest Meslek"
+
+    filtreli_ml = [m for m in ml if _mod_eslesir(m, secili_mod)]
+    muk_ad_listesi = ["(Genel)"] + [m.get("kisa_adi", m["adi"]) for m in filtreli_ml]
+    onceki_idx = 0
+    if "secili_mukellef" in st.session_state and st.session_state.secili_mukellef:
+        for i, m in enumerate(filtreli_ml):
+            if m.get("adi", "") == st.session_state.secili_mukellef:
+                onceki_idx = i + 1
+                break
+    secili_kisa = st.selectbox("Mükellef Seç", muk_ad_listesi, index=onceki_idx, label_visibility="collapsed", key="muk_select")
+    if secili_kisa != "(Genel)" and secili_kisa:
         for m in filtreli_ml:
             if m.get("kisa_adi", m["adi"]) == secili_kisa:
                 st.session_state.secili_mukellef = m["adi"]
+                st.session_state.secili_mukellef_kisa = secili_kisa
                 break
     else:
         st.session_state.secili_mukellef = ""
+        st.session_state.secili_mukellef_kisa = "(Genel)"
 
     if st.session_state.get("mod") == "Serbest Meslek":
         with st.expander("LUCA Şablonu", expanded=False):
