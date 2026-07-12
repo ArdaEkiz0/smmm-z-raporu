@@ -126,141 +126,87 @@ LIGHT_CSS = """
 
 DARK_CSS = """
 <style>
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-    }
-
-    h1 {
-        font-weight: 700 !important;
-        letter-spacing: -0.02em !important;
+    /* Ana sayfa arka planı */
+    .stApp, .main .block-container, section[data-testid="stSidebar"],
+    section[data-testid="stMain"], header[data-testid="stHeader"],
+    div[data-testid="stAppViewContainer"], .stAppViewContainer {
+        background-color: #0F172A !important;
         color: #F1F5F9 !important;
     }
 
-    h2, h3 {
-        font-weight: 600 !important;
-        letter-spacing: -0.01em !important;
-        color: #E2E8F0 !important;
-    }
+    /* Başlık */
+    h1 { font-weight: 700 !important; color: #F1F5F9 !important; }
+    h2, h3 { font-weight: 600 !important; color: #E2E8F0 !important; }
+    p, span, label, div { color: #CBD5E1 !important; }
 
+    /* Sidebar */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
-        border-right: 1px solid #334155;
+        background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
+        border-right: 1px solid #334155 !important;
     }
-
-    [data-testid="stSidebar"] * {
+    [data-testid="stSidebar"] [data-testid="stMarkdown"] p,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] [data-baseweb="radio"] label {
         color: #F1F5F9 !important;
     }
 
+    /* Butonlar */
     .stButton > button {
         border-radius: 8px !important;
-        font-weight: 500 !important;
-        transition: all 0.2s ease !important;
         background: #1E293B !important;
         color: #F1F5F9 !important;
-        border: 1px solid #334155 !important;
+        border: 1px solid #475569 !important;
     }
-
     .stButton > button:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(45, 212, 191, 0.25) !important;
         border-color: #2DD4BF !important;
+        box-shadow: 0 2px 8px rgba(45, 212, 191, 0.2) !important;
     }
-
     .stButton > button[kind="primary"] {
-        background: linear-gradient(135deg, #14B8A6 0%, #2DD4BF 100%) !important;
+        background: linear-gradient(135deg, #14B8A6, #2DD4BF) !important;
         color: #0F172A !important;
         border: none !important;
         font-weight: 600 !important;
     }
 
+    /* Input */
     .stTextInput input, .stNumberInput input, .stTextArea textarea {
-        border-radius: 6px !important;
         background: #1E293B !important;
         color: #F1F5F9 !important;
-        border: 1px solid #334155 !important;
+        border: 1px solid #475569 !important;
+        border-radius: 6px !important;
     }
-
     .stTextInput input:focus, .stNumberInput input:focus {
         border-color: #2DD4BF !important;
-        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15) !important;
+        box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.15) !important;
     }
 
-    .stDataFrame {
-        border-radius: 8px !important;
-        overflow: hidden !important;
-        border: 1px solid #334155 !important;
-    }
-
-    .streamlit-expanderHeader {
-        border-radius: 8px !important;
-        background: #1E293B !important;
-        color: #F1F5F9 !important;
-        font-weight: 500 !important;
-    }
-
+    /* Metric */
     [data-testid="stMetricValue"] {
-        font-size: 1.8rem !important;
+        color: #2DD4BF !important;
         font-weight: 700 !important;
-        color: #2DD4BF !important;
     }
+    [data-testid="stMetricLabel"] { color: #94A3B8 !important; }
 
-    [data-testid="stMetricLabel"] {
-        color: #94A3B8 !important;
-    }
-
-    .stProgress > div > div > div > div {
-        background: linear-gradient(90deg, #14B8A6 0%, #2DD4BF 100%) !important;
-    }
-
-    .stTabs [data-baseweb="tab"] {
+    /* Alert / Success */
+    [data-testid="stAlert"], .stAlert {
         background: #1E293B !important;
-        color: #94A3B8 !important;
-        border-radius: 8px 8px 0 0 !important;
+        border-left-color: #2DD4BF !important;
     }
 
-    .stTabs [aria-selected="true"] {
-        background: #0F172A !important;
-        color: #2DD4BF !important;
-    }
-
-    .stAlert {
-        border-radius: 8px !important;
+    /* Expander */
+    .streamlit-expanderHeader {
         background: #1E293B !important;
-    }
-
-    code {
-        background: #1E293B !important;
-        color: #2DD4BF !important;
-        padding: 2px 6px !important;
-        border-radius: 4px !important;
-    }
-
-    [data-testid="stFileUploader"] {
-        border-radius: 8px !important;
-        border: 2px dashed #334155 !important;
-        background: #1E293B !important;
-    }
-
-    [data-testid="stFileUploader"] * {
         color: #F1F5F9 !important;
     }
 
-    .stSpinner > div {
-        border-color: #2DD4BF !important;
-    }
+    /* Divider */
+    hr { border-color: #334155 !important; }
 
-    .stMarkdown, .stText, p, label, span {
-        color: #F1F5F9 !important;
-    }
-
-    .stDataFrame [data-testid="stTable"] {
-        background: #0F172A !important;
-    }
-
-    div[data-testid="stRadio"] label, div[data-testid="stCheckbox"] label {
-        color: #F1F5F9 !important;
-    }
+    /* Radio */
+    [data-baseweb="radio"] label { color: #CBD5E1 !important; }
+    [data-baseweb="radio"] span { color: #CBD5E1 !important; }
 </style>
 """
 
