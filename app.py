@@ -114,6 +114,7 @@ for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
 
 st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
+st.caption("v2.7-ocr-fixed | " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 with st.sidebar:
     st.header("Aygıtlar")
