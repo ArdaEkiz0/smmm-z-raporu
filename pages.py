@@ -378,10 +378,16 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
                     sozluk_oncesi = len(ogrenilen_sozluk())
                     alan_oncesi = len(ogrenilen_alanlar() if 'ogrenilen_alanlar' in dir() else {})
+                    kayit_hatasi = None
                     try:
+                        if not results or not isinstance(results, list):
+                            raise ValueError("results boş veya geçersiz - tekrar OCR çalıştırın")
                         gecmis_kaydet(results, hesap_kodlari, secili_muk)
                     except Exception as e:
+                        kayit_hatasi = str(e)
                         log.error(f"Kaydet hatasi: {e}")
+                        import traceback
+                        log.error(traceback.format_exc())
 
                     sozluk_sonra = len(ogrenilen_sozluk())
                     eklenen_kelime = sozluk_sonra - sozluk_oncesi
@@ -390,7 +396,15 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         ogr_mesaj_parts.append(f"📚 **{ogr_sayisi}** alan öğrenildi (firma/banka/tarih/Z No)")
                     if eklenen_kelime > 0:
                         ogr_mesaj_parts.append(f"🔤 **{eklenen_kelime}** yeni kelime düzeltmesi öğrenildi")
-                    if ogr_mesaj_parts:
+                    if kayit_hatasi:
+                        st.session_state.kaydet_bildirim = {
+                            "tip": "hata",
+                            "mesaj": f"❌ **Kaydetme başarısız!**",
+                            "detay": f"Hata: {kayit_hatasi[:200]}",
+                            "ogren_sayisi": 0,
+                            "eklenen_kelime": 0,
+                        }
+                    elif ogr_mesaj_parts:
                         st.session_state.kaydet_bildirim = {
                             "tip": "basari",
                             "mesaj": " | ".join(ogr_mesaj_parts),
@@ -427,6 +441,11 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 st.info(_bildirim["mesaj"])
                 if _bildirim.get("detay"):
                     st.caption(_bildirim["detay"])
+            elif _bildirim["tip"] == "hata":
+                st.error(_bildirim["mesaj"])
+                if _bildirim.get("detay"):
+                    st.code(_bildirim["detay"])
+                st.warning("⚠️ Veri kaydedilemedi! Tekrar deneyin veya sayfayı yenileyin.")
             if _bildirim.get("ogren_sayisi", 0) > 0 or _bildirim.get("eklenen_kelime", 0) > 0:
                 st.toast(
                     f"✅ Öğrenildi! ({_bildirim.get('ogren_sayisi', 0)} alan, {_bildirim.get('eklenen_kelime', 0)} kelime)",

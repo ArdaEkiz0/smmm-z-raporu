@@ -17,6 +17,7 @@ def dosya_oku(path, default=None):
 def dosya_yaz(path, data):
     import tempfile
     dir_name = os.path.dirname(path) or "."
+    tmp_path = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=dir_name, delete=False) as tmp:
             json.dump(data, tmp, indent=2, ensure_ascii=False)
@@ -24,8 +25,11 @@ def dosya_yaz(path, data):
         os.replace(tmp_path, path)
     except Exception:
         log.warning("dosya_yaz hatası: %s", path, exc_info=True)
-        if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
         raise
 
 
