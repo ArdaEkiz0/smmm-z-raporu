@@ -849,6 +849,9 @@ def parse_z_raporu(text):
     if sonuc["net_toplam"] > 100000 and sonuc["brut"] > 0 and sonuc["brut"] < 100000:
         sonuc["net_toplam"] = sonuc["brut"]
 
+    if sonuc["net_toplam"] == 0 and sonuc["brut"] > 0:
+        sonuc["net_toplam"] = sonuc["brut"]
+
     # KDV Kalemleri (parsedaki inline urun kdv kalemleri)
     kdv_blok_pat = r'KDV[:\-]?\s*(?:ORAN[İI]?|MATRAH)?[:\-]?\s*(\d+)[\s,.]*(\d+[.,]\d+)?'
     for m in re.finditer(kdv_blok_pat, t_duz, re.IGNORECASE):
