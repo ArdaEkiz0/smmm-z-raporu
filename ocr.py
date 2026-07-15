@@ -2,6 +2,7 @@ import os
 import re
 import io
 import logging
+import numpy as np
 from datetime import datetime
 from PIL import Image, ImageFilter, ImageOps
 from utils import log
@@ -494,6 +495,62 @@ def ocr_image(img):
 
 def ocr_gorsel_isle(img):
     return ocr_image(img)
+
+
+# EasyOCR lazy loader - ilk kullanimda yuklenir
+_easyocr_reader = None
+_easyocr_available = None
+
+def _get_easyocr():
+    """EasyOCR reader'i lazy-load et, hata olursa None don."""
+    global _easyocr_reader, _easyocr_available
+    if _easyocr_available is False:
+        return None
+    if _easyocr_reader is not None:
+        return _easyocr_reader
+    try:
+        import easyocr
+        _easyocr_reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
+        _easyocr_available = True
+        return _easyocr_reader
+    except Exception as e:
+        log.warning(f"EasyOCR yuklenemedi: {e}")
+        _easyocr_available = False
+        return None
+
+
+def easyocr_gorsel_isle(img):
+    """EasyOCR ile gorsel oku, sonucu text olarak don."""
+    reader = _get_easyocr()
+    if reader is None:
+        return ""
+    try:
+        img_array = np.array(img)
+        results = reader.readtext(img_array, detail=0, paragraph=False)
+        return "\n".join(results)
+    except Exception as e:
+        log.warning(f"EasyOCR okuma hatasi: {e}")
+        return ""
+
+
+def ocr_gorsel_isle_hibrit(img):
+    """Tesseract + EasyOCR hibrit: en iyi parse sonucunu sec, text don."""
+    tess_text = ocr_image(img)
+    tess_score = ocr_skorla(tess_text)
+
+    easy_text = easyocr_gorsel_isle(img)
+    if not easy_text:
+        return tess_text
+    easy_score = ocr_skorla(easy_text)
+
+    # Eger easyocr belirgin sekilde daha iyi, onu kullan
+    if easy_score > tess_score + 30:
+        return easy_text
+    # Eger tess daha iyi veya esit, onu kullan
+    if tess_score >= easy_score:
+        return tess_text
+    # Beraber kullanmak en iyisi
+    return tess_text + "\n" + easy_text
 
 
 # Initialize OCR engine on module load

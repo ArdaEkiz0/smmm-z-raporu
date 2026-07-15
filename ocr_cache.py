@@ -56,10 +56,12 @@ def ocr_gorsel_isle_cached(img):
         if hasattr(st, "session_state"):
             st.session_state["ocr_cache_stats"]["hits"] += 1
         return cached
-    from ocr import ocr_gorsel_isle
-    sonuc = ocr_gorsel_isle(img)
-    ocr_cache_kaydet(key, sonuc)
+    from ocr import ocr_gorsel_isle_hibrit
+    sonuc = ocr_gorsel_isle_hibrit(img)
+    if isinstance(sonuc, tuple):
+        sonuc = sonuc[0] if sonuc else ""
+    ocr_cache_kaydet(key, sonuc or "")
     _cache_misses += 1
     if hasattr(st, "session_state"):
         st.session_state["ocr_cache_stats"]["misses"] += 1
-    return sonuc
+    return sonuc or ""
