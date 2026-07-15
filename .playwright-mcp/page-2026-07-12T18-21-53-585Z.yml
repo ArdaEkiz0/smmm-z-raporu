@@ -1,0 +1,99 @@
+- generic [ref=e2]:
+  - generic [ref=e52]:
+    - button "keyboard_double_arrow_left" [ref=e224] [cursor=pointer]
+    - generic [ref=e56]:
+      - heading "Aygıtlar" [level=2] [ref=e60]
+      - radiogroup "Sayfa Seç" [ref=e63] [cursor=pointer]:
+        - generic [ref=e64]:
+          - radio "Dashboard"
+          - paragraph [ref=e69]: Dashboard
+        - generic [ref=e70]:
+          - radio "Z Raporu Yükle" [checked] [active]
+          - paragraph [ref=e75]: Z Raporu Yükle
+        - generic [ref=e76]:
+          - radio "Fiş Geçmişi"
+          - paragraph [ref=e81]: Fiş Geçmişi
+        - generic [ref=e82]:
+          - radio "Mükellef Yönetimi"
+          - paragraph [ref=e87]: Mükellef Yönetimi
+        - generic [ref=e88]:
+          - radio "KDV Özeti"
+          - paragraph [ref=e93]: KDV Özeti
+        - generic [ref=e94]:
+          - radio "Ayarlar"
+          - paragraph [ref=e99]: Ayarlar
+      - separator [ref=e104]
+      - heading "OCR Motoru" [level=2] [ref=e108]
+      - radiogroup "OCR Motoru Seç" [ref=e111] [cursor=pointer]:
+        - generic [ref=e112]:
+          - radio "Tesseract" [checked]
+          - paragraph [ref=e117]: Tesseract
+        - generic [ref=e118]:
+          - radio "GOT-OCR API"
+          - paragraph [ref=e123]: GOT-OCR API
+      - status [ref=e126]:
+        - generic [ref=e128]:
+          - generic [ref=e129]: 🟢
+          - paragraph [ref=e133]: Tesseract OCR hazir
+      - separator [ref=e138]
+      - heading "Mükellef" [level=2] [ref=e142]
+      - radiogroup "Muhasebe Türü" [ref=e145] [cursor=pointer]:
+        - generic [ref=e146]:
+          - radio "Bilanço" [checked]
+          - paragraph [ref=e151]: Bilanço
+        - generic [ref=e152]:
+          - radio "Serbest Meslek"
+          - paragraph [ref=e157]: Serbest Meslek
+      - generic [ref=e161]:
+        - generic [ref=e162]:
+          - generic [ref=e163]: (Genel)
+          - combobox "Selected (Genel). Mükellef Seç" [ref=e165]
+        - img "open" [ref=e167]
+      - separator [ref=e173]
+      - heading "Hesap Kodları" [level=2] [ref=e177]
+      - group [ref=e180]:
+        - generic "keyboard_arrow_right Hesap Kodları" [ref=e181] [cursor=pointer]:
+          - generic [ref=e182]:
+            - generic [ref=e183]: keyboard_arrow_right
+            - paragraph [ref=e187]: Hesap Kodları
+      - separator [ref=e192]
+      - heading "Ürün Kodları" [level=2] [ref=e196]
+      - group [ref=e199]:
+        - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=e200] [cursor=pointer]:
+          - generic [ref=e201]:
+            - generic [ref=e202]: keyboard_arrow_right
+            - paragraph [ref=e206]: Ürün Kodlarını Yönet
+  - generic [ref=e3]:
+    - banner [ref=e6]:
+      - generic [ref=e9]:
+        - button "Deploy" [ref=e11] [cursor=pointer]
+        - button "Main menu" [ref=e15] [cursor=pointer]
+    - generic [ref=e19]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=e217]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=e25]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-sistemi"
+      - heading "Z Raporu Fotoğraf Yükleme ve OCR" [level=2] [ref=e273]:
+        - text: Z Raporu Fotoğraf Yükleme ve OCR
+        - generic [ref=e222]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - alert [ref=e276]:
+        - paragraph [ref=e280]: Mükellef seçilmedi. Sidebar'dan mükellef seçin.
+      - generic [ref=e282]:
+        - paragraph [ref=e286]: Z raporu/fiş seç (JPG/PNG/PDF)
+        - region "Z raporu/fiş seç (JPG/PNG/PDF)" [ref=e287] [cursor=pointer]:
+          - button "Choose File" [ref=e288]
+          - button "upload Upload" [ref=e290]:
+            - generic [ref=e292]:
+              - generic [ref=e293]: upload
+              - paragraph [ref=e296]: Upload
+          - generic [ref=e297]: 200MB per file • JPG, PNG, PDF
+      - generic [ref=e301]:
+        - button [disabled] [ref=e306]:
+          - paragraph [ref=e310]: HEPSİNİ OKU (OCR)
+        - button [ref=e315] [cursor=pointer]:
+          - paragraph [ref=e319]: Temizle

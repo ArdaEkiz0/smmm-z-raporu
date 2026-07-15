@@ -1,0 +1,72 @@
+- generic [ref=f2e2]:
+  - generic [ref=f2e48]:
+    - button "keyboard_double_arrow_left" [ref=f2e51] [cursor=pointer]
+    - generic [ref=f2e56]:
+      - heading "Aygıtlar" [level=2] [ref=f2e60]
+      - alert [ref=f2e62]:
+        - generic [ref=f2e63]:
+          - strong [ref=f2e64]: "TypeError:"
+          - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+          - generic [ref=f2e65]:
+            - code
+      - button [ref=f2e68] [cursor=pointer]:
+        - paragraph [ref=f2e72]: 🌙 Karanlık Mod
+      - separator [ref=f2e77]
+      - heading "OCR Motoru" [level=2] [ref=f2e81]
+      - alert [ref=f2e83]:
+        - generic [ref=f2e84]:
+          - strong [ref=f2e85]: "TypeError:"
+          - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+          - generic [ref=f2e86]:
+            - code
+      - status [ref=f2e89]:
+        - generic [ref=f2e91]:
+          - generic [ref=f2e92]: 🟢
+          - paragraph [ref=f2e96]: Tesseract OCR hazir
+      - separator [ref=f2e101]
+      - heading "Mükellef" [level=2] [ref=f2e105]
+      - alert [ref=f2e107]:
+        - generic [ref=f2e108]:
+          - strong [ref=f2e109]: "TypeError:"
+          - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+          - generic [ref=f2e110]:
+            - code
+      - alert [ref=f2e112]:
+        - generic [ref=f2e113]:
+          - strong [ref=f2e114]: "TypeError:"
+          - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js"
+          - generic [ref=f2e115]:
+            - code
+      - separator [ref=f2e120]
+      - heading "Hesap Kodları" [level=2] [ref=f2e124]
+      - group [ref=f2e127]:
+        - generic "keyboard_arrow_right Hesap Kodları" [ref=f2e128] [cursor=pointer]:
+          - generic [ref=f2e129]:
+            - generic [ref=f2e130]: keyboard_arrow_right
+            - paragraph [ref=f2e134]: Hesap Kodları
+  - generic [ref=f2e3]:
+    - banner [ref=f2e6]:
+      - generic [ref=f2e9]:
+        - generic [ref=f2e138]:
+          - img "Running..." [ref=f2e139]
+          - button "Stop" [ref=f2e144] [cursor=pointer]
+        - button "Main menu" [ref=f2e11] [cursor=pointer]
+    - generic [ref=f2e15]:
+      - generic:
+        - iframe
+      - generic [ref=f2e16]: "<style> /* Modern font ve spacing */ .block-container { padding-top: 2rem; padding-bottom: 2rem; } /* Başlık stili */ h1 { font-weight: 700 !important; letter-spacing: -0.02em !important; } h2, h3 { font-weight: 600 !important; letter-spacing: -0.01em !important; } /* Sidebar güzelleştirme */ [data-testid=\"stSidebar\"] { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-right: 1px solid #e2e8f0; } /* Buton iyileştirmeleri */ .stButton > button { border-radius: 8px !important; font-weight: 500 !important; transition: all 0.2s ease !important; } .stButton > button:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15) !important; } /* Primary buton */ .stButton > button[kind=\"primary\"] { background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%) !important; color: white !important; border: none !important; } /* Input iyileştirmeleri */ .stTextInput input, .stNumberInput input, .stTextArea textarea { border-radius: 6px !important; border: 1px solid #cbd5e1 !important; } .stTextInput input:focus, .stNumberInput input:focus { border-color: #0F766E !important; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1) !important; } /* DataFrame / Tablo */ .stDataFrame { border-radius: 8px !important; overflow: hidden !important; border: 1px solid #e2e8f0 !important; } /* Expander */ .streamlit-expanderHeader { border-radius: 8px !important; background: #f8fafc !important; font-weight: 500 !important; } /* Metric kartları */ [data-testid=\"stMetricValue\"] { font-size: 1.8rem !important; font-weight: 700 !important; color: #0F766E !important; } /* Progress bar */ .stProgress > div > div > div > div { background: linear-gradient(90deg, #0F766E 0%, #14B8A6 100%) !important; } /* Tab stili */ .stTabs [data-baseweb=\"tab-list\"] { gap: 4px; } .stTabs [data-baseweb=\"tab\"] { border-radius: 8px 8px 0 0 !important; padding: 8px 16px !important; font-weight: 500 !important; } /* Success/Info/Warning kutuları */ .stAlert { border-radius: 8px !important; border-left-width: 4px !important; } /* Code blokları */ code { background: #f1f5f9 !important; padding: 2px 6px !important; border-radius: 4px !important; font-size: 0.9em !important; } /* File uploader */ [data-testid=\"stFileUploader\"] { border-radius: 8px !important; border: 2px dashed #cbd5e1 !important; padding: 1rem !important; } /* Spinner */ .stSpinner > div { border-color: #0F766E !important; } </style>"
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=f2e151]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=f2e152]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-ve-fis-yoenetim-sistemi"
+      - generic [ref=f2e28]:
+        - paragraph [ref=f2e32]: Şifre
+        - generic [ref=f2e34]:
+          - textbox "Şifre" [ref=f2e35]:
+            - /placeholder: Şifrenizi girin
+            - text: "1966"
+          - button "Show password" [ref=f2e36] [cursor=pointer]:
+            - generic [ref=f2e37]: visibility
+      - button [active] [ref=f2e41] [cursor=pointer]:
+        - paragraph [ref=f2e45]: Giriş

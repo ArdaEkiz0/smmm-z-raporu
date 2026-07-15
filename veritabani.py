@@ -1,12 +1,7 @@
 import os
-import re
 import glob
-import json
 import shutil
-import smtplib
-import email.utils
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
 
 from config import (
     DATA_DIR, HESAP_FILE, GECMIS_KLASORU, MUKELLEF_FILE,
@@ -71,6 +66,10 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
         "fisler": results,
     }
     dosya_yaz(os.path.join(GECMIS_KLASORU, f"kayit_{ts}.json"), kayit)
+    # Cache'i gecersiz kil
+    import streamlit as st
+    for k in ["_fis_ver_version", "_fis_kayitlar", "_fis_tumu"]:
+        st.session_state.pop(k, None)
     for r in results:
         if "error" in r:
             continue
@@ -87,36 +86,56 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
                     duzeltme_ogren(hali, dogru)
 
 
+def _fis_veri_version():
+    """Gecmis dosyalarinin degisip degismedigini kontrol et - hizli."""
+    toplam = 0
+    en_son = 0
+    try:
+        for fp in glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")):
+            toplam += 1
+            mtime = os.path.getmtime(fp)
+            if mtime > en_son:
+                en_son = mtime
+    except OSError:
+        pass
+    return f"v{toplam}_{en_son}"
+
 def gecmis_listele():
     import streamlit as st
-    @st.cache_data(ttl=30)
-    def _yukle():
-        kayitlar = []
-        for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")), reverse=True):
-            try:
-                kayit = dosya_oku(fp, {})
-                if kayit:
-                    kayit["_dosya"] = fp
-                    kayitlar.append(kayit)
-            except Exception:
-                log.warning("Geçmiş dosyası okunamadı: %s", fp, exc_info=True)
-                continue
-        return kayitlar
-    return _yukle()
+    ver_version = _fis_veri_version()
+    ss = st.session_state
+    if ss.get("_fis_ver_version") == ver_version and "_fis_kayitlar" in ss:
+        return ss["_fis_kayitlar"]
+    kayitlar = []
+    for fp in sorted(glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")), reverse=True):
+        try:
+            kayit = dosya_oku(fp, {})
+            if kayit:
+                kayit["_dosya"] = fp
+                kayitlar.append(kayit)
+        except Exception:
+            log.warning("Geçmiş dosyası okunamadı: %s", fp, exc_info=True)
+            continue
+    ss["_fis_ver_version"] = ver_version
+    ss["_fis_kayitlar"] = kayitlar
+    return kayitlar
 
 
 def tum_fisleri_yukle():
     import streamlit as st
-    @st.cache_data(ttl=30)
-    def _yukle():
-        tumu = []
-        for kayit in gecmis_listele():
-            for f in kayit.get("fisler", []):
-                if "error" not in f:
-                    f["mukellef"] = kayit.get("mukellef", kayit.get("mukellef_adi", ""))
-                    tumu.append(f)
-        return tumu
-    return _yukle()
+    ver_version = _fis_veri_version()
+    ss = st.session_state
+    if ss.get("_fis_ver_version") == ver_version and "_fis_tumu" in ss:
+        return ss["_fis_tumu"]
+    tumu = []
+    for kayit in gecmis_listele():
+        for f in kayit.get("fisler", []):
+            if "error" not in f:
+                f["mukellef"] = kayit.get("mukellef", kayit.get("mukellef_adi", ""))
+                tumu.append(f)
+    ss["_fis_ver_version"] = ver_version
+    ss["_fis_tumu"] = tumu
+    return tumu
 
 
 def fis_kayit_bul(tarih, z_no):
@@ -185,6 +204,9 @@ def kdv_ogren(results, urun_kodlari):
 
 
 def email_gonder(konu, icerik):
+    import smtplib
+    import email.utils
+    from email.mime.text import MIMEText
     email_config = dosya_oku(EMAIL_FILE, {})
     if not email_config.get("gonderen") or not email_config.get("sifre"):
         return False

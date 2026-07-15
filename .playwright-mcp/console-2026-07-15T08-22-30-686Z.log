@@ -1,0 +1,11 @@
+[    4230ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4230ms] [WARNING] Unrecognized feature: 'battery'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'vr'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4231ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://gurcanekiz.xyz/static/js/react-dom.DmpKrvBr.js:0
+[    4244ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[  129282ms] [WARNING] WebSocket onclose @ https://gurcanekiz.xyz/static/js/index.D7cltBCg.js:64
+[  255093ms] [WARNING] WebSocket onclose @ https://gurcanekiz.xyz/static/js/index.D7cltBCg.js:64

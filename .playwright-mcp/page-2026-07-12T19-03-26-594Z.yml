@@ -1,0 +1,96 @@
+- generic [ref=e2]:
+  - generic [ref=e7]:
+    - button "keyboard_double_arrow_left" [ref=e280] [cursor=pointer]
+    - generic [ref=e11]:
+      - heading "Aygıtlar" [level=2] [ref=e15]
+      - radiogroup "Sayfa Seç" [ref=e48]:
+        - generic [ref=e49] [cursor=pointer]:
+          - radio "Dashboard" [checked] [ref=e51]
+          - paragraph [ref=e57]: Dashboard
+        - generic [ref=e58] [cursor=pointer]:
+          - radio "Z Raporu Yükle" [ref=e60]
+          - paragraph [ref=e66]: Z Raporu Yükle
+        - generic [ref=e67] [cursor=pointer]:
+          - radio "Fiş Geçmişi" [ref=e69]
+          - paragraph [ref=e75]: Fiş Geçmişi
+        - generic [ref=e76] [cursor=pointer]:
+          - radio "Mükellef Yönetimi" [ref=e78]
+          - paragraph [ref=e84]: Mükellef Yönetimi
+        - generic [ref=e85] [cursor=pointer]:
+          - radio "KDV Özeti" [ref=e87]
+          - paragraph [ref=e93]: KDV Özeti
+        - generic [ref=e94] [cursor=pointer]:
+          - radio "Ayarlar" [ref=e96]
+          - paragraph [ref=e102]: Ayarlar
+      - button [active] [ref=e105] [cursor=pointer]:
+        - paragraph [ref=e109]: 🌙 Karanlık Mod
+      - separator [ref=e114]
+      - heading "OCR Motoru" [level=2] [ref=e118]
+      - radiogroup "OCR Motoru Seç" [ref=e121]:
+        - generic [ref=e122] [cursor=pointer]:
+          - radio "Tesseract" [checked] [ref=e124]
+          - paragraph [ref=e130]: Tesseract
+        - generic [ref=e131] [cursor=pointer]:
+          - radio "GOT-OCR API" [ref=e133]
+          - paragraph [ref=e139]: GOT-OCR API
+      - status [ref=e142]:
+        - generic [ref=e144]:
+          - generic [ref=e145]: 🟢
+          - paragraph [ref=e149]: Tesseract OCR hazir
+      - separator [ref=e154]
+      - heading "Mükellef" [level=2] [ref=e158]
+      - radiogroup "Muhasebe Türü" [ref=e161]:
+        - generic [ref=e162] [cursor=pointer]:
+          - radio "Bilanço" [checked] [ref=e164]
+          - paragraph [ref=e170]: Bilanço
+        - generic [ref=e171] [cursor=pointer]:
+          - radio "Serbest Meslek" [ref=e173]
+          - paragraph [ref=e179]: Serbest Meslek
+      - group [ref=e183]:
+        - combobox "Mükellef Seç" [ref=e184]: (Genel)
+        - button "Open" [ref=e185] [cursor=pointer]
+      - separator [ref=e193]
+      - heading "Hesap Kodları" [level=2] [ref=e197]
+      - group [ref=e200]:
+        - generic "keyboard_arrow_right Hesap Kodları" [ref=e201] [cursor=pointer]:
+          - generic [ref=e202]:
+            - generic [ref=e203]: keyboard_arrow_right
+            - paragraph [ref=e207]: Hesap Kodları
+      - separator [ref=e212]
+      - heading "Ürün Kodları" [level=2] [ref=e216]
+      - group [ref=e219]:
+        - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=e220] [cursor=pointer]:
+          - generic [ref=e221]:
+            - generic [ref=e222]: keyboard_arrow_right
+            - paragraph [ref=e226]: Ürün Kodlarını Yönet
+  - generic [ref=e3]:
+    - banner [ref=e18]:
+      - button "Main menu" [ref=e31] [cursor=pointer]
+    - generic [ref=e35]:
+      - generic:
+        - iframe
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=e44]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=e45]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-ve-fis-yoenetim-sistemi"
+      - heading "Genel Bakış" [level=2] [ref=e231]:
+        - text: Genel Bakış
+        - generic [ref=e232]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - generic [ref=e234]:
+        - generic [ref=e239]:
+          - paragraph [ref=e242]: Toplam Kayıt
+          - paragraph [ref=e245]: "0"
+        - generic [ref=e250]:
+          - paragraph [ref=e253]: Toplam Fiş
+          - paragraph [ref=e256]: "0"
+        - generic [ref=e261]:
+          - paragraph [ref=e264]: Aktif Mükellef
+          - paragraph [ref=e267]: "56"
+        - generic [ref=e272]:
+          - paragraph [ref=e275]: Toplam Ciro
+          - paragraph [ref=e278]: 0 TL

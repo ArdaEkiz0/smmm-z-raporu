@@ -1,0 +1,81 @@
+- generic [ref=f6e2]:
+  - generic [ref=f6e11]:
+    - heading "Aygıtlar" [level=2] [ref=f6e15]
+    - alert [ref=f6e17]:
+      - generic [ref=f6e18]:
+        - strong [ref=f6e19]: "TypeError:"
+        - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+        - generic [ref=f6e20]:
+          - code
+    - button [ref=f6e23] [cursor=pointer]:
+      - paragraph [ref=f6e27]: 🌙 Karanlık Mod
+    - separator [ref=f6e32]
+    - heading "OCR Motoru" [level=2] [ref=f6e36]
+    - alert [ref=f6e38]:
+      - generic [ref=f6e39]:
+        - strong [ref=f6e40]: "TypeError:"
+        - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+        - generic [ref=f6e41]:
+          - code
+    - status [ref=f6e44]:
+      - generic [ref=f6e46]:
+        - generic [ref=f6e47]: 🟢
+        - paragraph [ref=f6e51]: Tesseract OCR hazir
+    - separator [ref=f6e56]
+    - heading "Mükellef" [level=2] [ref=f6e60]
+    - alert [ref=f6e62]:
+      - generic [ref=f6e63]:
+        - strong [ref=f6e64]: "TypeError:"
+        - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js"
+        - generic [ref=f6e65]:
+          - code
+    - alert [ref=f6e67]:
+      - generic [ref=f6e68]:
+        - strong [ref=f6e69]: "TypeError:"
+        - text: "Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js"
+        - generic [ref=f6e70]:
+          - code
+    - separator [ref=f6e75]
+    - heading "Hesap Kodları" [level=2] [ref=f6e79]
+    - group [ref=f6e82]:
+      - generic "keyboard_arrow_right Hesap Kodları" [ref=f6e83] [cursor=pointer]:
+        - generic [ref=f6e84]:
+          - generic [ref=f6e85]: keyboard_arrow_right
+          - paragraph [ref=f6e89]: Hesap Kodları
+    - separator [ref=f6e94]
+    - heading "Ürün Kodları" [level=2] [ref=f6e98]
+    - group [ref=f6e101]:
+      - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=f6e102] [cursor=pointer]:
+        - generic [ref=f6e103]:
+          - generic [ref=f6e104]: keyboard_arrow_right
+          - paragraph [ref=f6e108]: Ürün Kodlarını Yönet
+  - generic [ref=f6e3]:
+    - banner [ref=f6e111]:
+      - button "Main menu" [ref=f6e116] [cursor=pointer]
+    - generic [ref=f6e120]:
+      - generic:
+        - iframe
+      - generic [ref=f6e121]: "<style> /* Modern font ve spacing */ .block-container { padding-top: 2rem; padding-bottom: 2rem; } /* Başlık stili */ h1 { font-weight: 700 !important; letter-spacing: -0.02em !important; } h2, h3 { font-weight: 600 !important; letter-spacing: -0.01em !important; } /* Sidebar güzelleştirme */ [data-testid=\"stSidebar\"] { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-right: 1px solid #e2e8f0; } /* Buton iyileştirmeleri */ .stButton > button { border-radius: 8px !important; font-weight: 500 !important; transition: all 0.2s ease !important; } .stButton > button:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15) !important; } /* Primary buton */ .stButton > button[kind=\"primary\"] { background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%) !important; color: white !important; border: none !important; } /* Input iyileştirmeleri */ .stTextInput input, .stNumberInput input, .stTextArea textarea { border-radius: 6px !important; border: 1px solid #cbd5e1 !important; } .stTextInput input:focus, .stNumberInput input:focus { border-color: #0F766E !important; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1) !important; } /* DataFrame / Tablo */ .stDataFrame { border-radius: 8px !important; overflow: hidden !important; border: 1px solid #e2e8f0 !important; } /* Expander */ .streamlit-expanderHeader { border-radius: 8px !important; background: #f8fafc !important; font-weight: 500 !important; } /* Metric kartları */ [data-testid=\"stMetricValue\"] { font-size: 1.8rem !important; font-weight: 700 !important; color: #0F766E !important; } /* Progress bar */ .stProgress > div > div > div > div { background: linear-gradient(90deg, #0F766E 0%, #14B8A6 100%) !important; } /* Tab stili */ .stTabs [data-baseweb=\"tab-list\"] { gap: 4px; } .stTabs [data-baseweb=\"tab\"] { border-radius: 8px 8px 0 0 !important; padding: 8px 16px !important; font-weight: 500 !important; } /* Success/Info/Warning kutuları */ .stAlert { border-radius: 8px !important; border-left-width: 4px !important; } /* Code blokları */ code { background: #f1f5f9 !important; padding: 2px 6px !important; border-radius: 4px !important; font-size: 0.9em !important; } /* File uploader */ [data-testid=\"stFileUploader\"] { border-radius: 8px !important; border: 2px dashed #cbd5e1 !important; padding: 1rem !important; } /* Spinner */ .stSpinner > div { border-color: #0F766E !important; } </style>"
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=f6e129]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=f6e130]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-ve-fis-yoenetim-sistemi"
+      - heading "Genel Bakış" [level=2] [ref=f6e135]:
+        - text: Genel Bakış
+        - generic [ref=f6e136]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - generic [ref=f6e138]:
+        - generic [ref=f6e143]:
+          - paragraph [ref=f6e146]: Toplam Kayıt
+          - paragraph [ref=f6e149]: "0"
+        - generic [ref=f6e154]:
+          - paragraph [ref=f6e157]: Toplam Fiş
+          - paragraph [ref=f6e160]: "0"
+        - generic [ref=f6e165]:
+          - paragraph [ref=f6e168]: Aktif Mükellef
+          - paragraph [ref=f6e171]: "56"
+        - generic [ref=f6e176]:
+          - paragraph [ref=f6e179]: Toplam Ciro
+          - paragraph [ref=f6e182]: 0 TL

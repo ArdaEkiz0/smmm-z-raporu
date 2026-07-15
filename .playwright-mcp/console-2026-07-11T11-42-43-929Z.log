@@ -1,0 +1,35 @@
+[     932ms] [WARNING] GetShoppingCartSummary returned null. @ https://static.nc-img.com/uilayout2/app.2fd9a4bcce32afdaf9f9.js:0
+[   82799ms] [WARNING] GetShoppingCartSummary returned null. @ :0
+[   83370ms] [WARNING] GetShoppingCartSummary returned null. @ :0
+[   84837ms] [WARNING] [Meta Pixel] - Removed URL query parameters due to potential violations. @ :0
+[  217380ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://aftermarket.namecheapapi.com/domain/status?domain=xn--grz3j.xn--fiq228c5hs,xn--grz572a.xn--fiq228c5hs,xn--czr.xn--fiq228c5hs,xn--grk-rxa.eu,xn--grzphm75e.xn--3ds443g,xn--gerekgundem-o9a.com,xn--gr1a.xn--fiq228c5hs,xn--grawkoci-rvb.com,xn--ugrz43l.xn--fiq228c5hs,xn--czr694b.xn--fiq228c5hs&rcs=Mms%2FKCVrc2R8cH9%2BcH5%2BfH1laydrc2t4fHt%2Bf3wqeS19cH0sKy8qK359fXhwKn9%2FfSh%2BfSsrcWs0:0
+[  217384ms] [ERROR] M @ :0
+[  217461ms] [WARNING] GA queue (_gaq) is undefined @ :0
+[  249567ms] [WARNING] [Meta Pixel] - Invalid parameter format for currency. Please refer https://developers.facebook.com/docs/meta-pixel/reference/ for valid parameter specifications. @ :0
+[  252276ms] [WARNING] [Meta Pixel] - Removed URL query parameters due to potential violations. @ https://connect.facebook.net/en_US/fbevents.js:187
+[  252276ms] [WARNING] [Meta Pixel] - Invalid parameter format for currency. Please refer https://developers.facebook.com/docs/meta-pixel/reference/ for valid parameter specifications. @ https://connect.facebook.net/en_US/fbevents.js:187
+[  273878ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://www.namecheap.com/api/v1/ncpl/cart/user/validateandclearitems:0
+[  275240ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://files.namecheap.com/cdn/1280/assets/css/fonts/gb-icon.woff2:0
+[  275240ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://files.namecheap.com/cdn/1280/assets/css/fonts/museo-sans-300-webfont.woff2:0
+[  275241ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://files.namecheap.com/cdn/1280/assets/css/fonts/museo-sans-700-webfont.woff2:0
+[  275243ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://files.namecheap.com/cdn/1280/assets/css/fonts/museo-sans-500-webfont.woff2:0
+[  275244ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://files.namecheap.com/cdn/1280/assets/css/fonts/gb-icon-font.woff2:0
+[  275548ms] [VERBOSE] [DOM] Multiple forms should be contained in their own form elements; break up complex forms into ones that represent a single action: (More info: https://goo.gl/9p2vKq) %o @ https://www.namecheap.com/myaccount/login-signup/?ReturnUrl=%2fcart%2fcheckout%2fdefault.aspx:0
+[  275886ms] Uncaught SyntaxError: Invalid regular expression: /^/support(/: Unterminated group
+    at String.startsWith (https://files.namecheap.com/cdn/0/assets/js/v1280.global-script.min.js:81:9061)
+    at <anonymous> (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:17655)
+    at isPageMatching (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:17507)
+    at isPageAllowed (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:17803)
+    at O.shouldRemoveWidget (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:8249)
+    at O.initEngagementPlatform (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:7695)
+    at O.registerHandlers (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:7904)
+    at init (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:9948)
+    at <anonymous> (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:52263)
+    at n (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:109)
+    at <anonymous> (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:901)
+    at <anonymous> (https://cdn.engagement.ai/production/static/js/sdk/chatSDK.af2249d710e43a43b333.js:0:911)
+[  276168ms] Error: reCAPTCHA placeholder element must be an element or id
+    at https://www.gstatic.com/recaptcha/releases/rL1ELiQAg1kPezz6_H9hTZ_i/recaptcha__tr.js:322:32
+    at window.onloadCallbackSignup (https://www.namecheap.com/myaccount/login-signup/?ReturnUrl=%2fcart%2fcheckout%2fdefault.aspx:1115:24)
+    at nrWrapper (<anonymous>:1:16540)
+[  277281ms] [WARNING] [Meta Pixel] - Invalid parameter format for currency. Please refer https://developers.facebook.com/docs/meta-pixel/reference/ for valid parameter specifications. @ https://connect.facebook.net/en_US/fbevents.js:187

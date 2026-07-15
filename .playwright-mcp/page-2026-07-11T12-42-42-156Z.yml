@@ -1,0 +1,312 @@
+- generic [ref=f7e2]:
+  - generic [ref=f7e51]:
+    - button "keyboard_double_arrow_left" [ref=f7e361] [cursor=pointer]
+    - generic [ref=f7e55]:
+      - heading "Aygıtlar" [level=2] [ref=f7e59]
+      - radiogroup "Sayfa Seç" [ref=f7e62] [cursor=pointer]:
+        - generic [ref=f7e63]:
+          - radio "Dashboard"
+          - paragraph [ref=f7e68]: Dashboard
+        - generic [ref=f7e69]:
+          - radio "Z Raporu Yükle"
+          - paragraph [ref=f7e74]: Z Raporu Yükle
+        - generic [ref=f7e75]:
+          - radio "Fiş Geçmişi"
+          - paragraph [ref=f7e80]: Fiş Geçmişi
+        - generic [ref=f7e81]:
+          - radio "Mükellef Yönetimi"
+          - paragraph [ref=f7e86]: Mükellef Yönetimi
+        - generic [ref=f7e87]:
+          - radio "KDV Özeti"
+          - paragraph [ref=f7e92]: KDV Özeti
+        - generic [ref=f7e93]:
+          - radio "Ayarlar" [checked] [active]
+          - paragraph [ref=f7e98]: Ayarlar
+      - separator [ref=f7e103]
+      - heading "OCR Motoru" [level=2] [ref=f7e107]
+      - radiogroup "OCR Motoru Seç" [ref=f7e110] [cursor=pointer]:
+        - generic [ref=f7e111]:
+          - radio "Tesseract" [checked]
+          - paragraph [ref=f7e116]: Tesseract
+        - generic [ref=f7e117]:
+          - radio "GOT-OCR API"
+          - paragraph [ref=f7e122]: GOT-OCR API
+      - status [ref=f7e125]:
+        - generic [ref=f7e127]:
+          - generic [ref=f7e128]: 🟢
+          - paragraph [ref=f7e132]: Tesseract OCR hazir
+      - separator [ref=f7e137]
+      - heading "Mükellef" [level=2] [ref=f7e141]
+      - radiogroup "Muhasebe Türü" [ref=f7e144] [cursor=pointer]:
+        - generic [ref=f7e145]:
+          - radio "Bilanço" [checked]
+          - paragraph [ref=f7e150]: Bilanço
+        - generic [ref=f7e151]:
+          - radio "Serbest Meslek"
+          - paragraph [ref=f7e156]: Serbest Meslek
+      - generic [ref=f7e160]:
+        - generic [ref=f7e161]:
+          - generic [ref=f7e162]: (Genel)
+          - combobox "Selected (Genel). Mükellef Seç" [ref=f7e164]
+        - img "open" [ref=f7e166]
+      - separator [ref=f7e172]
+      - heading "Hesap Kodları" [level=2] [ref=f7e176]
+      - generic [ref=f7e178]:
+        - paragraph [ref=f7e182]: Banka (KK)
+        - textbox "Banka (KK)" [ref=f7e185]:
+          - /placeholder: ""
+          - text: "108.01"
+      - generic [ref=f7e187]:
+        - paragraph [ref=f7e191]: Banka (Nakit)
+        - textbox "Banka (Nakit)" [ref=f7e194]:
+          - /placeholder: ""
+          - text: "100.01"
+      - generic [ref=f7e196]:
+        - paragraph [ref=f7e200]: Yemek Çeki
+        - textbox "Yemek Çeki" [ref=f7e203]:
+          - /placeholder: ""
+          - text: "108.03"
+      - generic [ref=f7e205]:
+        - paragraph [ref=f7e209]: Satış %1
+        - textbox "Satış %1" [ref=f7e212]:
+          - /placeholder: ""
+          - text: "600.01"
+      - generic [ref=f7e214]:
+        - paragraph [ref=f7e218]: Satış %10
+        - textbox "Satış %10" [ref=f7e221]:
+          - /placeholder: ""
+          - text: "600.05"
+      - generic [ref=f7e223]:
+        - paragraph [ref=f7e227]: Satış %20
+        - textbox "Satış %20" [ref=f7e230]:
+          - /placeholder: ""
+          - text: "600.04"
+      - generic [ref=f7e232]:
+        - paragraph [ref=f7e236]: KDV %1
+        - textbox "KDV %1" [ref=f7e239]:
+          - /placeholder: ""
+          - text: "391.01"
+      - generic [ref=f7e241]:
+        - paragraph [ref=f7e245]: KDV %10
+        - textbox "KDV %10" [ref=f7e248]:
+          - /placeholder: ""
+          - text: "391.05"
+      - generic [ref=f7e250]:
+        - paragraph [ref=f7e254]: KDV %20
+        - textbox "KDV %20" [ref=f7e257]:
+          - /placeholder: ""
+          - text: "391.04"
+      - generic [ref=f7e259]:
+        - paragraph [ref=f7e263]: Fiş İptal
+        - textbox "Fiş İptal" [ref=f7e266]:
+          - /placeholder: ""
+          - text: "610.01"
+      - generic [ref=f7e268]:
+        - button [ref=f7e273] [cursor=pointer]:
+          - paragraph [ref=f7e277]: Kaydet
+        - button [ref=f7e282] [cursor=pointer]:
+          - paragraph [ref=f7e286]: Sıfırla
+      - separator [ref=f7e291]
+      - heading "Ürün Kodları" [level=2] [ref=f7e295]
+      - group [ref=f7e298]:
+        - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=f7e299] [cursor=pointer]:
+          - generic [ref=f7e300]:
+            - generic [ref=f7e301]: keyboard_arrow_right
+            - paragraph [ref=f7e305]: Ürün Kodlarını Yönet
+  - generic [ref=f7e3]:
+    - banner [ref=f7e6]:
+      - generic [ref=f7e9]:
+        - button "Deploy" [ref=f7e11] [cursor=pointer]
+        - button "Main menu" [ref=f7e15] [cursor=pointer]
+    - generic [ref=f7e19]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=f7e308]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=f7e25]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-sistemi"
+      - heading "Ayarlar" [level=2] [ref=f7e364]:
+        - text: Ayarlar
+        - generic [ref=f7e313]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - heading "Yedekleme" [level=3] [ref=f7e369]:
+        - text: Yedekleme
+        - generic [ref=f7e370]:
+          - link "Link to heading":
+            - /url: "#yedekleme"
+      - generic [ref=f7e372]:
+        - button [ref=f7e377] [cursor=pointer]:
+          - paragraph [ref=f7e381]: Yedek Oluştur
+        - status [ref=f7e386]:
+          - paragraph [ref=f7e390]: Henüz yedek yok
+      - separator [ref=f7e395]
+      - heading "Bulut Yedekleme (ZIP İndir)" [level=3] [ref=f7e400]:
+        - text: Bulut Yedekleme (ZIP İndir)
+        - generic [ref=f7e401]:
+          - link "Link to heading":
+            - /url: "#bulut-yedekleme-zip-indir"
+      - paragraph [ref=f7e406]: Tüm verilerinizi ZIP olarak indirip Google Drive, OneDrive veya Dropbox'a yükleyebilirsiniz.
+      - button [ref=f7e409] [cursor=pointer]:
+        - paragraph [ref=f7e413]: ZIP Yedek Oluştur ve İndir
+      - separator [ref=f7e418]
+      - heading "E-posta Bildirimi" [level=3] [ref=f7e423]:
+        - text: E-posta Bildirimi
+        - generic [ref=f7e424]:
+          - link "Link to heading":
+            - /url: "#e-posta-bildirimi"
+      - generic [ref=f7e427]:
+        - generic [ref=f7e429]:
+          - generic [ref=f7e431]:
+            - generic [ref=f7e433]:
+              - paragraph [ref=f7e437]: SMTP Sunucu
+              - textbox "SMTP Sunucu" [ref=f7e440]:
+                - /placeholder: smtp.gmail.com
+            - generic [ref=f7e442]:
+              - paragraph [ref=f7e446]: Port
+              - generic [ref=f7e447]:
+                - spinbutton "Port" [ref=f7e450]: "587"
+                - generic [ref=f7e451]:
+                  - button [ref=f7e452] [cursor=pointer]
+                  - button [ref=f7e455] [cursor=pointer]
+            - generic [ref=f7e459]:
+              - paragraph [ref=f7e463]: Gönderen E-posta
+              - textbox "Gönderen E-posta" [ref=f7e466]:
+                - /placeholder: ornek@gmail.com
+          - generic [ref=f7e468]:
+            - generic [ref=f7e470]:
+              - paragraph [ref=f7e474]: Uygulama Şifresi
+              - generic [ref=f7e476]:
+                - textbox "Uygulama Şifresi" [ref=f7e477]:
+                  - /placeholder: Google Uygulama Şifresi
+                - button "Show password text" [ref=f7e478] [cursor=pointer]:
+                  - img "Show password text" [ref=f7e479]
+            - generic [ref=f7e482]:
+              - paragraph [ref=f7e486]: Alıcı E-posta
+              - textbox "Alıcı E-posta" [ref=f7e489]:
+                - /placeholder: Alıcı (boşsa gönderene gider)
+        - button [ref=f7e493] [cursor=pointer]:
+          - paragraph [ref=f7e497]: E-posta Ayarlarını Kaydet
+      - separator [ref=f7e502]
+      - heading "Hesap Planı Seçimi" [level=3] [ref=f7e507]:
+        - text: Hesap Planı Seçimi
+        - generic [ref=f7e508]:
+          - link "Link to heading":
+            - /url: "#hesap-plani-secimi"
+      - generic [ref=f7e510]:
+        - paragraph [ref=f7e514]: Muhasebe Programı
+        - generic [ref=f7e516]:
+          - generic [ref=f7e517]:
+            - generic [ref=f7e518]: LUCA
+            - combobox "Selected LUCA. Muhasebe Programı" [ref=f7e520]
+          - img "open" [ref=f7e522]
+      - status [ref=f7e526]:
+        - paragraph [ref=f7e530]:
+          - text: "Aktif hesap planı:"
+          - strong [ref=f7e531]: LUCA
+      - generic [ref=f7e537]:
+        - generic [ref=f7e538]: "{"
+        - generic [ref=f7e546]:
+          - generic [ref=f7e547]:
+            - generic [ref=f7e548]:
+              - generic [ref=f7e549]:
+                - text: "\""
+                - generic [ref=f7e550]: kredi_karti
+                - text: "\""
+              - generic [ref=f7e551]: ":"
+            - generic [ref=f7e552] [cursor=pointer]: "\"108.01\""
+          - generic [ref=f7e555]:
+            - generic [ref=f7e556]:
+              - generic [ref=f7e557]:
+                - text: "\""
+                - generic [ref=f7e558]: nakit
+                - text: "\""
+              - generic [ref=f7e559]: ":"
+            - generic [ref=f7e560] [cursor=pointer]: "\"100.01\""
+          - generic [ref=f7e563]:
+            - generic [ref=f7e564]:
+              - generic [ref=f7e565]:
+                - text: "\""
+                - generic [ref=f7e566]: yemek_ceki
+                - text: "\""
+              - generic [ref=f7e567]: ":"
+            - generic [ref=f7e568] [cursor=pointer]: "\"108.03\""
+          - generic [ref=f7e571]:
+            - generic [ref=f7e572]:
+              - generic [ref=f7e573]:
+                - text: "\""
+                - generic [ref=f7e574]: satis_1
+                - text: "\""
+              - generic [ref=f7e575]: ":"
+            - generic [ref=f7e576] [cursor=pointer]: "\"600.01\""
+          - generic [ref=f7e579]:
+            - generic [ref=f7e580]:
+              - generic [ref=f7e581]:
+                - text: "\""
+                - generic [ref=f7e582]: satis_10
+                - text: "\""
+              - generic [ref=f7e583]: ":"
+            - generic [ref=f7e584] [cursor=pointer]: "\"600.05\""
+          - generic [ref=f7e587]:
+            - generic [ref=f7e588]:
+              - generic [ref=f7e589]:
+                - text: "\""
+                - generic [ref=f7e590]: satis_20
+                - text: "\""
+              - generic [ref=f7e591]: ":"
+            - generic [ref=f7e592] [cursor=pointer]: "\"600.04\""
+          - generic [ref=f7e595]:
+            - generic [ref=f7e596]:
+              - generic [ref=f7e597]:
+                - text: "\""
+                - generic [ref=f7e598]: kdv_1
+                - text: "\""
+              - generic [ref=f7e599]: ":"
+            - generic [ref=f7e600] [cursor=pointer]: "\"391.01\""
+          - generic [ref=f7e603]:
+            - generic [ref=f7e604]:
+              - generic [ref=f7e605]:
+                - text: "\""
+                - generic [ref=f7e606]: kdv_10
+                - text: "\""
+              - generic [ref=f7e607]: ":"
+            - generic [ref=f7e608] [cursor=pointer]: "\"391.05\""
+          - generic [ref=f7e611]:
+            - generic [ref=f7e612]:
+              - generic [ref=f7e613]:
+                - text: "\""
+                - generic [ref=f7e614]: kdv_20
+                - text: "\""
+              - generic [ref=f7e615]: ":"
+            - generic [ref=f7e616] [cursor=pointer]: "\"391.04\""
+          - generic [ref=f7e619]:
+            - generic [ref=f7e620]:
+              - generic [ref=f7e621]:
+                - text: "\""
+                - generic [ref=f7e622]: iadeler
+                - text: "\""
+              - generic [ref=f7e623]: ":"
+            - generic [ref=f7e624] [cursor=pointer]: "\"610.01\""
+        - generic [ref=f7e627]: "}"
+      - separator [ref=f7e633]
+      - heading "OCR Düzeltme Sözlüğü" [level=3] [ref=f7e638]:
+        - text: OCR Düzeltme Sözlüğü
+        - generic [ref=f7e639]:
+          - link "Link to heading":
+            - /url: "#ocr-duezeltme-soezluegue"
+      - paragraph [ref=f7e644]: OCR'ın yanlış okuduğu kelimeleri buradan yönetebilirsiniz. Sistem kullanıcı düzeltmelerinden otomatik öğrenir.
+      - alert [ref=f7e647]:
+        - generic [ref=f7e649]:
+          - generic [ref=f7e650]: "NameError: name 'ogrenilen_sozluk' is not defined"
+          - generic [ref=f7e651]:
+            - generic [ref=f7e652]: "Traceback:"
+            - code [ref=f7e655]:
+              - generic [ref=f7e656]: File "C:\Users\ozel\OneDrive\Masaüstü\luuaaaaaaaaaaa\app.py", line 248, in <module> _page_ayarlar()
+              - generic [ref=f7e657]: File "C:\Users\ozel\OneDrive\Masaüstü\luuaaaaaaaaaaa\pages.py", line 1053, in _page_ayarlar sozluk = duzeltme_sozlugu() ^^^^^^^^^^^^^^^^
+          - generic [ref=f7e658]:
+            - button "Copy" [ref=f7e659] [cursor=pointer]
+            - link "Ask Google" [ref=f7e660] [cursor=pointer]:
+              - /url: https://www.google.com/search?q=NameError%3A%20name%20'ogrenilen_sozluk'%20is%20not%20defined
+            - link "Ask ChatGPT" [ref=f7e661] [cursor=pointer]:
+              - /url: https://chatgpt.com/?q=NameError%3A%20name%20'ogrenilen_sozluk'%20is%20not%20defined%0A%0AFile%20%22C%3A%5CUsers%5Cozel%5COneDrive%5CMasa%C3%BCst%C3%BC%5Cluuaaaaaaaaaaa%5Capp.py%22%2C%20line%20248%2C%20in%20%3Cmodule%3E%0A%20%20%20%20_page_ayarlar()%0AFile%20%22C%3A%5CUsers%5Cozel%5COneDrive%5CMasa%C3%BCst%C3%BC%5Cluuaaaaaaaaaaa%5Cpages.py%22%2C%20line%201053%2C%20in%20_page_ayarlar%0A%20%20%20%20sozluk%20%3D%20duzeltme_sozlugu()%0A%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%20%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E%5E

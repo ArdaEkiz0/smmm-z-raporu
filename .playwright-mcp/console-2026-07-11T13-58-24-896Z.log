@@ -1,0 +1,27 @@
+[    1064ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1064ms] [WARNING] Unrecognized feature: 'battery'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1064ms] [WARNING] Unrecognized feature: 'document-domain'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1064ms] [WARNING] Unrecognized feature: 'layout-animations'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1064ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1065ms] [WARNING] Unrecognized feature: 'oversized-images'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1065ms] [WARNING] Unrecognized feature: 'vr'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1065ms] [WARNING] Unrecognized feature: 'wake-lock'. @ http://localhost:8501/static/js/index.dkY5s53S.js:1
+[    1078ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[    1102ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[    5724ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8501/?page=Z%20Raporu%20Y%C3%BCkle:0
+[  112661ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[  112669ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112677ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112684ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112692ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112700ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112710ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112718ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112726ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112739ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112747ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112754ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112766ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112778ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112835ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[  112959ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0

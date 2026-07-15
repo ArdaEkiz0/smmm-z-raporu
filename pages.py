@@ -4,8 +4,6 @@ import re
 import glob
 import shutil
 from datetime import datetime, timedelta
-from PIL import Image
-import pandas as pd
 import streamlit as st
 from utils import log
 
@@ -38,6 +36,8 @@ from luca import (
 
 
 def _page_z_raporu_yukle(hesap_kodlari):
+    from PIL import Image
+    import pandas as pd
     st.header("Z Raporu Fotoğraf Yükleme ve OCR")
 
     urun_kodlari = st.session_state.get("urun_kodlari", [])
@@ -614,6 +614,7 @@ def _tarih_esles(fis, yil, ay):
 
 
 def _page_dashboard():
+    import pandas as pd
     st.header("Genel Bakis")
 
     tum_fisler = tum_fisleri_yukle()
@@ -718,6 +719,7 @@ def _page_dashboard():
 
 
 def _page_fis_gecmisi(hesap_kodlari):
+    import pandas as pd
     st.header("Fiş Geçmişi")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 

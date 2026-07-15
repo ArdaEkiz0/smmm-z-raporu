@@ -1,0 +1,123 @@
+- generic [ref=e2]:
+  - generic [ref=e56]:
+    - heading "Aygıtlar" [level=2] [ref=e60]
+    - radiogroup "Sayfa Seç" [ref=e63] [cursor=pointer]:
+      - generic [ref=e64]:
+        - radio "Dashboard"
+        - paragraph [ref=e69]: Dashboard
+      - generic [ref=e70]:
+        - radio "Z Raporu Yükle" [checked]
+        - paragraph [ref=e75]: Z Raporu Yükle
+      - generic [ref=e76]:
+        - radio "Fiş Geçmişi"
+        - paragraph [ref=e81]: Fiş Geçmişi
+      - generic [ref=e82]:
+        - radio "Mükellef Yönetimi"
+        - paragraph [ref=e87]: Mükellef Yönetimi
+      - generic [ref=e88]:
+        - radio "KDV Özeti"
+        - paragraph [ref=e93]: KDV Özeti
+      - generic [ref=e94]:
+        - radio "Ayarlar"
+        - paragraph [ref=e99]: Ayarlar
+    - separator [ref=e104]
+    - heading "OCR Motoru" [level=2] [ref=e108]
+    - radiogroup "OCR Motoru Seç" [ref=e111] [cursor=pointer]:
+      - generic [ref=e112]:
+        - radio "Tesseract" [checked]
+        - paragraph [ref=e117]: Tesseract
+      - generic [ref=e118]:
+        - radio "GOT-OCR API"
+        - paragraph [ref=e123]: GOT-OCR API
+    - status [ref=e126]:
+      - generic [ref=e128]:
+        - generic [ref=e129]: 🟢
+        - paragraph [ref=e133]: Tesseract OCR hazir
+    - separator [ref=e138]
+    - heading "Mükellef" [level=2] [ref=e142]
+    - radiogroup "Muhasebe Türü" [ref=e145] [cursor=pointer]:
+      - generic [ref=e146]:
+        - radio "Bilanço"
+        - paragraph [ref=e151]: Bilanço
+      - generic [ref=e152]:
+        - radio "Serbest Meslek" [checked]
+        - paragraph [ref=e157]: Serbest Meslek
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]: ALİ DEMİREL
+        - combobox "Selected ALİ DEMİREL. Mükellef Seç" [ref=e430]
+      - img "open" [ref=e167]
+    - group [ref=e322]:
+      - generic "keyboard_arrow_right LUCA Şablonu" [ref=e323] [cursor=pointer]:
+        - generic [ref=e324]:
+          - generic [ref=e325]: keyboard_arrow_right
+          - paragraph [ref=e329]: LUCA Şablonu
+    - button [ref=e332] [cursor=pointer]:
+      - paragraph [ref=e336]: Şablonu Kaldır
+    - separator [ref=e341]
+    - heading "Hesap Kodları" [level=2] [ref=e344]
+    - group [ref=e347]:
+      - generic "keyboard_arrow_right Hesap Kodları" [ref=e348] [cursor=pointer]:
+        - generic [ref=e349]:
+          - generic [ref=e350]: keyboard_arrow_right
+          - paragraph [ref=e354]: Hesap Kodları
+    - separator [ref=e359]
+    - heading "Ürün Kodları" [level=2] [ref=e363]
+    - group [ref=e366]:
+      - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=e367] [cursor=pointer]:
+        - generic [ref=e368]:
+          - generic [ref=e369]: keyboard_arrow_right
+          - paragraph [ref=e373]: Ürün Kodlarını Yönet
+  - generic [ref=e3]:
+    - banner [ref=e6]:
+      - generic [ref=e9]:
+        - generic [ref=e512]:
+          - img "Running..." [ref=e513]
+          - button "Stop" [ref=e518] [cursor=pointer]
+        - button "Deploy" [ref=e11] [cursor=pointer]
+        - button "Main menu" [ref=e15] [cursor=pointer]
+    - generic [ref=e19]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=e217]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=e25]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-sistemi"
+      - heading "Z Raporu Fotoğraf Yükleme ve OCR" [level=2] [ref=e273]:
+        - text: Z Raporu Fotoğraf Yükleme ve OCR
+        - generic [ref=e222]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - status [ref=e431]:
+        - paragraph [ref=e280]:
+          - text: "Mükellef:"
+          - strong [ref=e432]: ALİ DEMİREL
+          - text: (Sidebar'dan değiştirin)
+      - generic [ref=e282]:
+        - paragraph [ref=e286]: Z raporu/fiş seç (JPG/PNG/PDF)
+        - region "Z raporu/fiş seç (JPG/PNG/PDF)" [ref=e287] [cursor=pointer]:
+          - button "Choose File" [ref=e288]
+          - generic [ref=e434]:
+            - generic "sample_mikail.jpeg, 118.5KB" [ref=e437]:
+              - generic [ref=e442]:
+                - generic "sample_mikail.jpeg" [ref=e443]
+                - generic [ref=e444]: 118.5KB
+              - button "Remove sample_mikail.jpeg" [ref=e446]
+            - button "Add files" [ref=e450]:
+              - generic [ref=e451]: add
+      - status [ref=e457]:
+        - paragraph [ref=e461]: 1 görsel, 0 PDF yüklendi
+      - generic [ref=e468]:
+        - button "Fullscreen" [ref=e473] [cursor=pointer]
+        - generic [ref=e478]:
+          - img "0" [ref=e479]
+          - paragraph [ref=e482]: sample_mikail.jpeg
+      - generic [ref=e492]:
+        - button [active] [ref=e497] [cursor=pointer]:
+          - paragraph [ref=e501]: HEPSİNİ OKU (OCR)
+        - button [ref=e506] [cursor=pointer]:
+          - paragraph [ref=e510]: Temizle
+      - generic [ref=e520]:
+        - paragraph [ref=e523]: OCR yapılıyor...
+        - progressbar "progress" [ref=e524]

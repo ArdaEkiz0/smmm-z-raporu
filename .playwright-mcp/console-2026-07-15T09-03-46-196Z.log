@@ -1,0 +1,9 @@
+[    1274ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'battery'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'vr'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1274ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1290ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0

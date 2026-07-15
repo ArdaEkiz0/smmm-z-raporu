@@ -1,0 +1,27 @@
+[     671ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'battery'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'document-domain'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'layout-animations'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'oversized-images'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     671ms] [WARNING] Unrecognized feature: 'vr'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     672ms] [WARNING] Unrecognized feature: 'wake-lock'. @ http://localhost:8502/static/js/index.dkY5s53S.js:1
+[     686ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[     698ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[    2061ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8502/?page=Ayarlar:0
+[   25412ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[   25418ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25424ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25429ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25435ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25440ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25447ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25453ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25460ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25467ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25474ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25486ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25513ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25579ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   25732ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc?smmm_auth=1:0
+[   27617ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8502/?page=Ayarlar:0

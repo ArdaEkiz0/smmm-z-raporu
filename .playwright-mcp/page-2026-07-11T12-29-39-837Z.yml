@@ -1,0 +1,143 @@
+- generic [ref=f4e2]:
+  - generic [ref=f4e11]:
+    - heading "Aygıtlar" [level=2] [ref=f4e15]
+    - radiogroup "Sayfa Seç" [ref=f4e18] [cursor=pointer]:
+      - generic [ref=f4e19]:
+        - radio "Dashboard" [checked]
+        - paragraph [ref=f4e24]: Dashboard
+      - generic [ref=f4e25]:
+        - radio "Z Raporu Yükle"
+        - paragraph [ref=f4e30]: Z Raporu Yükle
+      - generic [ref=f4e31]:
+        - radio "Fiş Geçmişi"
+        - paragraph [ref=f4e36]: Fiş Geçmişi
+      - generic [ref=f4e37]:
+        - radio "Mükellef Yönetimi"
+        - paragraph [ref=f4e42]: Mükellef Yönetimi
+      - generic [ref=f4e43]:
+        - radio "KDV Özeti"
+        - paragraph [ref=f4e48]: KDV Özeti
+      - generic [ref=f4e49]:
+        - radio "Ayarlar"
+        - paragraph [ref=f4e54]: Ayarlar
+    - separator [ref=f4e59]
+    - heading "OCR Motoru" [level=2] [ref=f4e63]
+    - radiogroup "OCR Motoru Seç" [ref=f4e66] [cursor=pointer]:
+      - generic [ref=f4e67]:
+        - radio "Tesseract" [checked]
+        - paragraph [ref=f4e72]: Tesseract
+      - generic [ref=f4e73]:
+        - radio "GOT-OCR API"
+        - paragraph [ref=f4e78]: GOT-OCR API
+    - status [ref=f4e81]:
+      - generic [ref=f4e83]:
+        - generic [ref=f4e84]: 🟢
+        - paragraph [ref=f4e88]: Tesseract OCR hazir
+    - separator [ref=f4e93]
+    - heading "Mükellef" [level=2] [ref=f4e97]
+    - radiogroup "Muhasebe Türü" [ref=f4e100] [cursor=pointer]:
+      - generic [ref=f4e101]:
+        - radio "Bilanço" [checked]
+        - paragraph [ref=f4e106]: Bilanço
+      - generic [ref=f4e107]:
+        - radio "Serbest Meslek"
+        - paragraph [ref=f4e112]: Serbest Meslek
+    - generic [ref=f4e116]:
+      - generic [ref=f4e117]:
+        - generic [ref=f4e118]: (Genel)
+        - combobox "Selected (Genel). Mükellef Seç" [ref=f4e120]
+      - img "open" [ref=f4e122]
+    - separator [ref=f4e128]
+    - heading "Hesap Kodları" [level=2] [ref=f4e132]
+    - generic [ref=f4e134]:
+      - paragraph [ref=f4e138]: Banka (KK)
+      - textbox "Banka (KK)" [ref=f4e141]:
+        - /placeholder: ""
+        - text: "108.01"
+    - generic [ref=f4e143]:
+      - paragraph [ref=f4e147]: Banka (Nakit)
+      - textbox "Banka (Nakit)" [ref=f4e150]:
+        - /placeholder: ""
+        - text: "100.01"
+    - generic [ref=f4e152]:
+      - paragraph [ref=f4e156]: Yemek Çeki
+      - textbox "Yemek Çeki" [ref=f4e159]:
+        - /placeholder: ""
+        - text: "108.03"
+    - generic [ref=f4e161]:
+      - paragraph [ref=f4e165]: Satış %1
+      - textbox "Satış %1" [ref=f4e168]:
+        - /placeholder: ""
+        - text: "600.01"
+    - generic [ref=f4e170]:
+      - paragraph [ref=f4e174]: Satış %10
+      - textbox "Satış %10" [ref=f4e177]:
+        - /placeholder: ""
+        - text: "600.05"
+    - generic [ref=f4e179]:
+      - paragraph [ref=f4e183]: Satış %20
+      - textbox "Satış %20" [ref=f4e186]:
+        - /placeholder: ""
+        - text: "600.04"
+    - generic [ref=f4e188]:
+      - paragraph [ref=f4e192]: KDV %1
+      - textbox "KDV %1" [ref=f4e195]:
+        - /placeholder: ""
+        - text: "391.01"
+    - generic [ref=f4e197]:
+      - paragraph [ref=f4e201]: KDV %10
+      - textbox "KDV %10" [ref=f4e204]:
+        - /placeholder: ""
+        - text: "391.05"
+    - generic [ref=f4e206]:
+      - paragraph [ref=f4e210]: KDV %20
+      - textbox "KDV %20" [ref=f4e213]:
+        - /placeholder: ""
+        - text: "391.04"
+    - generic [ref=f4e215]:
+      - paragraph [ref=f4e219]: Fiş İptal
+      - textbox "Fiş İptal" [ref=f4e222]:
+        - /placeholder: ""
+        - text: "610.01"
+    - generic [ref=f4e224]:
+      - button [ref=f4e229] [cursor=pointer]:
+        - paragraph [ref=f4e233]: Kaydet
+      - button [ref=f4e238] [cursor=pointer]:
+        - paragraph [ref=f4e242]: Sıfırla
+    - separator [ref=f4e247]
+    - heading "Ürün Kodları" [level=2] [ref=f4e251]
+    - group [ref=f4e254]:
+      - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=f4e255] [cursor=pointer]:
+        - generic [ref=f4e256]:
+          - generic [ref=f4e257]: keyboard_arrow_right
+          - paragraph [ref=f4e261]: Ürün Kodlarını Yönet
+  - generic [ref=f4e3]:
+    - banner [ref=f4e264]:
+      - generic [ref=f4e267]:
+        - button "Deploy" [ref=f4e269] [cursor=pointer]
+        - button "Main menu" [ref=f4e273] [cursor=pointer]
+    - generic [ref=f4e277]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=f4e282]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=f4e283]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-sistemi"
+      - heading "Genel Bakış" [level=2] [ref=f4e288]:
+        - text: Genel Bakış
+        - link "Link to heading" [ref=f4e290] [cursor=pointer]:
+          - /url: "#genel-bakis"
+      - generic [ref=f4e294]:
+        - generic [ref=f4e299]:
+          - paragraph [ref=f4e302]: Toplam Kayıt
+          - paragraph [ref=f4e305]: "3"
+        - generic [ref=f4e310]:
+          - paragraph [ref=f4e313]: Toplam Fiş
+          - paragraph [ref=f4e316]: "0"
+        - generic [ref=f4e321]:
+          - paragraph [ref=f4e324]: Aktif Mükellef
+          - paragraph [ref=f4e327]: "56"
+        - generic [ref=f4e332]:
+          - paragraph [ref=f4e335]: Toplam Ciro
+          - paragraph [ref=f4e338]: 0 TL

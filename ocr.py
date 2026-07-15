@@ -534,23 +534,34 @@ def easyocr_gorsel_isle(img):
 
 
 def ocr_gorsel_isle_hibrit(img):
-    """Tesseract + EasyOCR hibrit: en iyi parse sonucunu sec, text don."""
+    """Tesseract + EasyOCR hibrit: Tess yeterliyse EasyOCR'a gerek yok."""
     tess_text = ocr_image(img)
     tess_score = ocr_skorla(tess_text)
+    tess_parsed = parse_z_raporu(tess_text)
+
+    HIGH_CONF = 150
+    if tess_score >= HIGH_CONF:
+        tess_kk = tess_parsed.get("kredi_karti", 0)
+        tess_brut = tess_parsed.get("brut", 0)
+        # Tess yuksek skorda ama onemli alan bos olabilir
+        if tess_kk > 0 or tess_brut <= 0:
+            return tess_text
 
     easy_text = easyocr_gorsel_isle(img)
     if not easy_text:
         return tess_text
     easy_score = ocr_skorla(easy_text)
+    easy_parsed = parse_z_raporu(easy_text)
 
-    # Eger easyocr belirgin sekilde daha iyi, onu kullan
-    if easy_score > tess_score + 30:
+    # Her alan icin en iyisini sec
+    easy_kk = easy_parsed.get("kredi_karti", 0)
+    if tess_parsed.get("kredi_karti", 0) == 0 and easy_kk > 0:
         return easy_text
-    # Eger tess daha iyi veya esit, onu kullan
-    if tess_score >= easy_score:
+    if easy_score > tess_score + 20:
+        return easy_text
+    if tess_kk > 0:
         return tess_text
-    # Beraber kullanmak en iyisi
-    return tess_text + "\n" + easy_text
+    return tess_text
 
 
 # Initialize OCR engine on module load

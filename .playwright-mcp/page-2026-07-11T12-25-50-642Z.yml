@@ -1,0 +1,23 @@
+- generic [ref=e3]:
+  - banner [ref=e6]:
+    - generic [ref=e9]:
+      - button "Deploy" [ref=e11] [cursor=pointer]
+      - button "Main menu" [ref=e15] [cursor=pointer]
+  - generic [ref=e19]:
+    - generic:
+      - iframe
+    - heading "SMMM Z Raporu Sistemi" [level=1] [ref=e24]:
+      - text: SMMM Z Raporu Sistemi
+      - generic [ref=e25]:
+        - link "Link to heading":
+          - /url: "#smmm-z-raporu-sistemi"
+    - paragraph [ref=e30]: Yetkili kullanıcı girişi
+    - generic [ref=e32]:
+      - paragraph [ref=e36]: Şifre
+      - generic [ref=e38]:
+        - textbox "Şifre" [active] [ref=e39]:
+          - /placeholder: Şifrenizi girin
+        - button "Show password text" [ref=e40] [cursor=pointer]:
+          - img "Show password text" [ref=e41]
+    - button [ref=e45] [cursor=pointer]:
+      - paragraph [ref=e49]: Giriş

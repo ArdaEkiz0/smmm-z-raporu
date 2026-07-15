@@ -1,0 +1,12 @@
+﻿python.exe : 2026-07-10 12:49:19.997 Uvicorn server started on 127.0.0.1:8503
+At line:1 char:134
++ ... _test.log"; & "C:\Users\ozel\AppData\Local\hermes\hermes-agent\venv\S ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (2026-07-10 12:4... 127.0.0.1:8503:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+  You can now view your Streamlit app in your browser.
+
+  URL: http://127.0.0.1:8503
+

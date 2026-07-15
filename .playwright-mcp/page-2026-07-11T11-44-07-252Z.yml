@@ -1,0 +1,134 @@
+- generic [active] [ref=f3e1]:
+  - banner [ref=f3e5]:
+    - generic [ref=f3e6]:
+      - generic [ref=f3e9]:
+        - generic [ref=f3e10]:
+          - link "Contact us" [ref=f3e12] [cursor=pointer]:
+            - /url: https://www.namecheap.com/support/
+          - link "Sign up" [ref=f3e13] [cursor=pointer]:
+            - /url: https://www.namecheap.com/myaccount/signup/
+          - generic [ref=f3e14]:
+            - button " Sign in" [ref=f3e15] [cursor=pointer]:
+              - generic [ref=f3e16]: 
+              - generic [ref=f3e17]: Sign in
+            - text: 
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]:
+            - link "Your Cart" [ref=f3e20] [cursor=pointer]:
+              - /url: https://www.namecheap.com/shoppingcart/
+              - generic [ref=f3e21]: 
+            - text: 
+          - generic [ref=f3e22]:
+            - generic [ref=f3e23] [cursor=pointer]:
+              - text: $
+              - generic [ref=f3e24]: USD
+            - text: 
+          - button "Search" [ref=f3e25] [cursor=pointer]:
+            - generic [ref=f3e26]: 
+      - generic [ref=f3e28]:
+        - generic [ref=f3e30]:
+          - strong [ref=f3e32]:
+            - link [ref=f3e33] [cursor=pointer]:
+              - /url: https://www.namecheap.com/
+              - img "Namecheap" [ref=f3e34]
+          - text: 
+        - navigation [ref=f3e35]:
+          - generic [ref=f3e36]:
+            - generic: 
+            - generic [ref=f3e37]:
+              - link "Domains NEW" [ref=f3e38] [cursor=pointer]:
+                - /url: https://www.namecheap.com/domains/
+                - text: Domains
+                - generic [ref=f3e39]: NEW
+              - text: 
+            - generic [ref=f3e40]:
+              - link "Hosting" [ref=f3e41] [cursor=pointer]:
+                - /url: https://www.namecheap.com/hosting/
+              - text: 
+            - generic [ref=f3e42]:
+              - link "WordPress" [ref=f3e43] [cursor=pointer]:
+                - /url: https://www.namecheap.com/wordpress/
+              - text: 
+            - generic [ref=f3e44]:
+              - link "Email" [ref=f3e45] [cursor=pointer]:
+                - /url: https://www.namecheap.com/hosting/email/
+              - text: 
+            - generic [ref=f3e46]:
+              - link "Marketing Tools NEW" [ref=f3e47] [cursor=pointer]:
+                - /url: https://www.namecheap.com/apps/
+                - text: Marketing Tools
+                - generic [ref=f3e48]: NEW
+              - text:     
+            - generic [ref=f3e49]:
+              - link "Security NEW" [ref=f3e50] [cursor=pointer]:
+                - /url: https://www.namecheap.com/security/
+                - text: Security
+                - generic [ref=f3e51]: NEW
+              - text: 
+            - generic [ref=f3e52]:
+              - link "Transfer to Us TRY ME" [ref=f3e53] [cursor=pointer]:
+                - /url: https://www.namecheap.com/domains/transfer/
+                - text: Transfer to Us
+                - generic [ref=f3e54]: TRY ME
+              - text: 
+            - generic [ref=f3e55]:
+              - link "Help Center NEW" [ref=f3e56] [cursor=pointer]:
+                - /url: https://www.namecheap.com/help-center/
+                - text: Help Center
+                - generic [ref=f3e57]: NEW
+              - text: 
+            - generic [ref=f3e58]:
+              - button "Account NEW" [ref=f3e59] [cursor=pointer]:
+                - text: Account
+                - generic [ref=f3e60]: NEW
+              - text: 
+  - generic [ref=f3e67]:
+    - generic [ref=f3e69]:
+      - generic [ref=f3e71]:
+        - button "Search" [ref=f3e72] [cursor=pointer]
+        - textbox "Search for domains ..." [ref=f3e73]: gürcanekiz
+        - button "Clear" [ref=f3e74] [cursor=pointer]
+      - article [ref=f3e75]
+    - generic [ref=f3e81]:
+      - button "Domains" [ref=f3e82] [cursor=pointer]
+      - button "Auctions" [ref=f3e89] [cursor=pointer]
+      - button "Premium" [ref=f3e96] [cursor=pointer]
+      - button "Generator" [ref=f3e100] [cursor=pointer]
+      - button "Beast Mode" [ref=f3e107] [cursor=pointer]
+      - button "Favorites" [ref=f3e115] [cursor=pointer]
+    - complementary [ref=f3e119]:
+      - generic [ref=f3e120]:
+        - heading "Suggested Results" [level=3] [ref=f3e121]
+        - button "Hide" [ref=f3e122] [cursor=pointer]
+      - article [ref=f3e123]
+      - article [ref=f3e130]
+      - article [ref=f3e137]
+      - article [ref=f3e144]
+      - article [ref=f3e151]
+  - generic [ref=f3e163]:
+    - paragraph [ref=f3e165]:
+      - generic [ref=f3e166]: Need help?
+      - text: We're always here for you.
+    - link " Go to Live Chat page" [ref=f3e168] [cursor=pointer]:
+      - /url: https://www.namecheap.com/help-center/live-chat?loc=/general/
+      - generic [ref=f3e169]: 
+      - text: Go to Live Chat page
+  - contentinfo [ref=f3e173]:
+    - generic [ref=f3e176]:
+      - link [ref=f3e178] [cursor=pointer]:
+        - /url: https://www.namecheap.com/
+        - img "Namecheap" [ref=f3e180]
+      - generic [ref=f3e181]:
+        - paragraph [ref=f3e182]: The entirety of this site is protected by copyright © 2000–2026 Namecheap, Inc.
+        - paragraph [ref=f3e183]: 4600 East Washington Street, Suite 300, Phoenix, AZ 85034, USA
+      - generic [ref=f3e184]:
+        - link "Terms and Conditions" [ref=f3e185] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/
+        - link "Privacy Policy" [ref=f3e186] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/general/privacy-policy/
+        - link "UDRP" [ref=f3e187] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/domains/udrp/
+        - link "Domain Registration Data Disclosure Policy" [ref=f3e189] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/general/domain-registration-data-disclosure-policy-guide/
+        - link "Cookie Preferences" [ref=f3e190] [cursor=pointer]:
+          - /url: javascript:void(0);

@@ -1,0 +1,225 @@
+- generic [ref=e2]:
+  - generic [ref=e56]:
+    - heading "Aygıtlar" [level=2] [ref=e60]
+    - radiogroup "Sayfa Seç" [ref=e63] [cursor=pointer]:
+      - generic [ref=e64]:
+        - radio "Dashboard"
+        - paragraph [ref=e69]: Dashboard
+      - generic [ref=e70]:
+        - radio "Z Raporu Yükle" [checked]
+        - paragraph [ref=e75]: Z Raporu Yükle
+      - generic [ref=e76]:
+        - radio "Fiş Geçmişi"
+        - paragraph [ref=e81]: Fiş Geçmişi
+      - generic [ref=e82]:
+        - radio "Mükellef Yönetimi"
+        - paragraph [ref=e87]: Mükellef Yönetimi
+      - generic [ref=e88]:
+        - radio "KDV Özeti"
+        - paragraph [ref=e93]: KDV Özeti
+      - generic [ref=e94]:
+        - radio "Ayarlar"
+        - paragraph [ref=e99]: Ayarlar
+    - separator [ref=e104]
+    - heading "OCR Motoru" [level=2] [ref=e108]
+    - radiogroup "OCR Motoru Seç" [ref=e111] [cursor=pointer]:
+      - generic [ref=e112]:
+        - radio "Tesseract" [checked]
+        - paragraph [ref=e117]: Tesseract
+      - generic [ref=e118]:
+        - radio "GOT-OCR API"
+        - paragraph [ref=e123]: GOT-OCR API
+    - status [ref=e126]:
+      - generic [ref=e128]:
+        - generic [ref=e129]: 🟢
+        - paragraph [ref=e133]: Tesseract OCR hazir
+    - separator [ref=e138]
+    - heading "Mükellef" [level=2] [ref=e142]
+    - radiogroup "Muhasebe Türü" [ref=e145] [cursor=pointer]:
+      - generic [ref=e146]:
+        - radio "Bilanço"
+        - paragraph [ref=e151]: Bilanço
+      - generic [ref=e152]:
+        - radio "Serbest Meslek" [checked]
+        - paragraph [ref=e157]: Serbest Meslek
+    - generic [ref=e161]:
+      - generic [ref=e162]:
+        - generic [ref=e163]: ALİ DEMİREL
+        - combobox "Selected ALİ DEMİREL. Mükellef Seç" [ref=e430]
+      - img "open" [ref=e167]
+    - group [ref=e322]:
+      - generic "keyboard_arrow_right LUCA Şablonu" [ref=e323] [cursor=pointer]:
+        - generic [ref=e324]:
+          - generic [ref=e325]: keyboard_arrow_right
+          - paragraph [ref=e329]: LUCA Şablonu
+    - button [ref=e332] [cursor=pointer]:
+      - paragraph [ref=e336]: Şablonu Kaldır
+    - separator [ref=e341]
+    - heading "Hesap Kodları" [level=2] [ref=e344]
+    - group [ref=e347]:
+      - generic "keyboard_arrow_right Hesap Kodları" [ref=e348] [cursor=pointer]:
+        - generic [ref=e349]:
+          - generic [ref=e350]: keyboard_arrow_right
+          - paragraph [ref=e354]: Hesap Kodları
+    - separator [ref=e359]
+    - heading "Ürün Kodları" [level=2] [ref=e363]
+    - group [ref=e366]:
+      - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=e367] [cursor=pointer]:
+        - generic [ref=e368]:
+          - generic [ref=e369]: keyboard_arrow_right
+          - paragraph [ref=e373]: Ürün Kodlarını Yönet
+  - generic [ref=e3]:
+    - banner [ref=e6]:
+      - generic [ref=e9]:
+        - button "Deploy" [ref=e11] [cursor=pointer]
+        - button "Main menu" [ref=e15] [cursor=pointer]
+    - generic [ref=e19]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=e217]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=e25]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-sistemi"
+      - heading "Z Raporu Fotoğraf Yükleme ve OCR" [level=2] [ref=e273]:
+        - text: Z Raporu Fotoğraf Yükleme ve OCR
+        - generic [ref=e222]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - status [ref=e431]:
+        - paragraph [ref=e280]:
+          - text: "Mükellef:"
+          - strong [ref=e432]: ALİ DEMİREL
+          - text: (Sidebar'dan değiştirin)
+      - generic [ref=e282]:
+        - paragraph [ref=e286]: Z raporu/fiş seç (JPG/PNG/PDF)
+        - region "Z raporu/fiş seç (JPG/PNG/PDF)" [ref=e287] [cursor=pointer]:
+          - button "Choose File" [ref=e288]
+          - generic [ref=e434]:
+            - generic "sample_mikail.jpeg, 118.5KB" [ref=e437]:
+              - generic [ref=e442]:
+                - generic "sample_mikail.jpeg" [ref=e443]
+                - generic [ref=e444]: 118.5KB
+              - button "Remove sample_mikail.jpeg" [ref=e446]
+            - button "Add files" [ref=e450]:
+              - generic [ref=e451]: add
+      - status [ref=e457]:
+        - paragraph [ref=e461]: 1 görsel, 0 PDF yüklendi
+      - generic [ref=e468]:
+        - button "Fullscreen" [ref=e473] [cursor=pointer]
+        - generic [ref=e478]:
+          - img "0" [ref=e479]
+          - paragraph [ref=e482]: sample_mikail.jpeg
+      - generic [ref=e492]:
+        - button [active] [ref=e497] [cursor=pointer]:
+          - paragraph [ref=e501]: HEPSİNİ OKU (OCR)
+        - button [ref=e506] [cursor=pointer]:
+          - paragraph [ref=e510]: Temizle
+      - separator [ref=e530]
+      - heading "Sonuçlar (1 Z Raporu)" [level=3] [ref=e535]:
+        - text: Sonuçlar (1 Z Raporu)
+        - generic [ref=e536]:
+          - link "Link to heading":
+            - /url: "#sonuclar-1-z-raporu"
+      - generic [ref=e538]:
+        - paragraph [ref=e543]:
+          - strong [ref=e544]: sample_mikail.jpeg
+        - generic [ref=e546]:
+          - generic [ref=e548]:
+            - generic [ref=e550]:
+              - paragraph [ref=e554]: Tarih
+              - textbox "Tarih" [ref=e557]:
+                - /placeholder: ""
+                - text: 30.06.2026
+            - generic [ref=e559]:
+              - paragraph [ref=e563]: Firma
+              - textbox "Firma" [ref=e566]:
+                - /placeholder: ""
+                - text: MKALEKZORTAKLIGI
+            - generic [ref=e568]:
+              - paragraph [ref=e572]: Banka
+              - textbox "Banka" [ref=e575]:
+                - /placeholder: ""
+                - text: Halkbank
+            - generic [ref=e577]:
+              - paragraph [ref=e581]: Z No
+              - textbox "Z No" [ref=e584]:
+                - /placeholder: ""
+                - text: "2.124"
+          - generic [ref=e586]:
+            - generic [ref=e588]:
+              - paragraph [ref=e592]: Brüt (TL)
+              - generic [ref=e593]:
+                - spinbutton "Brüt (TL)" [ref=e596]: "19851.90"
+                - generic [ref=e597]:
+                  - button [ref=e598] [cursor=pointer]
+                  - button [ref=e601] [cursor=pointer]
+            - generic [ref=e605]:
+              - paragraph [ref=e609]: Net (TL)
+              - generic [ref=e610]:
+                - spinbutton "Net (TL)" [ref=e613]: "7011987.00"
+                - generic [ref=e614]:
+                  - button [ref=e615] [cursor=pointer]
+                  - button [ref=e618] [cursor=pointer]
+            - generic [ref=e622]:
+              - paragraph [ref=e626]: Nakit (TL)
+              - generic [ref=e627]:
+                - spinbutton "Nakit (TL)" [ref=e630]: "0.00"
+                - generic [ref=e631]:
+                  - button [disabled] [ref=e632]
+                  - button [ref=e635] [cursor=pointer]
+          - generic [ref=e639]:
+            - generic [ref=e641]:
+              - paragraph [ref=e645]: K.Kartı (TL)
+              - generic [ref=e646]:
+                - spinbutton "K.Kartı (TL)" [ref=e649]: "14851.90"
+                - generic [ref=e650]:
+                  - button [ref=e651] [cursor=pointer]
+                  - button [ref=e654] [cursor=pointer]
+            - generic [ref=e658]:
+              - paragraph [ref=e662]: Yemek Çeki (TL)
+              - generic [ref=e663]:
+                - spinbutton "Yemek Çeki (TL)" [ref=e666]: "0.00"
+                - generic [ref=e667]:
+                  - button [disabled] [ref=e668]
+                  - button [ref=e671] [cursor=pointer]
+            - generic [ref=e675]:
+              - paragraph [ref=e679]: İade (TL)
+              - generic [ref=e680]:
+                - spinbutton "İade (TL)" [ref=e683]: "11955.00"
+                - generic [ref=e684]:
+                  - button [ref=e685] [cursor=pointer]
+                  - button [ref=e688] [cursor=pointer]
+      - group [ref=e693]:
+        - generic "keyboard_arrow_right 📝 Tüm Alanlar — Düzenle & Öğret" [ref=e694] [cursor=pointer]:
+          - generic [ref=e695]:
+            - generic [ref=e696]: keyboard_arrow_right
+            - paragraph [ref=e700]: 📝 Tüm Alanlar — Düzenle & Öğret
+      - generic [ref=e705]:
+        - button "Show/hide columns" [ref=e709] [cursor=pointer]
+        - button "Download as CSV" [ref=e715] [cursor=pointer]
+        - button "Search" [ref=e721] [cursor=pointer]
+        - button "Fullscreen" [ref=e727] [cursor=pointer]
+      - group [ref=e741]:
+        - generic "keyboard_arrow_right Fiş İptal / İade Varsa Girin (Opsiyonel)" [ref=e742] [cursor=pointer]:
+          - generic [ref=e743]:
+            - generic [ref=e744]: keyboard_arrow_right
+            - paragraph [ref=e748]: Fiş İptal / İade Varsa Girin (Opsiyonel)
+      - alert [ref=e751]:
+        - paragraph [ref=e755]: "1 Z raporunda KDV oranı bulunamadı. Excel için KDV oranı seçin:"
+      - generic [ref=e757]:
+        - generic [ref=e758]: "sample_mikail.jpeg — Brüt: 19,851.90 TL"
+        - generic [ref=e766]:
+          - paragraph [ref=e770]: KDV Oranı
+          - generic [ref=e772]:
+            - generic [ref=e773]:
+              - generic [ref=e774]: "%1"
+              - combobox "Selected %1. KDV Oranı" [ref=e776]
+            - img "open" [ref=e778]
+        - generic [ref=e784]:
+          - paragraph [ref=e787]: Oran
+          - paragraph [ref=e790]: "%1"
+        - button [ref=e795] [cursor=pointer]:
+          - paragraph [ref=e799]: Uygula
+      - status [ref=e802]:
+        - paragraph [ref=e806]: KDV oranlarını tamamlayıp sayfayı yenileyin.

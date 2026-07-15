@@ -1,0 +1,390 @@
+- generic [ref=f3e1]:
+  - banner [ref=f3e5]:
+    - generic [ref=f3e6]:
+      - generic [ref=f3e9]:
+        - generic [ref=f3e10]:
+          - link "Contact us" [ref=f3e12] [cursor=pointer]:
+            - /url: https://www.namecheap.com/support/
+          - link "Sign up" [ref=f3e13] [cursor=pointer]:
+            - /url: https://www.namecheap.com/myaccount/signup/
+          - generic [ref=f3e14]:
+            - button " Sign in" [ref=f3e15] [cursor=pointer]:
+              - generic [ref=f3e16]: 
+              - generic [ref=f3e17]: Sign in
+            - text: 
+        - generic [ref=f3e18]:
+          - generic [ref=f3e19]:
+            - link "Your Cart" [ref=f3e20] [cursor=pointer]:
+              - /url: https://www.namecheap.com/shoppingcart/
+              - generic [ref=f3e21]: 
+            - text: 
+          - generic [ref=f3e22]:
+            - generic [ref=f3e23] [cursor=pointer]:
+              - text: $
+              - generic [ref=f3e24]: USD
+            - text: 
+          - button "Search" [ref=f3e25] [cursor=pointer]:
+            - generic [ref=f3e26]: 
+      - generic [ref=f3e28]:
+        - generic [ref=f3e30]:
+          - strong [ref=f3e32]:
+            - link [ref=f3e33] [cursor=pointer]:
+              - /url: https://www.namecheap.com/
+              - img "Namecheap" [ref=f3e34]
+          - text: 
+        - navigation [ref=f3e35]:
+          - generic [ref=f3e36]:
+            - generic: 
+            - generic [ref=f3e37]:
+              - link "Domains NEW" [ref=f3e38] [cursor=pointer]:
+                - /url: https://www.namecheap.com/domains/
+                - text: Domains
+                - generic [ref=f3e39]: NEW
+              - text: 
+            - generic [ref=f3e40]:
+              - link "Hosting" [ref=f3e41] [cursor=pointer]:
+                - /url: https://www.namecheap.com/hosting/
+              - text: 
+            - generic [ref=f3e42]:
+              - link "WordPress" [ref=f3e43] [cursor=pointer]:
+                - /url: https://www.namecheap.com/wordpress/
+              - text: 
+            - generic [ref=f3e44]:
+              - link "Email" [ref=f3e45] [cursor=pointer]:
+                - /url: https://www.namecheap.com/hosting/email/
+              - text: 
+            - generic [ref=f3e46]:
+              - link "Marketing Tools NEW" [ref=f3e47] [cursor=pointer]:
+                - /url: https://www.namecheap.com/apps/
+                - text: Marketing Tools
+                - generic [ref=f3e48]: NEW
+              - text:     
+            - generic [ref=f3e49]:
+              - link "Security NEW" [ref=f3e50] [cursor=pointer]:
+                - /url: https://www.namecheap.com/security/
+                - text: Security
+                - generic [ref=f3e51]: NEW
+              - text: 
+            - generic [ref=f3e52]:
+              - link "Transfer to Us TRY ME" [ref=f3e53] [cursor=pointer]:
+                - /url: https://www.namecheap.com/domains/transfer/
+                - text: Transfer to Us
+                - generic [ref=f3e54]: TRY ME
+              - text: 
+            - generic [ref=f3e55]:
+              - link "Help Center NEW" [ref=f3e56] [cursor=pointer]:
+                - /url: https://www.namecheap.com/help-center/
+                - text: Help Center
+                - generic [ref=f3e57]: NEW
+              - text: 
+            - generic [ref=f3e58]:
+              - button "Account NEW" [ref=f3e59] [cursor=pointer]:
+                - text: Account
+                - generic [ref=f3e60]: NEW
+              - text: 
+  - generic [ref=f3e67]:
+    - generic [ref=f3e69]:
+      - generic [ref=f3e71]:
+        - button "Search" [active] [ref=f3e72] [cursor=pointer]
+        - textbox "Search for domains ..." [ref=f3e73]: gürcanekiz.xyz
+        - button "Clear" [ref=f3e74] [cursor=pointer]
+      - article [ref=f3e578]:
+        - generic [ref=f3e581]:
+          - generic [ref=f3e582]:
+            - heading "gürcanekiz.xyz" [level=2] [ref=f3e583]
+            - generic [ref=f3e584]: 90% OFF
+          - button "Add to favorites" [ref=f3e585] [cursor=pointer]
+        - generic [ref=f3e589]:
+          - strong [ref=f3e590]: $2.00/yr
+          - generic [ref=f3e591]: Retail $19.48/yr
+        - button "Add to cart" [ref=f3e593] [cursor=pointer]
+    - generic [ref=f3e81]:
+      - button "Domains" [ref=f3e82] [cursor=pointer]
+      - button "Auctions" [ref=f3e89] [cursor=pointer]
+      - button "Premium" [ref=f3e96] [cursor=pointer]
+      - button "Generator" [ref=f3e100] [cursor=pointer]
+      - button "Beast Mode" [ref=f3e107] [cursor=pointer]
+      - button "Favorites" [ref=f3e115] [cursor=pointer]
+    - complementary [ref=f3e119]:
+      - generic [ref=f3e120]:
+        - heading "Suggested Results" [level=3] [ref=f3e121]
+        - button "Hide" [ref=f3e122] [cursor=pointer]
+      - article [ref=f3e594]:
+        - generic [ref=f3e595]:
+          - generic [ref=f3e597]:
+            - heading "gürcanekiz.com" [level=2] [ref=f3e598]
+            - generic [ref=f3e599]: $6.79 WITH NEWCOM679
+          - emphasis [ref=f3e600] [cursor=pointer]:
+            - text: More info
+            - generic:
+              - link "New customers, get a mighty .COM domain for $6.79 with promo code NEWCOM679. Non-premium domains only. Full T&Cs apply.":
+                - /url: https://www.namecheap.com/domains/registration/gtld/com/
+          - button "Add to favorites" [ref=f3e601] [cursor=pointer]
+        - generic [ref=f3e605]:
+          - strong [ref=f3e606]: $11.28/yr
+          - generic [ref=f3e607]: Retail $14.98/yr
+        - button "Add to cart" [ref=f3e609] [cursor=pointer]
+      - article [ref=f3e610]:
+        - generic [ref=f3e611]:
+          - heading "gürcanekiz.to" [level=2] [ref=f3e614]
+          - button "Add to favorites" [ref=f3e615] [cursor=pointer]
+        - generic [ref=f3e619]:
+          - strong [ref=f3e620]: $39.98/yr
+          - generic [ref=f3e621]: Retail $39.98/yr
+        - button "Add to cart" [ref=f3e623] [cursor=pointer]
+      - article [ref=f3e624]:
+        - generic [ref=f3e625]:
+          - generic [ref=f3e627]:
+            - heading "gürcanekiz.org" [level=2] [ref=f3e628]
+            - generic [ref=f3e629]: 41% OFF
+          - button "Add to favorites" [ref=f3e630] [cursor=pointer]
+        - generic [ref=f3e634]:
+          - strong [ref=f3e635]: $8.48/yr
+          - generic [ref=f3e636]: Retail $14.48/yr
+        - button "Add to cart" [ref=f3e638] [cursor=pointer]
+      - article [ref=f3e639]:
+        - generic [ref=f3e640]:
+          - generic [ref=f3e642]:
+            - heading "gürcanekiz.net" [level=2] [ref=f3e643]
+            - generic [ref=f3e644]: 17% OFF
+          - button "Add to favorites" [ref=f3e645] [cursor=pointer]
+        - generic [ref=f3e649]:
+          - strong [ref=f3e650]: $12.48/yr
+          - generic [ref=f3e651]: Retail $14.98/yr
+        - button "Add to cart" [ref=f3e653] [cursor=pointer]
+      - article [ref=f3e655]:
+        - generic [ref=f3e657]:
+          - heading "SSL" [level=2] [ref=f3e658]
+          - paragraph [ref=f3e659]: Site security made simple
+          - emphasis [ref=f3e660] [cursor=pointer]:
+            - text: More info
+            - generic:
+              - text: Secure your new domain with an SSL certificate, covers 1 domain and is issued in 15 minutes. Learn how HTTPS can give you a
+              - link "SEO boost":
+                - /url: https://www.namecheap.com/blog/https-secure-your-site-and-boost-your-seo/
+              - text: .
+        - strong [ref=f3e662]: $11.00/yr
+        - button "Add to cart" [ref=f3e663] [cursor=pointer]
+    - main [ref=f3e191]:
+      - generic [ref=f3e192]:
+        - heading "Results" [level=3] [ref=f3e193]
+        - button "Explore More" [ref=f3e664] [cursor=pointer]
+      - generic [ref=f3e194]:
+        - article [ref=f3e665]:
+          - generic [ref=f3e666]:
+            - generic [ref=f3e667]:
+              - heading "gürcanekiz.inc" [level=2] [ref=f3e668]
+              - generic [ref=f3e669]: 76% OFF
+            - button "Add to favorites" [ref=f3e670] [cursor=pointer]
+          - generic [ref=f3e674]:
+            - strong [ref=f3e675]: $498.00/yr
+            - generic [ref=f3e676]: Retail $2,098.00/yr
+          - button "Add to cart" [ref=f3e678] [cursor=pointer]
+        - article [ref=f3e679]:
+          - generic [ref=f3e680]:
+            - generic [ref=f3e681]:
+              - heading "gürcanekiz.online" [level=2] [ref=f3e682]
+              - generic [ref=f3e683]: ONE PER CUSTOMER
+            - emphasis [ref=f3e684] [cursor=pointer]:
+              - text: More info
+              - generic: Offer is applied automatically on login. Renews at $34.98/yr. Not applicable to premium domains.
+            - button "Add to favorites" [ref=f3e685] [cursor=pointer]
+          - generic [ref=f3e689]:
+            - strong [ref=f3e690]: $0.98/yr
+            - generic [ref=f3e691]: Retail $2.88/yr
+          - button "Add to cart" [ref=f3e693] [cursor=pointer]
+        - article [ref=f3e694]:
+          - generic [ref=f3e695]:
+            - generic [ref=f3e696]:
+              - heading "gürcanekiz.fit" [level=2] [ref=f3e697]
+              - generic [ref=f3e698]: 91% OFF
+            - button "Add to favorites" [ref=f3e699] [cursor=pointer]
+          - generic [ref=f3e703]:
+            - strong [ref=f3e704]: $2.98/yr
+            - generic [ref=f3e705]: Retail $33.98/yr
+          - button "Add to cart" [ref=f3e707] [cursor=pointer]
+        - article [ref=f3e708]:
+          - generic [ref=f3e709]:
+            - heading "gürcanekiz.fashion" [level=2] [ref=f3e711]
+            - button "Add to favorites" [ref=f3e712] [cursor=pointer]
+          - generic [ref=f3e716]:
+            - strong [ref=f3e717]: $33.98/yr
+            - generic [ref=f3e718]: Retail $33.98/yr
+          - button "Add to cart" [ref=f3e720] [cursor=pointer]
+        - article [ref=f3e721]:
+          - generic [ref=f3e722]:
+            - generic [ref=f3e723]:
+              - heading "gürcanekiz.tech" [level=2] [ref=f3e724]
+              - generic [ref=f3e725]: ONLY $30.98 FOR 2 YEARS
+            - button "Add to favorites" [ref=f3e726] [cursor=pointer]
+          - generic [ref=f3e730]:
+            - strong [ref=f3e731]: $9.99/yr
+            - generic [ref=f3e732]: Retail $68.98/yr
+          - button "Add to cart" [ref=f3e734] [cursor=pointer]
+        - article [ref=f3e735]:
+          - generic [ref=f3e736]:
+            - generic [ref=f3e737]:
+              - heading "gürcanekiz.ink" [level=2] [ref=f3e738]
+              - generic [ref=f3e739]: 91% OFF
+            - button "Add to favorites" [ref=f3e740] [cursor=pointer]
+          - generic [ref=f3e744]:
+            - strong [ref=f3e745]: $2.98/yr
+            - generic [ref=f3e746]: Retail $33.98/yr
+          - button "Add to cart" [ref=f3e748] [cursor=pointer]
+        - article [ref=f3e749]:
+          - generic [ref=f3e750]:
+            - generic [ref=f3e751]:
+              - heading "gürcanekiz.health" [level=2] [ref=f3e752]
+              - generic [ref=f3e753] [cursor=pointer]:
+                - text: Taken
+                - generic: This domain name has already been registered. However, you can make an offer to the current owner to see if they are willing to sell it.
+            - button "Add to favorites" [ref=f3e754] [cursor=pointer]
+          - button "Make offer" [ref=f3e758] [cursor=pointer]
+        - article [ref=f3e759]:
+          - generic [ref=f3e760]:
+            - generic [ref=f3e761]:
+              - heading "gürcanekiz.io" [level=2] [ref=f3e762]
+              - generic [ref=f3e763]: 47% OFF
+            - button "Add to favorites" [ref=f3e764] [cursor=pointer]
+          - generic [ref=f3e768]:
+            - strong [ref=f3e769]: $34.98/yr
+            - generic [ref=f3e770]: Retail $65.98/yr
+          - button "Add to cart" [ref=f3e772] [cursor=pointer]
+        - article [ref=f3e773]:
+          - generic [ref=f3e774]:
+            - generic [ref=f3e775]:
+              - heading "gürcanekiz.store" [level=2] [ref=f3e776]
+              - generic [ref=f3e777]: ONE PER CUSTOMER
+            - emphasis [ref=f3e778] [cursor=pointer]:
+              - text: More info
+              - generic: Offer is applied automatically on login. Renews at $43.98/yr. Not applicable to premium domains.
+            - button "Add to favorites" [ref=f3e779] [cursor=pointer]
+          - generic [ref=f3e783]:
+            - strong [ref=f3e784]: $0.98/yr
+            - generic [ref=f3e785]: Retail $1.78/yr
+          - button "Add to cart" [ref=f3e787] [cursor=pointer]
+        - article [ref=f3e788]:
+          - generic [ref=f3e789]:
+            - generic [ref=f3e790]:
+              - heading "gürcanekiz.llc" [level=2] [ref=f3e791]
+              - generic [ref=f3e792] [cursor=pointer]:
+                - text: Taken
+                - generic: This domain name has already been registered. However, you can make an offer to the current owner to see if they are willing to sell it.
+            - button "Add to favorites" [ref=f3e793] [cursor=pointer]
+          - button "Make offer" [ref=f3e797] [cursor=pointer]
+        - article [ref=f3e798]:
+          - generic [ref=f3e799]:
+            - generic [ref=f3e800]:
+              - heading "gürcanekiz.art" [level=2] [ref=f3e801]
+              - generic [ref=f3e802]: $25.98 for 2 years
+            - button "Add to favorites" [ref=f3e803] [cursor=pointer]
+          - generic [ref=f3e807]:
+            - strong [ref=f3e808]: $3.98/yr
+            - generic [ref=f3e809]: Retail $25.98/yr
+          - button "Add to cart" [ref=f3e811] [cursor=pointer]
+        - article [ref=f3e812]:
+          - generic [ref=f3e813]:
+            - generic [ref=f3e814]:
+              - heading "gürcanekiz.is" [level=2] [ref=f3e815]
+              - generic [ref=f3e816] [cursor=pointer]:
+                - text: Taken
+                - generic: This domain name has already been registered. However, you can make an offer to the current owner to see if they are willing to sell it.
+            - emphasis [ref=f3e817] [cursor=pointer]:
+              - text: More info
+              - generic:
+                - link "Anyone can register a .IS domain, however contact verification is required.":
+                  - /url: https://www.namecheap.com/support/knowledgebase/article.aspx/10105/36/is-domain-registration-requirements
+            - button "Add to favorites" [ref=f3e818] [cursor=pointer]
+          - button "Make offer" [ref=f3e822] [cursor=pointer]
+        - article [ref=f3e823]:
+          - generic [ref=f3e824]:
+            - generic [ref=f3e825]:
+              - heading "gürcanekiz.cc" [level=2] [ref=f3e826]
+              - generic [ref=f3e827]: 46% OFF
+            - button "Add to favorites" [ref=f3e828] [cursor=pointer]
+          - generic [ref=f3e832]:
+            - strong [ref=f3e833]: $5.98/yr
+            - generic [ref=f3e834]: Retail $10.98/yr
+          - button "Add to cart" [ref=f3e836] [cursor=pointer]
+        - article [ref=f3e837]:
+          - generic [ref=f3e838]:
+            - generic [ref=f3e839]:
+              - heading "gürcanekiz.so" [level=2] [ref=f3e840]
+              - generic [ref=f3e841] [cursor=pointer]:
+                - text: Taken
+                - generic: This domain name has already been registered. However, you can make an offer to the current owner to see if they are willing to sell it.
+            - button "Add to favorites" [ref=f3e842] [cursor=pointer]
+          - button "Make offer" [ref=f3e846] [cursor=pointer]
+        - article [ref=f3e847]:
+          - generic [ref=f3e848]:
+            - generic [ref=f3e849]:
+              - heading "gürcanekiz.ac" [level=2] [ref=f3e850]
+              - generic [ref=f3e851]: 54% OFF
+            - button "Add to favorites" [ref=f3e852] [cursor=pointer]
+          - generic [ref=f3e856]:
+            - strong [ref=f3e857]: $28.98/yr
+            - generic [ref=f3e858]: Retail $62.98/yr
+          - button "Add to cart" [ref=f3e860] [cursor=pointer]
+        - article [ref=f3e861]:
+          - generic [ref=f3e862]:
+            - heading "gürcanekiz.cx" [level=2] [ref=f3e864]
+            - button "Add to favorites" [ref=f3e865] [cursor=pointer]
+          - generic [ref=f3e869]:
+            - strong [ref=f3e870]: $19.98/yr
+            - generic [ref=f3e871]: Retail $19.98/yr
+          - button "Add to cart" [ref=f3e873] [cursor=pointer]
+        - article [ref=f3e874]:
+          - generic [ref=f3e875]:
+            - generic [ref=f3e876]:
+              - heading "gürcanekiz.sh" [level=2] [ref=f3e877]
+              - generic [ref=f3e878]: 44% OFF
+            - button "Add to favorites" [ref=f3e879] [cursor=pointer]
+          - generic [ref=f3e883]:
+            - strong [ref=f3e884]: $34.98/yr
+            - generic [ref=f3e885]: Retail $62.98/yr
+          - button "Add to cart" [ref=f3e887] [cursor=pointer]
+        - article [ref=f3e888]:
+          - generic [ref=f3e889]:
+            - heading "gürcanekiz.name" [level=2] [ref=f3e891]
+            - button "Add to favorites" [ref=f3e892] [cursor=pointer]
+          - generic [ref=f3e896]:
+            - strong [ref=f3e897]: $8.98/yr
+            - generic [ref=f3e898]: Retail $8.98/yr
+          - button "Add to cart" [ref=f3e900] [cursor=pointer]
+        - article [ref=f3e901]:
+          - generic [ref=f3e902]:
+            - generic [ref=f3e903]:
+              - heading "gürcanekiz.gg" [level=2] [ref=f3e904]
+              - generic [ref=f3e905] [cursor=pointer]:
+                - text: Taken
+                - generic: This domain name has already been registered. However, you can make an offer to the current owner to see if they are willing to sell it.
+            - button "Add to favorites" [ref=f3e906] [cursor=pointer]
+          - button "Make offer" [ref=f3e910] [cursor=pointer]
+      - button "Explore 400+ Additional Extensions" [ref=f3e912] [cursor=pointer]
+  - generic [ref=f3e163]:
+    - paragraph [ref=f3e165]:
+      - generic [ref=f3e166]: Need help?
+      - text: We're always here for you.
+    - link " Go to Live Chat page" [ref=f3e168] [cursor=pointer]:
+      - /url: https://www.namecheap.com/help-center/live-chat?loc=/general/
+      - generic [ref=f3e169]: 
+      - text: Go to Live Chat page
+  - contentinfo [ref=f3e173]:
+    - generic [ref=f3e176]:
+      - link [ref=f3e178] [cursor=pointer]:
+        - /url: https://www.namecheap.com/
+        - img "Namecheap" [ref=f3e180]
+      - generic [ref=f3e181]:
+        - paragraph [ref=f3e182]: The entirety of this site is protected by copyright © 2000–2026 Namecheap, Inc.
+        - paragraph [ref=f3e183]: 4600 East Washington Street, Suite 300, Phoenix, AZ 85034, USA
+      - generic [ref=f3e184]:
+        - link "Terms and Conditions" [ref=f3e185] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/
+        - link "Privacy Policy" [ref=f3e186] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/general/privacy-policy/
+        - link "UDRP" [ref=f3e187] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/domains/udrp/
+        - link "Domain Registration Data Disclosure Policy" [ref=f3e189] [cursor=pointer]:
+          - /url: https://www.namecheap.com/legal/general/domain-registration-data-disclosure-policy-guide/
+        - link "Cookie Preferences" [ref=f3e190] [cursor=pointer]:
+          - /url: javascript:void(0);

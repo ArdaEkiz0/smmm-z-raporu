@@ -1,0 +1,92 @@
+- generic [ref=f5e2]:
+  - generic [ref=f5e11]:
+    - heading "Aygıtlar" [level=2] [ref=f5e15]
+    - radiogroup "Sayfa Seç" [ref=f5e18]:
+      - generic [ref=f5e19] [cursor=pointer]:
+        - radio "Dashboard" [checked] [ref=f5e21]
+        - paragraph [ref=f5e27]: Dashboard
+      - generic [ref=f5e28] [cursor=pointer]:
+        - radio "Z Raporu Yükle" [ref=f5e30]
+        - paragraph [ref=f5e36]: Z Raporu Yükle
+      - generic [ref=f5e37] [cursor=pointer]:
+        - radio "Fiş Geçmişi" [ref=f5e39]
+        - paragraph [ref=f5e45]: Fiş Geçmişi
+      - generic [ref=f5e46] [cursor=pointer]:
+        - radio "Mükellef Yönetimi" [ref=f5e48]
+        - paragraph [ref=f5e54]: Mükellef Yönetimi
+      - generic [ref=f5e55] [cursor=pointer]:
+        - radio "KDV Özeti" [ref=f5e57]
+        - paragraph [ref=f5e63]: KDV Özeti
+      - generic [ref=f5e64] [cursor=pointer]:
+        - radio "Ayarlar" [ref=f5e66]
+        - paragraph [ref=f5e72]: Ayarlar
+    - button [ref=f5e75] [cursor=pointer]:
+      - paragraph [ref=f5e79]: 🌙 Karanlık Mod
+    - separator [ref=f5e84]
+    - heading "OCR Motoru" [level=2] [ref=f5e88]
+    - radiogroup "OCR Motoru Seç" [ref=f5e91]:
+      - generic [ref=f5e92] [cursor=pointer]:
+        - radio "Tesseract" [checked] [ref=f5e94]
+        - paragraph [ref=f5e100]: Tesseract
+      - generic [ref=f5e101] [cursor=pointer]:
+        - radio "GOT-OCR API" [ref=f5e103]
+        - paragraph [ref=f5e109]: GOT-OCR API
+    - status [ref=f5e112]:
+      - generic [ref=f5e114]:
+        - generic [ref=f5e115]: 🟢
+        - paragraph [ref=f5e119]: Tesseract OCR hazir
+    - separator [ref=f5e124]
+    - heading "Mükellef" [level=2] [ref=f5e128]
+    - radiogroup "Muhasebe Türü" [ref=f5e131]:
+      - generic [ref=f5e132] [cursor=pointer]:
+        - radio "Bilanço" [checked] [ref=f5e134]
+        - paragraph [ref=f5e140]: Bilanço
+      - generic [ref=f5e141] [cursor=pointer]:
+        - radio "Serbest Meslek" [ref=f5e143]
+        - paragraph [ref=f5e149]: Serbest Meslek
+    - group [ref=f5e153]:
+      - combobox "Mükellef Seç" [ref=f5e154]: (Genel)
+      - button "Open" [ref=f5e155] [cursor=pointer]
+    - separator [ref=f5e163]
+    - heading "Hesap Kodları" [level=2] [ref=f5e167]
+    - group [ref=f5e170]:
+      - generic "keyboard_arrow_right Hesap Kodları" [ref=f5e171] [cursor=pointer]:
+        - generic [ref=f5e172]:
+          - generic [ref=f5e173]: keyboard_arrow_right
+          - paragraph [ref=f5e177]: Hesap Kodları
+    - separator [ref=f5e182]
+    - heading "Ürün Kodları" [level=2] [ref=f5e186]
+    - group [ref=f5e189]:
+      - generic "keyboard_arrow_right Ürün Kodlarını Yönet" [ref=f5e190] [cursor=pointer]:
+        - generic [ref=f5e191]:
+          - generic [ref=f5e192]: keyboard_arrow_right
+          - paragraph [ref=f5e196]: Ürün Kodlarını Yönet
+  - generic [ref=f5e3]:
+    - banner [ref=f5e199]:
+      - button "Main menu" [ref=f5e204] [cursor=pointer]
+    - generic [ref=f5e208]:
+      - generic:
+        - iframe
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=f5e213]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=f5e214]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-ve-fis-yoenetim-sistemi"
+      - heading "Genel Bakış" [level=2] [ref=f5e219]:
+        - text: Genel Bakış
+        - generic [ref=f5e220]:
+          - link "Link to heading":
+            - /url: "#genel-bakis"
+      - generic [ref=f5e222]:
+        - generic [ref=f5e227]:
+          - paragraph [ref=f5e230]: Toplam Kayıt
+          - paragraph [ref=f5e233]: "0"
+        - generic [ref=f5e238]:
+          - paragraph [ref=f5e241]: Toplam Fiş
+          - paragraph [ref=f5e244]: "0"
+        - generic [ref=f5e249]:
+          - paragraph [ref=f5e252]: Aktif Mükellef
+          - paragraph [ref=f5e255]: "56"
+        - generic [ref=f5e260]:
+          - paragraph [ref=f5e263]: Toplam Ciro
+          - paragraph [ref=f5e266]: 0 TL

@@ -1,0 +1,18 @@
+- generic [ref=e2]:
+  - heading "Aygıtlar" [level=2] [ref=e15]
+  - generic [ref=e3]:
+    - banner [ref=e18]:
+      - generic [ref=e21]:
+        - generic [ref=e23]:
+          - img "Running..." [ref=e24]
+          - button "Stop" [ref=e29] [cursor=pointer]
+        - button "Main menu" [ref=e31] [cursor=pointer]
+    - generic [ref=e35]:
+      - generic:
+        - iframe
+      - generic [ref=e36]: "<style> /* Modern font ve spacing */ .block-container { padding-top: 2rem; padding-bottom: 2rem; } /* Başlık stili */ h1 { font-weight: 700 !important; letter-spacing: -0.02em !important; } h2, h3 { font-weight: 600 !important; letter-spacing: -0.01em !important; } /* Sidebar güzelleştirme */ [data-testid=\"stSidebar\"] { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%); border-right: 1px solid #e2e8f0; } /* Buton iyileştirmeleri */ .stButton > button { border-radius: 8px !important; font-weight: 500 !important; transition: all 0.2s ease !important; } .stButton > button:hover { transform: translateY(-1px) !important; box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15) !important; } /* Primary buton */ .stButton > button[kind=\"primary\"] { background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%) !important; color: white !important; border: none !important; } /* Input iyileştirmeleri */ .stTextInput input, .stNumberInput input, .stTextArea textarea { border-radius: 6px !important; border: 1px solid #cbd5e1 !important; } .stTextInput input:focus, .stNumberInput input:focus { border-color: #0F766E !important; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1) !important; } /* DataFrame / Tablo */ .stDataFrame { border-radius: 8px !important; overflow: hidden !important; border: 1px solid #e2e8f0 !important; } /* Expander */ .streamlit-expanderHeader { border-radius: 8px !important; background: #f8fafc !important; font-weight: 500 !important; } /* Metric kartları */ [data-testid=\"stMetricValue\"] { font-size: 1.8rem !important; font-weight: 700 !important; color: #0F766E !important; } /* Progress bar */ .stProgress > div > div > div > div { background: linear-gradient(90deg, #0F766E 0%, #14B8A6 100%) !important; } /* Tab stili */ .stTabs [data-baseweb=\"tab-list\"] { gap: 4px; } .stTabs [data-baseweb=\"tab\"] { border-radius: 8px 8px 0 0 !important; padding: 8px 16px !important; font-weight: 500 !important; } /* Success/Info/Warning kutuları */ .stAlert { border-radius: 8px !important; border-left-width: 4px !important; } /* Code blokları */ code { background: #f1f5f9 !important; padding: 2px 6px !important; border-radius: 4px !important; font-size: 0.9em !important; } /* File uploader */ [data-testid=\"stFileUploader\"] { border-radius: 8px !important; border: 2px dashed #cbd5e1 !important; padding: 1rem !important; } /* Spinner */ .stSpinner > div { border-color: #0F766E !important; } </style>"
+      - heading "SMMM Z Raporu ve Fiş Yönetim Sistemi" [level=1] [ref=e44]:
+        - text: SMMM Z Raporu ve Fiş Yönetim Sistemi
+        - generic [ref=e45]:
+          - link "Link to heading":
+            - /url: "#smmm-z-raporu-ve-fis-yoenetim-sistemi"

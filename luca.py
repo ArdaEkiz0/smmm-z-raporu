@@ -1,9 +1,6 @@
 import io
 import html as html_mod
 from datetime import datetime
-from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
-from openpyxl import Workbook
-import pandas as pd
 
 from config import BASIT_USUL_KOLONLAR, SABLON_FILE, URUN_KODLARI_FILE
 from utils import dosya_oku, log, parse_tutar
@@ -263,6 +260,8 @@ th {{ background: #1a5276; color: white; }}
 
 
 def generate_excel(data_rows):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
     wb = Workbook()
     ws = wb.active
     ws.title = "Z Raporlari"
@@ -322,6 +321,8 @@ def generate_excel_cached(data_rows_tuple):
 
 
 def generate_basit_usul_excel(results, muk_bilgi, sablon_data=None):
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
     wb = Workbook()
     ws = wb.active
     ws.title = "Serbest Meslek"

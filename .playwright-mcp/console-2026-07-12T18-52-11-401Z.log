@@ -1,0 +1,36 @@
+[    1186ms] [WARNING] Unrecognized feature: 'ambient-light-sensor'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'battery'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'document-domain'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'layout-animations'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'legacy-image-formats'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'oversized-images'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'vr'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1186ms] [WARNING] Unrecognized feature: 'wake-lock'. @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:0
+[    1217ms] [WARNING] An iframe which has both allow-scripts and allow-same-origin for its sandbox attribute can escape its sandboxing. @ about:srcdoc:0
+[    1399ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js:0
+[    1407ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/js/web-namespaces.BxZ_GhEx.js:0
+[    1407ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/js/rehype-raw.B4onAIzj.js:0
+[    1420ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:7
+[    1421ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js
+TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/StreamlitMarkdown.CwaSe4JX.js:58
+[    1421ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:7
+[    1421ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js
+TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/StreamlitMarkdown.CwaSe4JX.js:58
+[    1421ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:7
+[    1421ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js
+TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Radio.fKttXiTy.js @ https://smmm-z-raporu.onrender.com/static/js/StreamlitMarkdown.CwaSe4JX.js:58
+[    1649ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/js/hastscript.BGKGo9FQ.js:0
+[    1723ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/media/SourceCodeVF-Upright.ttf.BjWn63N-.woff2:0
+[    1724ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js:0
+[    1731ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js @ https://smmm-z-raporu.onrender.com/static/js/react-dom.DmpKrvBr.js:7
+[    1732ms] [ERROR] TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js
+TypeError: Failed to fetch dynamically imported module: https://smmm-z-raporu.onrender.com/static/js/Selectbox.IGsNeZFC.js @ https://smmm-z-raporu.onrender.com/static/js/StreamlitMarkdown.CwaSe4JX.js:58
+[   21403ms] [WARNING] WebSocket onclose @ https://smmm-z-raporu.onrender.com/static/js/index.BfkDCGNp.js:64
+[   21567ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/health:0
+[   21577ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/host-config:0
+[   22386ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/host-config:0
+[   22392ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/health:0
+[   23320ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/host-config:0
+[   23339ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/health:0
+[   24406ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/health:0
+[   24410ms] [ERROR] Failed to load resource: the server responded with a status of 502 () @ https://smmm-z-raporu.onrender.com/_stcore/host-config:0
