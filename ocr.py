@@ -799,16 +799,16 @@ def parse_z_raporu(text):
                 sonuc["brut"] = val
 
     # TOPLAMI / TOPLAM4I / TOPLAM1 (Net deger) — "I" rakam olarak okunmus
-    if sonuc["net_toplam"] == 0:
-        net_toplami = re.search(r'TOPLAM[İI14l][\s:]*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+    if sonuc["net_toplam"] == 0 or sonuc["net_toplam"] == sonuc["brut"]:
+        net_toplami = re.search(r'TOPLAM[İI14l].{0,20}?([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
         if net_toplami:
             val = parse_tutar(net_toplami.group(1).replace(" ", ""))
-            if val > 0 and val < 100000:
+            if val > 0 and val < 100000 and val != sonuc["brut"]:
                 sonuc["net_toplam"] = val
 
-    # K.KARTI sonraki satirdaki deger (14851.90 gibi)
-    if sonuc["kredi_karti"] == 0:
-        kk_satir = re.search(r'K[\.\s]?KART[İIı]?[\s\S]{0,50}?\n\s*\.?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+    # K.KARTI sonraki deger (ocr_duzelt newlinelari kaldiriyor)
+    if sonuc["kredi_karti"] < 100:
+        kk_satir = re.search(r'K[\.\s]?KART[İIı]?\s+\d+\s+\.?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
         if kk_satir:
             val = parse_tutar(kk_satir.group(1).replace(" ", ""))
             if val > 100 and val < 100000:
@@ -1009,6 +1009,9 @@ def parse_z_raporu(text):
         r'NAK[İiI]?T\s*VE\s*NAK[İiI]?T\s*[\s\S]{0,40}?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'NAK[İiI]?T\s*[:\-]?\s+\d+\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'NAK[İiI]?T\s*[:\-]?\s+\d+[.,]?\d*\s*[\dxX\*]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        # NAKT + deger (ocr_duzelt newlinelari kaldiriyor, boslukla ayrilmis)
+        r'NAK[İiI]?T\s+\d+\s+[:\*]?\s*([\d][\d.,\s]*[\d.,])',
+        r'NAK[İiI]?T\s+\d+\s+\.?([\d][\d.,]{3,}[\d.,])',
     ]
     for pat in nakit_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -1167,16 +1170,32 @@ def parse_z_raporu(text):
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*([\d][\d.,\s]*[\d.,])',
         r'(?:FIS|FİS)\s*(?:IPTAL|İPTAL)\s+\d+\s+\*?\s*([\d.,]+)',
-        # FIS IPTAL satiri, deger sonraki satirda
-        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-\s\d]*\n\s*([\d][\d.,\s]*[\d.,])',
-        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[\s\S]{0,30}?([\d][\d.,\s]{3,}[\d.,])',
+        # FIS IPTAL + deger (ocr_duzelt newlinelari kaldiriyor)
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[\s\S]{0,40}?([\d][\d.,\s]{3,}[\d.,])',
+        r'[İI]PTAL\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in iade_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
         if m:
             val = parse_tutar(m.group(1).replace(" ", ""))
-            if val > 0 and val < 100000:
+            if val >= 10 and val < 100000:
+                # OCR "1955" -> "11955" hata duzeltme
+                if val > 10000 and val < 20000:
+                    val_alt = float(str(val)[1:])
+                    if val_alt > 100 and val_alt < 10000:
+                        toplam_odeme = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
+                        fark = sonuc["brut"] - toplam_odeme
+                        if abs(fark - val_alt) < abs(fark - val):
+                            val = val_alt
                 sonuc["iadeler"] = val
                 break
+
+    # Capraz dogrulama: brut ≈ nakit + kk + yemek - iade
+    if sonuc["brut"] > 0:
+        toplam_odeme = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
+        if toplam_odeme > 0:
+            fark = sonuc["brut"] - toplam_odeme
+            if 0 < fark < 100 and sonuc["iadeler"] == 0:
+                sonuc["iadeler"] = fark
 
     return sonuc
