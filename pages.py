@@ -114,59 +114,73 @@ def _page_z_raporu_yukle(hesap_kodlari):
             dosya_verileri.append((uf.name, uf.read()))
 
         toplam = len(dosya_verileri)
-        progress = st.progress(0, text="OCR yapılıyor...")
         baslama = _time.time()
-        tamamlanan = [0]
-        all_results = [None] * toplam
+        status = st.status(f"OCR baslatildi — {toplam} dosya", expanded=True)
+        with status:
+            st.write(f"Toplam: {toplam} dosya")
+            st.write(f"Paralel is parcacigi: {min(4, toplam)}")
+            progress_bar = st.progress(0.0)
+            log_alani = st.empty()
+            tamamlanan = [0]
+            toplam_sure_list = [0.0]
+            all_results = [None] * toplam
 
-        def _tek_ocr(idx, fname, data):
-            try:
-                if fname.lower().endswith(".pdf"):
-                    if not PDF2IMAGE_MEVCUT:
-                        return idx, {"filename": fname, "error": "pdf2image yok", "ocr_text": ""}
-                    pages = convert_from_bytes(data, dpi=300)
-                    sonuclar = []
-                    for pi, page in enumerate(pages):
-                        ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
+            def _tek_ocr(idx, fname, data):
+                t0 = _time.time()
+                try:
+                    if fname.lower().endswith(".pdf"):
+                        if not PDF2IMAGE_MEVCUT:
+                            return idx, [{"filename": fname, "error": "pdf2image yok", "ocr_text": ""}], _time.time() - t0
+                        pages = convert_from_bytes(data, dpi=300)
+                        sonuclar = []
+                        for pi, page in enumerate(pages):
+                            ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
+                            parsed = parse_z_raporu(ocr_text)
+                            ogr_alanlari_uygula(parsed)
+                            parsed["filename"] = f"{fname} - Syf {pi+1}"
+                            parsed["ocr_text"] = ocr_text
+                            parsed["mukellef_adi"] = ""
+                            sonuclar.append(parsed)
+                        return idx, sonuclar, _time.time() - t0
+                    else:
+                        img = Image.open(io.BytesIO(data))
+                        ocr_text = ocr_gorsel_isle_cached(img)
                         parsed = parse_z_raporu(ocr_text)
                         ogr_alanlari_uygula(parsed)
-                        parsed["filename"] = f"{fname} - Syf {pi+1}"
+                        parsed["filename"] = fname
                         parsed["ocr_text"] = ocr_text
                         parsed["mukellef_adi"] = ""
-                        sonuclar.append(parsed)
-                    return idx, sonuclar
-                else:
-                    img = Image.open(io.BytesIO(data))
-                    ocr_text = ocr_gorsel_isle_cached(img)
-                    parsed = parse_z_raporu(ocr_text)
-                    ogr_alanlari_uygula(parsed)
-                    parsed["filename"] = fname
-                    parsed["ocr_text"] = ocr_text
-                    parsed["mukellef_adi"] = ""
-                    return idx, parsed
-            except Exception as e:
-                log.error(f"OCR hatasi {fname}: {e}")
-                return idx, {"filename": fname, "error": str(e), "ocr_text": ""}
+                        return idx, parsed, _time.time() - t0
+                except Exception as e:
+                    log.error(f"OCR hatasi {fname}: {e}")
+                    return idx, {"filename": fname, "error": str(e), "ocr_text": ""}, _time.time() - t0
 
-        max_workers = min(4, toplam)
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {
-                executor.submit(_tek_ocr, i, fname, data): i
-                for i, (fname, data) in enumerate(dosya_verileri)
-            }
-            for future in as_completed(futures):
-                idx, result = future.result()
-                tamamlanan[0] += 1
-                if isinstance(result, list):
-                    all_results[idx] = result
-                else:
-                    all_results[idx] = result
-                gecen = _time.time() - baslama
-                ort = gecen / max(tamamlanan[0], 1)
-                kal = max(toplam - tamamlanan[0], 0) * ort
-                kstr = f"{int(kal//60)}dk {int(kal%60)}sn" if kal >= 60 else f"{int(kal)}sn"
-                gstr = f"{int(gecen//60)}dk {int(gecen%60)}sn" if gecen >= 60 else f"{gecen:.1f}sn"
-                progress.progress(tamamlanan[0] / max(toplam, 1), text=f"{tamamlanan[0]}/{toplam} | {gstr} gecti | ~{kstr} kaldi")
+            max_workers = min(4, toplam)
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    executor.submit(_tek_ocr, i, fname, data): i
+                    for i, (fname, data) in enumerate(dosya_verileri)
+                }
+                for future in as_completed(futures):
+                    idx, result, sure_fis = future.result()
+                    tamamlanan[0] += 1
+                    toplam_sure_list[0] += sure_fis
+                    if isinstance(result, list):
+                        all_results[idx] = result
+                    else:
+                        all_results[idx] = result
+                    gecen = _time.time() - baslama
+                    ort = gecen / max(tamamlanan[0], 1)
+                    kal = max(toplam - tamamlanan[0], 0) * ort
+                    kstr = f"{int(kal//60)}dk {int(kal%60)}sn" if kal >= 60 else f"{int(kal)}sn"
+                    gstr = f"{int(gecen//60)}dk {int(gecen%60)}sn" if gecen >= 60 else f"{gecen:.1f}sn"
+                    ort_fis = toplam_sure_list[0] / tamamlanan[0]
+                    progress_bar.progress(tamamlanan[0] / toplam)
+                    log_alani.markdown(
+                        f"**{tamamlanan[0]}/{toplam}** tamamlandi | "
+                        f"**{gstr}** gecti | **~{kstr}** kaldi | "
+                        f"Ort/dosya: **{ort_fis:.1f}sn** | Son: `{dosya_verileri[idx][0]}` ({sure_fis:.1f}sn)"
+                    )
 
         flat_results = []
         for r in all_results:
@@ -178,7 +192,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
         toplam_sure = _time.time() - baslama
         sure_metni = f"{int(toplam_sure//60)}dk {int(toplam_sure%60)}sn" if toplam_sure >= 60 else f"{toplam_sure:.1f}sn"
-        progress.progress(1.0, text=f"OCR tamamlandi! Toplam: {sure_metni} ({toplam} dosya, {max_workers} paralel)")
+        status.update(label=f"OCR tamamlandi! Toplam: {sure_metni} ({toplam} dosya, {max_workers} paralel)", state="complete")
 
         cache_stats = ocr_cache_istatistik()
         cache_ratio = (cache_stats["hits"] * 100 // max(cache_stats["hits"] + cache_stats["misses"], 1))
