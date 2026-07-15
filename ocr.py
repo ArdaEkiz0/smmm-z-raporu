@@ -263,7 +263,7 @@ def _remove_border(img):
         return img
 
 
-def gorsel_hazirla(img, mode="default"):
+def gorsel_hazirla(img, mode="default", min_w=None):
     """Gelişmiş görüntü ön işleme.
 
     Modlar:
@@ -276,11 +276,14 @@ def gorsel_hazirla(img, mode="default"):
 
     w, h = img.size
 
+    if min_w is None:
+        min_w = 1200 if mode != "sayisal" else 1500
+
     if mode == "sayisal":
         img = _bilateral_denoise(img)
         img = _clahe(img)
         if w < 1500 or h < 800:
-            faktor = max(1500 / max(w, 1), 2.5)
+            faktor = max(min_w / max(w, 1), 2.5)
             w2, h2 = int(w * faktor), int(h * faktor)
             img = img.resize((w2, h2), Image.LANCZOS)
         img = img.filter(ImageFilter.MedianFilter(3))
@@ -288,8 +291,8 @@ def gorsel_hazirla(img, mode="default"):
         return img
 
     if mode == "kalin":
-        if w < 1200 or h < 600:
-            faktor = max(1200 / max(w, 1), 2.0)
+        if w < min_w or h < 600:
+            faktor = max(min_w / max(w, 1), 2.0)
             w2, h2 = int(w * faktor), int(h * faktor)
             img = img.resize((w2, h2), Image.LANCZOS)
         img = _clahe(img)
@@ -302,8 +305,8 @@ def gorsel_hazirla(img, mode="default"):
     img = _clahe(img)
 
     w, h = img.size
-    if w < 1200 or h < 600:
-        faktor = max(1200 / max(w, 1), 2.0)
+    if w < min_w or h < 600:
+        faktor = max(min_w / max(w, 1), 2.0)
         w2, h2 = int(w * faktor), int(h * faktor)
         img = img.resize((w2, h2), Image.LANCZOS)
 
@@ -337,16 +340,21 @@ _otsu_engine = None
 def load_ocr():
     global _otsu_engine
     import pytesseract
-    tesseract_yollari = [
-        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-        "/usr/bin/tesseract",
-        "/usr/local/bin/tesseract",
-    ]
-    for yl in tesseract_yollari:
-        if os.path.exists(yl):
-            pytesseract.pytesseract.tesseract_cmd = yl
-            break
+    import shutil as _shutil
+    tesseract_yolu = _shutil.which("tesseract")
+    if tesseract_yolu:
+        pytesseract.pytesseract.tesseract_cmd = tesseract_yolu
+    else:
+        tesseract_yollari = [
+            r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+            r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            "/usr/bin/tesseract",
+            "/usr/local/bin/tesseract",
+        ]
+        for yl in tesseract_yollari:
+            if os.path.exists(yl):
+                pytesseract.pytesseract.tesseract_cmd = yl
+                break
     try:
         pytesseract.get_tesseract_version()
         _otsu_engine = pytesseract
@@ -423,8 +431,9 @@ def _ocr_hazirla_otsu(img, offset=0):
 
 
 def ocr_image(img):
-    """Ana OCR pipeline - Hızlı: önce az deneme, iyi sonuç yoksa genişlet."""
+    """Ana OCR pipeline - once hizli denemeler, sonra kapsamli."""
     candidates = []
+    try_hazir = img.copy()
 
     modes = [
         ("default", [0, -5, 5]),
@@ -432,7 +441,7 @@ def ocr_image(img):
     ]
 
     for mode_name, offsets in modes:
-        hazir = gorsel_hazirla(img, mode=mode_name)
+        hazir = gorsel_hazirla(img, mode=mode_name, min_w=1200)
         for offset in offsets:
             otsu = _ocr_hazirla_otsu(hazir, offset)
             for psm in [6, 4]:
@@ -446,7 +455,7 @@ def ocr_image(img):
 
     if not candidates or (candidates and candidates[0][0] < 100):
         for mode_name, offsets in [("default", [-10, 10]), ("sayisal", [0])]:
-            hazir = gorsel_hazirla(img, mode=mode_name)
+            hazir = gorsel_hazirla(img, mode=mode_name, min_w=1200)
             for offset in offsets:
                 otsu = _ocr_hazirla_otsu(hazir, offset)
                 for psm in [6, 4, 3]:

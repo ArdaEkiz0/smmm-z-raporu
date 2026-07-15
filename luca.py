@@ -64,6 +64,20 @@ def urun_kodu_bul(urun_kodlari, urun_adi):
     return None
 
 
+def _iade_dagit(iade, nakit, kk, yemek):
+    """İade tutarını kaynaklara (nakit, KK, yemek) sırayla dağıt.
+    Döndürür: (iade_nkt_k, iade_kk_k, iade_yem_k, yeni_nakit, yeni_kk, yeni_yemek)."""
+    if iade <= 0:
+        return 0, 0, 0, nakit, kk, yemek
+    iade_kk_k = round(min(kk, iade), 2) if kk > 0 else 0
+    iade_nkt_k = round(min(nakit, iade - iade_kk_k), 2) if nakit > 0 and iade > iade_kk_k else 0
+    iade_yem_k = round(iade - iade_kk_k - iade_nkt_k, 2)
+    yeni_nakit = round(nakit - iade_nkt_k, 2) if iade_nkt_k > 0 else nakit
+    yeni_kk = round(kk - iade_kk_k, 2) if iade_kk_k > 0 else kk
+    yeni_yemek = round(yemek - iade_yem_k, 2) if iade_yem_k > 0 else yemek
+    return iade_nkt_k, iade_kk_k, iade_yem_k, yeni_nakit, yeni_kk, yeni_yemek
+
+
 def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     rows = []
 
@@ -123,12 +137,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
         if net_toplam > 0 and abs(net_toplam - toplam_tutar) > 0.01:
             toplam_tutar = net_toplam
         if iade > 0:
-            iade_kk_k = round(min(kk, iade), 2) if kk > 0 else 0
-            iade_nkt_k = round(min(nakit, iade - iade_kk_k), 2) if nakit > 0 and iade > iade_kk_k else 0
-            iade_yem_k = round(iade - iade_kk_k - iade_nkt_k, 2)
-            nakit = round(nakit - iade_nkt_k, 2) if iade_nkt_k > 0 else nakit
-            kk = round(kk - iade_kk_k, 2) if iade_kk_k > 0 else kk
-            yemek = round(yemek - iade_yem_k, 2) if iade_yem_k > 0 else yemek
+            _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
             rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
         if nakit > 0:
             rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
@@ -151,12 +160,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
                 kdv_key = "kdv_" + str(oran)
                 rows.append(satir(hesap_kodlari.get(kdv_key, "391.04"), f"KDV %{oran} - {musteri}", 0, kdv_t))
         if iade > 0:
-            iade_kk_k = round(min(kk, iade), 2) if kk > 0 else 0
-            iade_nkt_k = round(min(nakit, iade - iade_kk_k), 2) if nakit > 0 and iade > iade_kk_k else 0
-            iade_yem_k = round(iade - iade_kk_k - iade_nkt_k, 2)
-            nakit = round(nakit - iade_nkt_k, 2) if iade_nkt_k > 0 else nakit
-            kk = round(kk - iade_kk_k, 2) if iade_kk_k > 0 else kk
-            yemek = round(yemek - iade_yem_k, 2) if iade_yem_k > 0 else yemek
+            _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
             rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
         if nakit > 0:
             rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
@@ -175,6 +179,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
         kdv = round(brutt - net_toplam, 2)
         if kdv > 0:
             rows.append(satir("391.04", f"KDV %20 - {musteri}", 0, kdv))
+    _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
     if nakit > 0:
         rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
     if kk > 0:
@@ -383,7 +388,7 @@ def generate_basit_usul_excel(results, muk_bilgi, sablon_data=None):
         row[11] = adres
         row[19] = ua
         row[20] = miktar
-        birim_f = round(brut_tutar / miktar, 2) if miktar > 0 else ""
+        birim_f = round(brut_tutar / miktar, 2) if (isinstance(miktar, (int, float)) and miktar > 0) else ""
         row[21] = birim_f
         matrah = round(brut_tutar / (1 + oran / 100), 2) if oran > 0 else brut_tutar
         row[22] = matrah

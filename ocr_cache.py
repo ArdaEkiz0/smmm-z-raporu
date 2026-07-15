@@ -17,7 +17,6 @@ def ocr_cache_oku(key):
 
 
 def ocr_cache_kaydet(key, sonuc):
-    global _cache_hits, _cache_misses
     if len(_ocr_cache) >= OCR_CACHE_MAX:
         eski = list(_ocr_cache.keys())[0]
         del _ocr_cache[eski]

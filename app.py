@@ -43,44 +43,16 @@ def _global_excepthook(exc_type, exc_value, exc_tb):
     sys.stderr.write(_msg)
 sys.excepthook = _global_excepthook
 
-st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
+st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon="📒")
 
-import random as _r
 _zaman = datetime.now().strftime("%Y-%m-%d %H:%M")
-_jeton = ''.join(_r.choices('ABCDEF0123456789', k=6))
-st.caption(f"v3.0-REDEPLOY-{_jeton} | {_zaman}")
+st.caption(f"<span style='font-size:0.7rem;color:#94a3b8;'>v3.1 | {_zaman}</span>", unsafe_allow_html=True)
 
-# Tarayici cache'ini zorla bypass et - eski kod yukluyse hard reload yap
-st.markdown(f"""
-<script>
-(function() {{
-    const EXPECTED_VERSION = 'v3.0-REDEPLOY-{_jeton}';
-    try {{
-        const currentVer = sessionStorage.getItem('app_version');
-        if (currentVer !== EXPECTED_VERSION) {{
-            sessionStorage.setItem('app_version', EXPECTED_VERSION);
-            if (currentVer !== null) {{
-                console.log('Yeni versiyon tespit edildi, hard reload yapiliyor...');
-                window.location.reload(true);
-            }}
-        }}
-    }} catch(e) {{}}
-    if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('gurcanekiz.xyz')) {{
-        const meta = document.createElement('meta');
-        meta.httpEquiv = 'Cache-Control';
-        meta.content = 'no-cache, no-store, must-revalidate';
-        document.head.appendChild(meta);
-        const meta2 = document.createElement('meta');
-        meta2.httpEquiv = 'Pragma';
-        meta2.content = 'no-cache';
-        document.head.appendChild(meta2);
-        const meta3 = document.createElement('meta');
-        meta3.httpEquiv = 'Expires';
-        meta3.content = '0';
-        document.head.appendChild(meta3);
-    }}
-}})();
-</script>
+# Tarayici cache bypass
+st.markdown("""
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 """, unsafe_allow_html=True)
 
 st.components.v1.html("""
@@ -107,12 +79,19 @@ if not auth_ok():
                 pws = json.load(f).get("passwords", [])
         except Exception:
             log.warning("AUTH_FILE okunamadı", exc_info=True)
+
+    def _sifre_esles(girilen, kayitli):
+        import hashlib
+        if isinstance(kayitli, str) and kayitli.startswith("sha256:"):
+            return hashlib.sha256(girilen.encode("utf-8")).hexdigest() == kayitli[7:]
+        return girilen == kayitli
+
     if pws:
         st.title("SMMM Z Raporu Sistemi")
         st.markdown("Yetkili kullanıcı girişi")
         pwd = st.text_input("Şifre", type="password", placeholder="Şifrenizi girin")
         if st.button("Giriş", type="primary"):
-            if pwd in pws:
+            if any(_sifre_esles(pwd, pw) for pw in pws):
                 st.session_state.auth_ok = True
                 st.components.v1.html("""
                 <script>
@@ -136,11 +115,54 @@ tema_uygula()
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
 
-st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
+# AUTH_FILE migrate: eski plaintext sifreler sha256:'e cevrilir
+def _migrate_auth_file():
+    if not os.path.exists(AUTH_FILE):
+        return
+    try:
+        import hashlib
+        with open(AUTH_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        pws = data.get("passwords", [])
+        if any(isinstance(p, str) and not p.startswith(("sha256:", "plain:")) for p in pws):
+            upgraded = []
+            for p in pws:
+                if isinstance(p, str) and not p.startswith(("sha256:", "plain:")):
+                    h = hashlib.sha256(p.encode("utf-8")).hexdigest()
+                    upgraded.append(f"sha256:{h}")
+                else:
+                    upgraded.append(p)
+            data["passwords"] = upgraded
+            with open(AUTH_FILE, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            log.info("AUTH_FILE: plaintext sifreler sha256'e donusturuldu")
+    except Exception as e:
+        log.warning(f"AUTH_FILE migrate edilemedi: {e}")
+
+_migrate_auth_file()
+
+st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
+st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek")
 
 with st.sidebar:
-    st.header("Aygıtlar")
-    sayfa = st.radio("Sayfa Seç", ["Dashboard", "Z Raporu Yükle", "Fiş Geçmişi", "Mükellef Yönetimi", "KDV Özeti", "Ayarlar"], label_visibility="collapsed")
+    st.markdown("""
+    <div style="text-align:center;padding:0.5rem 0 1rem 0;">
+        <div style="font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;
+                    background:linear-gradient(135deg,#0F766E,#14B8A6);
+                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                    background-clip:text;">SMMM</div>
+        <div style="font-size:0.75rem;color:#94a3b8;letter-spacing:0.08em;text-transform:uppercase;margin-top:-2px;">Z Raporu Sistemi</div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.divider()
+    _sayfa_ikon = {"Dashboard": "📊", "Z Raporu Yükle": "📄", "Fiş Geçmişi": "📋",
+                   "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️"}
+    sayfa = st.radio(
+        "Sayfa Seç",
+        list(_sayfa_ikon.keys()),
+        format_func=lambda x: f"{_sayfa_ikon.get(x, '')} {x}",
+        label_visibility="collapsed",
+    )
 
     tema_degistirici()
 
@@ -279,20 +301,22 @@ with st.sidebar:
             urun_kodlari_kaydet([dict(k) for k in edited])
             st.toast("Ürün kodları kaydedildi!", icon="✅")
 
-if sayfa == "Dashboard":
+sayfa_key = sayfa
+
+if sayfa_key == "Dashboard":
     _page_dashboard()
 
-elif sayfa == "Z Raporu Yükle":
+elif sayfa_key == "Z Raporu Yükle":
     _page_z_raporu_yukle(hesap_kodlari)
 
-elif sayfa == "Fiş Geçmişi":
+elif sayfa_key == "Fiş Geçmişi":
     _page_fis_gecmisi(hesap_kodlari)
 
-elif sayfa == "Mükellef Yönetimi":
+elif sayfa_key == "Mükellef Yönetimi":
     _page_mukellef_yonetimi()
 
-elif sayfa == "KDV Özeti":
+elif sayfa_key == "KDV Özeti":
     _page_kdv_ozeti(hesap_kodlari)
 
-elif sayfa == "Ayarlar":
+elif sayfa_key == "Ayarlar":
     _page_ayarlar()

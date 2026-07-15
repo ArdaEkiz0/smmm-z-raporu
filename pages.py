@@ -353,14 +353,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         if yeni_iade != r.get("iadeler", 0):
                             degisiklik.append(f"İade: {r.get('iadeler',0):.2f} → {yeni_iade:.2f}")
                         r["iadeler"] = yeni_iade
-                        for k_alan, k_deger in [
-                            ("ed_tarih", yeni_tarih), ("ed_firma", yeni_firma),
-                            ("ed_banka", yeni_banka), ("ed_zno", yeni_zno),
-                            ("ed_brut", yeni_brut), ("ed_net", yeni_net),
-                            ("ed_nakit", yeni_nakit), ("ed_kk", yeni_kk),
-                            ("ed_yemek", yeni_yemek), ("ed_iade", yeni_iade),
-                        ]:
-                            st.session_state[f"{k_alan}_{idx}"] = k_deger
                     st.session_state.results = results
                     secili_muk = st.session_state.get("secili_mukellef", "")
                     try:
@@ -613,6 +605,25 @@ def _tarih_esles(fis, yil, ay):
         return False
 
 
+def _filtrele_tarih(fisler, bas, son):
+    """Fis listesini tarih araligina gore filtrele."""
+    if not bas and not son:
+        return fisler
+    sonuc = []
+    for f in fisler:
+        t = f.get("tarih", "")
+        try:
+            d = datetime.strptime(t, "%d.%m.%Y")
+            if bas and d < bas:
+                continue
+            if son and d > son:
+                continue
+            sonuc.append(f)
+        except (ValueError, TypeError):
+            continue
+    return sonuc
+
+
 def _page_dashboard():
     import pandas as pd
     st.header("Genel Bakis")
@@ -620,6 +631,26 @@ def _page_dashboard():
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
     ml = mukellefler()
+
+    if tum_fisler:
+        tum_tarihler = []
+        for f in tum_fisler:
+            t = f.get("tarih", "")
+            try:
+                tum_tarihler.append(datetime.strptime(t, "%d.%m.%Y"))
+            except (ValueError, TypeError):
+                continue
+        if tum_tarihler:
+            min_t = min(tum_tarihler)
+            max_t = max(tum_tarihler)
+            col_f1, col_f2 = st.columns(2)
+            with col_f1:
+                filtre_bas = st.date_input("Baslangic", value=min_t, min_value=min_t, max_value=max_t, key="dash_bas")
+            with col_f2:
+                filtre_son = st.date_input("Bitis", value=max_t, min_value=min_t, max_value=max_t, key="dash_son")
+            filtre_bas_dt = datetime(filtre_bas.year, filtre_bas.month, filtre_bas.day)
+            filtre_son_dt = datetime(filtre_son.year, filtre_son.month, filtre_son.day, 23, 59, 59)
+            tum_fisler = _filtrele_tarih(tum_fisler, filtre_bas_dt, filtre_son_dt)
 
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Toplam Kayit", f"{len(kayitlar)}")
