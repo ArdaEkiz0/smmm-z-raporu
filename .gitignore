@@ -21,3 +21,9 @@ secrets.json
 urun_kodlari.json
 hesap_kodlari.json
 mukellefler.json
+.playwright-mcp/
+*.jpeg
+*.jpg
+streamlit_test.log
+_t3.py
+_*.py

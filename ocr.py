@@ -538,12 +538,11 @@ def ocr_gorsel_isle_hibrit(img):
     tess_text = ocr_image(img)
     tess_score = ocr_skorla(tess_text)
     tess_parsed = parse_z_raporu(tess_text)
+    tess_kk = tess_parsed.get("kredi_karti", 0)
+    tess_brut = tess_parsed.get("brut", 0)
 
     HIGH_CONF = 150
     if tess_score >= HIGH_CONF:
-        tess_kk = tess_parsed.get("kredi_karti", 0)
-        tess_brut = tess_parsed.get("brut", 0)
-        # Tess yuksek skorda ama onemli alan bos olabilir
         if tess_kk > 0 or tess_brut <= 0:
             return tess_text
 
@@ -553,9 +552,8 @@ def ocr_gorsel_isle_hibrit(img):
     easy_score = ocr_skorla(easy_text)
     easy_parsed = parse_z_raporu(easy_text)
 
-    # Her alan icin en iyisini sec
     easy_kk = easy_parsed.get("kredi_karti", 0)
-    if tess_parsed.get("kredi_karti", 0) == 0 and easy_kk > 0:
+    if tess_kk == 0 and easy_kk > 0:
         return easy_text
     if easy_score > tess_score + 20:
         return easy_text
@@ -1165,10 +1163,8 @@ def parse_z_raporu(text):
         r'BANKA\s*[/\-]\s*KART[İIı]?[:\-/]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KASA\s*Nakit[\s\S]{0,40}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'POS\s*CIRO\s*VE\s*TAHS[İI]LAT[\s\S]{0,80}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]?[İI]?[sS]?\s*Bankas[ıiıİI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]\s*BANKAS[İI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'[İI][ŞS]\s*Bankas[ıi][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'Is\s*Bankas[ıiıİI][:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'[İI][ŞS]\s*Bankas[ıi][:\-]?\s*\d{0,2}\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'Is\s*Bankas[ıi]\s*\d{0,2}\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Banka\s*POS[\s\S]{0,30}?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'K\s*[\.\s]?\s*KART[İIı]?[\s:]\s*[\dxX]*\s+[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'K\s*[\.\s]\s*KART[İIı]?[\s:]\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
