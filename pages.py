@@ -333,6 +333,13 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         r["iadeler"] = yeni_iade
                     # session_state'i guncelle (referans ayni, degisiklikler zaten kaydedildi)
                     st.session_state.results = results
+                    secili_muk = st.session_state.get("secili_mukellef", "")
+                    try:
+                        gecmis_kaydet(results, hesap_kodlari, secili_muk)
+                        st.toast(f"✅ {len(degisiklik)} tutar veritabanina kaydedildi.", icon="💾")
+                    except Exception as e:
+                        log.error(f"Kaydet hatasi: {e}")
+                        st.toast(f"Veritabanina kaydedilemedi: {e}", icon="⚠️")
                     if ogr_sayisi > 0:
                         st.toast(f"✅ {ogr_sayisi} alan öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
                     else:
