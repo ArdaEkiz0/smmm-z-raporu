@@ -636,6 +636,15 @@ def ocr_duzelt(text):
     text = re.sub(r'KRED[İI]\s*KART[İIı]\s*[İIı]*LE', 'KREDİ KARTI İLE', text, flags=re.IGNORECASE)
     text = re.sub(r'BANKA\s*KART[İIı]\s*[İIı]*LE', 'BANKA KARTI İLE', text, flags=re.IGNORECASE)
     text = re.sub(r'BANKA\s*KARŞILAMALI', 'BANKA KARTI İLE', text, flags=re.IGNORECASE)
+    # OCR bozuk okumalarini duzelt
+    text = re.sub(r'\bBALTVER\b', 'MALİ VERİ', text)
+    text = re.sub(r'\bBALT\s*V[İI]R[İI]\b', 'MALİ VERİ', text)
+    text = re.sub(r'\bTOPLAN\b', 'TOPLAM', text)
+    text = re.sub(r'\bTOPLAN\s*TUTAR\b', 'TOPLAM TUTAR', text)
+    text = re.sub(r'\bNaktu?\s*B[İI]T[İI]?[İI]L[İI]\b', 'NAKİT BEDELİ', text)
+    text = re.sub(r'\bNAKIT\s*B[İI]TL[İI]\b', 'NAKİT BEDELİ', text)
+    text = re.sub(r'\bTEEKKK?R[FE]?D[FE]?R[Z]\b', 'TEŞEKKÜR EDERİZ', text)
+    text = re.sub(r'\bT[FE]Ş[FE]KK[ÜU]R\s*[FE]D[FE]R[İI]Z\b', 'TEŞEKKÜR EDERİZ', text)
     return text
 
 
@@ -758,6 +767,7 @@ def parse_z_raporu(text):
         r'B\s*R\s*[UÜ]\s*T[:\-]?\s*([\d,.BOoIl]+)',
         r'MAL[İI]\s*VER[İI][\s\S]{0,80}?TOPLAM\s*[:\-]?\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])',
         r'BR[UÜ]T\s+\*?\s*([\d][\d.,\sBOoIl]*[\d.,])',
+        r'MAL[İI]\s*VER[İI][\s\S]{0,100}?TOPLAM[:\s]*\*?\s*([\d][\d.,\s]{3,}[\d.,])',
     ]
     for pat in brut_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -773,7 +783,7 @@ def parse_z_raporu(text):
         if mali_veri:
             val_str = mali_veri.group(1).replace(" ", "")
             val = parse_tutar(val_str)
-            if val > 0:
+            if val > 0 and val < 100000:
                 sonuc["brut"] = val
 
     if sonuc["brut"] == 0:
@@ -783,20 +793,37 @@ def parse_z_raporu(text):
             sonuc["brut"] = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
 
     if sonuc["brut"] == 0:
-        genel_toplam = re.search(r'(?:NET\s*S?AT[İI]Ş|GENEL\s*TOPLAM|VERG[İI]\s*D[ÖO]K[ÜU]M[ÜU])\s*\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        genel_toplam = re.search(r'(?:NET\s*S?AT[İI]Ş|GENEL\s*TOPLAM)\s*\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
         if genel_toplam:
             val_str = genel_toplam.group(1).replace(" ", "")
             val = parse_tutar(val_str)
             if val > 0:
                 sonuc["brut"] = val
 
+    # Tum TOPLAM degerlerini topla, KDV olmayan en buyugunu Brut sec
     if sonuc["brut"] == 0:
-        basit_toplam = re.search(r'\bTOPLAM\s+(?!F[İI]Ş)(?!KDV)(?!M[ÜU]KELLEF)(?![%])\s*\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
-        if basit_toplam:
-            val_str = basit_toplam.group(1).replace(" ", "")
-            val = parse_tutar(val_str)
-            if val > 0:
-                sonuc["brut"] = val
+        tum_toplam_eslesmeler = re.finditer(r'\bTOPLAM[^\n]{0,15}?\*?\s*([\d][\d.,\s]{3,}[\d.,])', t_duz, re.IGNORECASE)
+        kdv_degerler = set()
+        for kdv_pat in [r'TOPLAM\s*KDV[\s:]*\*?\s*([\d][\d.,\s]{3,}[\d.,])',
+                        r'TOPK[DV][\s\w]*[:\s]*\*?\s*([\d][\d.,\s]{3,}[\d.,])',
+                        r'KDV[\s:]+(?:TOPLAM|TUTAR)[\s:]*\*?\s*([\d][\d.,\s]{3,}[\d.,])',
+                        r'TOPKDV[İI14l][\s:]*\*?\s*([\d][\d.,\s]{3,}[\d.,])']:
+            for m in re.findall(kdv_pat, t_duz, re.IGNORECASE):
+                v = parse_tutar(m.replace(" ", ""))
+                if v > 0:
+                    kdv_degerler.add(round(v, 2))
+        adaylar = []
+        for m in tum_toplam_eslesmeler:
+            val_str = m.group(1)
+            v = parse_tutar(val_str.replace(" ", ""))
+            eslesen_text = m.group(0).upper()
+            if v > 100 and v < 100000 and round(v, 2) not in kdv_degerler:
+                if "KDV" in eslesen_text or "VERG" in eslesen_text:
+                    continue
+                # X0 ve X1 KDV matrahlari genelde daha kucuk (1k-20k araliginda)
+                adaylar.append(v)
+        if adaylar:
+            sonuc["brut"] = max(adaylar)
 
     # TOPLAMI / TOPLAM4I / TOPLAM1 (Net deger) — "I" rakam olarak okunmus
     if sonuc["net_toplam"] == 0 or sonuc["net_toplam"] == sonuc["brut"]:
@@ -1012,6 +1039,10 @@ def parse_z_raporu(text):
         # NAKT + deger (ocr_duzelt newlinelari kaldiriyor, boslukla ayrilmis)
         r'NAK[İiI]?T\s+\d+\s+[:\*]?\s*([\d][\d.,\s]*[\d.,])',
         r'NAK[İiI]?T\s+\d+\s+\.?([\d][\d.,]{3,}[\d.,])',
+        # KASA NAKIT deger sonraki satirda (boslukla ayrilmis)
+        r'KASA\s*NAK[İiI]?T[\s\S]{0,30}?([\d][\d.,\s]{3,}[\d.,])',
+        # HAKIT (OCR hata NAKIT -> HAKIT)
+        r'HAK[İiI]?T[\s\S]{0,30}?([\d][\d.,\s]{3,}[\d.,])',
     ]
     for pat in nakit_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
