@@ -12,5 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 EXPOSE 8080
-RUN chmod +x start.sh
-CMD ["./start.sh"]
+CMD ["sh", "-c", "python cache_purge.py 2>/dev/null; streamlit run app.py --server.port=8080 --server.headless=true --server.address=0.0.0.0"]
