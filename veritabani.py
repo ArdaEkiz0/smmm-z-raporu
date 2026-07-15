@@ -56,34 +56,74 @@ def _mukellef_eslestir(firma_adi, mukellef_listesi, ml=None):
 
 
 def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
+    """Z raporu sonuclarini gecmis klasorune kaydet, ogrenme yap.
+
+    Returns:
+        dict: {"dosya_kayit": bool, "ogrenme_hatasi": str|None, "dosya_yolu": str}
+    """
     from ocr import parse_z_raporu, duzeltme_ogren, ogrenci_alan_bul
-    if not results:
-        return
+    sonuc = {"dosya_kayit": False, "ogrenme_hatasi": None, "dosya_yolu": None}
+
+    if not results or not isinstance(results, list):
+        raise ValueError("Sonuç listesi boş veya geçersiz")
+
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    dosya_yolu = os.path.join(GECMIS_KLASORU, f"kayit_{ts}.json")
     kayit = {
         "tarih": ts,
         "mukellef": mukellef_adi,
         "fisler": results,
     }
-    dosya_yaz(os.path.join(GECMIS_KLASORU, f"kayit_{ts}.json"), kayit)
-    # Cache'i gecersiz kil
-    import streamlit as st
-    for k in ["_fis_ver_version", "_fis_kayitlar", "_fis_tumu"]:
-        st.session_state.pop(k, None)
-    for r in results:
-        if "error" in r:
-            continue
-        ham = r.get("ocr_text", "") or r.get("ham_text", "")
-        if not ham:
-            continue
-        orj_parsed = parse_z_raporu(ham)
-        for alan in ["firma_adi", "tarih", "banka_adi"]:
-            dogru = r.get(alan, "")
-            eski = orj_parsed.get(alan, "")
-            if dogru and dogru != eski:
-                hali = ogrenci_alan_bul(ham, alan, dogru)
-                if hali and hali.upper() != dogru.upper():
-                    duzeltme_ogren(hali, dogru)
+
+    # Aşama 1: Dosyaya yaz (en kritik - basarisiz olursa exception firlat)
+    try:
+        dosya_yaz(dosya_yolu, kayit)
+        sonuc["dosya_kayit"] = True
+        sonuc["dosya_yolu"] = dosya_yolu
+        log.info(f"Fiş kaydedildi: {dosya_yolu} ({len(results)} kayıt)")
+    except Exception as e:
+        log.error(f"Dosya yazma basarisiz: {dosya_yolu}: {e}")
+        raise
+
+    # Aşama 2: Cache invalidate (dosya yazildi, simdi cache temizle)
+    try:
+        import streamlit as st
+        for k in ["_fis_ver_version", "_fis_kayitlar", "_fis_tumu"]:
+            st.session_state.pop(k, None)
+    except Exception as e:
+        log.warning(f"Cache invalidate basarisiz: {e}")
+
+    # Aşama 3: Ogrenme (hata olursa logla, KULLANICIYA HATA GOSTERME - dosya zaten kaydedildi)
+    ogrenme_hatasi = None
+    try:
+        for r in results:
+            if "error" in r:
+                continue
+            ham = r.get("ocr_text", "") or r.get("ham_text", "")
+            if not ham:
+                continue
+            try:
+                orj_parsed = parse_z_raporu(ham)
+            except Exception as e:
+                ogrenme_hatasi = f"parse_z_raporu hatasi: {str(e)[:100]}"
+                log.warning(f"OCR parse basarisiz, ogrenme atlaniyor: {e}")
+                continue
+            for alan in ["firma_adi", "tarih", "banka_adi"]:
+                dogru = r.get(alan, "")
+                eski = orj_parsed.get(alan, "")
+                if dogru and dogru != eski:
+                    try:
+                        hali = ogrenci_alan_bul(ham, alan, dogru)
+                        if hali and hali.upper() != dogru.upper():
+                            duzeltme_ogren(hali, dogru)
+                    except Exception as e:
+                        log.warning(f"Ogrenme hatasi ({alan}): {e}")
+    except Exception as e:
+        ogrenme_hatasi = str(e)
+        log.error(f"Toplu ogrenme hatasi: {e}")
+
+    sonuc["ogrenme_hatasi"] = ogrenme_hatasi
+    return sonuc
 
 
 def _fis_veri_version():

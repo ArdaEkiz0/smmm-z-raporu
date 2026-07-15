@@ -379,12 +379,13 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     sozluk_oncesi = len(ogrenilen_sozluk())
                     alan_oncesi = len(ogrenilen_alanlar() if 'ogrenilen_alanlar' in dir() else {})
                     kayit_hatasi = None
+                    kayit_sonuc = None
                     try:
                         if not results or not isinstance(results, list):
                             raise ValueError("results boş veya geçersiz - tekrar OCR çalıştırın")
-                        gecmis_kaydet(results, hesap_kodlari, secili_muk)
+                        kayit_sonuc = gecmis_kaydet(results, hesap_kodlari, secili_muk)
                     except Exception as e:
-                        kayit_hatasi = str(e)
+                        kayit_hatasi = f"{type(e).__name__}: {e}"
                         log.error(f"Kaydet hatasi: {e}")
                         import traceback
                         log.error(traceback.format_exc())
@@ -404,6 +405,41 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             "ogren_sayisi": 0,
                             "eklenen_kelime": 0,
                         }
+                    elif kayit_sonuc and kayit_sonuc.get("ogrenme_hatasi"):
+                        dosya_adi = os.path.basename(kayit_sonuc.get("dosya_yolu", "?"))
+                        st.session_state.kaydet_bildirim = {
+                            "tip": "uyari",
+                            "mesaj": f"⚠️ **Kaydedildi** (öğrenme kısmi hata)",
+                            "detay": f"💾 Dosya: {dosya_adi} | Öğrenme: {kayit_sonuc['ogrenme_hatasi'][:100]}",
+                            "ogren_sayisi": ogr_sayisi,
+                            "eklenen_kelime": eklenen_kelime,
+                        }
+                    elif kayit_sonuc and kayit_sonuc.get("dosya_kayit"):
+                        dosya_adi = os.path.basename(kayit_sonuc.get("dosya_yolu", "?"))
+                        if ogr_mesaj_parts:
+                            st.session_state.kaydet_bildirim = {
+                                "tip": "basari",
+                                "mesaj": " | ".join(ogr_mesaj_parts),
+                                "detay": f"💾 Kaydedildi: {dosya_adi} | {len(degisiklik)} alan güncellendi",
+                                "ogren_sayisi": ogr_sayisi,
+                                "eklenen_kelime": eklenen_kelime,
+                            }
+                        elif len(degisiklik) > 0:
+                            st.session_state.kaydet_bildirim = {
+                                "tip": "bilgi",
+                                "mesaj": f"💾 **{len(degisiklik)}** alan güncellendi ve kaydedildi.",
+                                "detay": f"Dosya: {dosya_adi}",
+                                "ogren_sayisi": 0,
+                                "eklenen_kelime": 0,
+                            }
+                        else:
+                            st.session_state.kaydet_bildirim = {
+                                "tip": "bilgi",
+                                "mesaj": f"ℹ️ Değişiklik yok, kayıt yeniden yazıldı.",
+                                "detay": f"Dosya: {dosya_adi} | Ayarlar → OCR Öğrenme bölümünden öğrenilen düzeltmelere bakabilirsiniz.",
+                                "ogren_sayisi": 0,
+                                "eklenen_kelime": 0,
+                            }
                     elif ogr_mesaj_parts:
                         st.session_state.kaydet_bildirim = {
                             "tip": "basari",
@@ -446,6 +482,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 if _bildirim.get("detay"):
                     st.code(_bildirim["detay"])
                 st.warning("⚠️ Veri kaydedilemedi! Tekrar deneyin veya sayfayı yenileyin.")
+            elif _bildirim["tip"] == "uyari":
+                st.warning(_bildirim["mesaj"])
+                if _bildirim.get("detay"):
+                    st.caption(_bildirim["detay"])
             if _bildirim.get("ogren_sayisi", 0) > 0 or _bildirim.get("eklenen_kelime", 0) > 0:
                 st.toast(
                     f"✅ Öğrenildi! ({_bildirim.get('ogren_sayisi', 0)} alan, {_bildirim.get('eklenen_kelime', 0)} kelime)",
