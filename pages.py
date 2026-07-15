@@ -35,6 +35,16 @@ from luca import (
 )
 
 
+def _init_text(key, value):
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+def _init_num(key, value):
+    if key not in st.session_state:
+        st.session_state[key] = float(value or 0)
+
+
 def _page_z_raporu_yukle(hesap_kodlari):
     from PIL import Image
     import pandas as pd
@@ -267,18 +277,28 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 st.markdown(f"**{r.get('filename','')}**")
                 c1, c2, c3 = st.columns(3)
                 with c1:
-                    st.text_input("Tarih", value=r.get("tarih") or "", key=f"ed_tarih_{tab_idx}")
-                    st.text_input("Firma", value=r.get("firma_adi") or "", key=f"ed_firma_{tab_idx}")
-                    st.text_input("Banka", value=r.get("banka_adi") or "", key=f"ed_banka_{tab_idx}")
-                    st.text_input("Z No", value=r.get("z_no") or "", key=f"ed_zno_{tab_idx}")
+                    _init_text(f"ed_tarih_{tab_idx}", r.get("tarih") or "")
+                    st.text_input("Tarih", key=f"ed_tarih_{tab_idx}")
+                    _init_text(f"ed_firma_{tab_idx}", r.get("firma_adi") or "")
+                    st.text_input("Firma", key=f"ed_firma_{tab_idx}")
+                    _init_text(f"ed_banka_{tab_idx}", r.get("banka_adi") or "")
+                    st.text_input("Banka", key=f"ed_banka_{tab_idx}")
+                    _init_text(f"ed_zno_{tab_idx}", r.get("z_no") or "")
+                    st.text_input("Z No", key=f"ed_zno_{tab_idx}")
                 with c2:
-                    st.number_input("Brüt (TL)", min_value=0.0, value=float(r.get("brut", 0)), step=100.0, key=f"ed_brut_{tab_idx}")
-                    st.number_input("Net (TL)", min_value=0.0, value=float(r.get("net_toplam", 0)), step=100.0, key=f"ed_net_{tab_idx}")
-                    st.number_input("Nakit (TL)", min_value=0.0, value=float(r.get("nakit", 0)), step=100.0, key=f"ed_nakit_{tab_idx}")
+                    _init_num(f"ed_brut_{tab_idx}", float(r.get("brut", 0) or 0))
+                    st.number_input("Brüt (TL)", min_value=0.0, step=100.0, key=f"ed_brut_{tab_idx}")
+                    _init_num(f"ed_net_{tab_idx}", float(r.get("net_toplam", 0) or 0))
+                    st.number_input("Net (TL)", min_value=0.0, step=100.0, key=f"ed_net_{tab_idx}")
+                    _init_num(f"ed_nakit_{tab_idx}", float(r.get("nakit", 0) or 0))
+                    st.number_input("Nakit (TL)", min_value=0.0, step=100.0, key=f"ed_nakit_{tab_idx}")
                 with c3:
-                    st.number_input("K.Kartı (TL)", min_value=0.0, value=float(r.get("kredi_karti", 0)), step=100.0, key=f"ed_kk_{tab_idx}")
-                    st.number_input("Yemek Çeki (TL)", min_value=0.0, value=float(r.get("yemek_ceki", 0)), step=100.0, key=f"ed_yemek_{tab_idx}")
-                    st.number_input("İade (TL)", min_value=0.0, value=float(r.get("iadeler", 0)), step=100.0, key=f"ed_iade_{tab_idx}")
+                    _init_num(f"ed_kk_{tab_idx}", float(r.get("kredi_karti", 0) or 0))
+                    st.number_input("K.Kartı (TL)", min_value=0.0, step=100.0, key=f"ed_kk_{tab_idx}")
+                    _init_num(f"ed_yemek_{tab_idx}", float(r.get("yemek_ceki", 0) or 0))
+                    st.number_input("Yemek Çeki (TL)", min_value=0.0, step=100.0, key=f"ed_yemek_{tab_idx}")
+                    _init_num(f"ed_iade_{tab_idx}", float(r.get("iadeler", 0) or 0))
+                    st.number_input("İade (TL)", min_value=0.0, step=100.0, key=f"ed_iade_{tab_idx}")
 
         if duzeltilebilir:
             with st.expander("📝 Tüm Alanlar — Düzenle & Öğret", expanded=False):
@@ -377,20 +397,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     st.rerun()
 
         ozet_data = []
-        all_luca_rows = []
-        fc = 1
         for i, r in enumerate(results):
             if "error" in r:
                 ozet_data.append({"#": i+1, "Dosya": r["filename"], "Durum": "HATA", "Tarih": "", "Z No": "", "Firma": "", "Banka": "", "Brüt": 0, "Net": 0, "KK": 0, "Nakit": 0, "İptal": 0})
                 continue
-            try:
-                rows = data_to_luca_rows(r, hesap_kodlari, fc, urun_kodlari)
-                all_luca_rows.extend(rows)
-                fc += 1
-            except Exception as e:
-                log.error(f"LUCA satır hatası {r.get('filename','')}: {e}")
-                st.error(f"Satır hatası {r.get('filename','')}: {e}")
-                rows = []
             ozet_data.append({
                 "#": i+1, "Dosya": r.get("filename", "")[:25], "Durum": "OK",
                 "Tarih": r.get("tarih", "?"), "Z No": r.get("z_no", "?"),
