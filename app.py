@@ -60,6 +60,28 @@ sys.excepthook = _global_excepthook
 
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
 
+# Tum yanitlara no-cache header ekle (tarayici cache'ini zorla devre disi birak)
+st.markdown("""
+<script>
+(function() {
+    if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('gurcanekiz.xyz')) {
+        const meta = document.createElement('meta');
+        meta.httpEquiv = 'Cache-Control';
+        meta.content = 'no-cache, no-store, must-revalidate';
+        document.head.appendChild(meta);
+        const meta2 = document.createElement('meta');
+        meta2.httpEquiv = 'Pragma';
+        meta2.content = 'no-cache';
+        document.head.appendChild(meta2);
+        const meta3 = document.createElement('meta');
+        meta3.httpEquiv = 'Expires';
+        meta3.content = '0';
+        document.head.appendChild(meta3);
+    }
+})();
+</script>
+""", unsafe_allow_html=True)
+
 st.components.v1.html("""
 <script>
 if (localStorage.getItem("smmm_auth") === "1" && window.location.search !== "?smmm_auth=1") {
