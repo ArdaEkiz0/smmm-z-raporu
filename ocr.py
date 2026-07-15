@@ -798,6 +798,22 @@ def parse_z_raporu(text):
             if val > 0:
                 sonuc["brut"] = val
 
+    # TOPLAMI / TOPLAM4I / TOPLAM1 (Net deger) — "I" rakam olarak okunmus
+    if sonuc["net_toplam"] == 0:
+        net_toplami = re.search(r'TOPLAM[İI14l][\s:]*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        if net_toplami:
+            val = parse_tutar(net_toplami.group(1).replace(" ", ""))
+            if val > 0 and val < 100000:
+                sonuc["net_toplam"] = val
+
+    # K.KARTI sonraki satirdaki deger (14851.90 gibi)
+    if sonuc["kredi_karti"] == 0:
+        kk_satir = re.search(r'K[\.\s]?KART[İIı]?[\s\S]{0,50}?\n\s*\.?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE)
+        if kk_satir:
+            val = parse_tutar(kk_satir.group(1).replace(" ", ""))
+            if val > 100 and val < 100000:
+                sonuc["kredi_karti"] = val
+
     # En buyuk TOPLAM (genellikle KDV-blok toplamlarindan buyuk olan)
     if sonuc["brut"] == 0 or sonuc["brut"] < 100:
         tum_toplamlar = re.findall(r'\bTOPLAM\b[\s\S]{0,30}?\*?\s*([\d][\d.,\sBOoIl]*[\d.,])', t_duz, re.IGNORECASE)
@@ -1137,7 +1153,7 @@ def parse_z_raporu(text):
                 sonuc["yemek_ceki"] = val
                 break
 
-    # İadeler
+    # İadeler (Fiş İptal = İade)
     iade_patterns = [
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s*\d+\s+\*?\+?\s*([\d][\d.,\s]*[\d.,])',
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
@@ -1151,12 +1167,15 @@ def parse_z_raporu(text):
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*([\d][\d.,\s]*[\d.,])',
         r'(?:FIS|FİS)\s*(?:IPTAL|İPTAL)\s+\d+\s+\*?\s*([\d.,]+)',
+        # FIS IPTAL satiri, deger sonraki satirda
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-\s\d]*\n\s*([\d][\d.,\s]*[\d.,])',
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[\s\S]{0,30}?([\d][\d.,\s]{3,}[\d.,])',
     ]
     for pat in iade_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
         if m:
             val = parse_tutar(m.group(1).replace(" ", ""))
-            if val > 0:
+            if val > 0 and val < 100000:
                 sonuc["iadeler"] = val
                 break
 

@@ -331,7 +331,14 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         if yeni_iade != r.get("iadeler", 0):
                             degisiklik.append(f"İade: {r.get('iadeler',0):.2f} → {yeni_iade:.2f}")
                         r["iadeler"] = yeni_iade
-                    # session_state'i guncelle (referans ayni, degisiklikler zaten kaydedildi)
+                        for k_alan, k_deger in [
+                            ("ed_tarih", yeni_tarih), ("ed_firma", yeni_firma),
+                            ("ed_banka", yeni_banka), ("ed_zno", yeni_zno),
+                            ("ed_brut", yeni_brut), ("ed_net", yeni_net),
+                            ("ed_nakit", yeni_nakit), ("ed_kk", yeni_kk),
+                            ("ed_yemek", yeni_yemek), ("ed_iade", yeni_iade),
+                        ]:
+                            st.session_state[f"{k_alan}_{idx}"] = k_deger
                     st.session_state.results = results
                     secili_muk = st.session_state.get("secili_mukellef", "")
                     try:
