@@ -56,6 +56,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
     uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
 
     if uploaded_files:
+        yeni_dosya_sayisi = len(uploaded_files)
+        eski_dosya_sayisi = st.session_state.get("son_yuklenen_sayisi", 0)
+        if yeni_dosya_sayisi != eski_dosya_sayisi:
+            st.session_state.son_yuklenen_sayisi = yeni_dosya_sayisi
         pdf_count = sum(1 for f in uploaded_files if f.name.lower().endswith(".pdf"))
         img_count = len(uploaded_files) - pdf_count
         st.success(f"{img_count} görsel, {pdf_count} PDF yüklendi")
@@ -100,6 +104,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
         if ocr_engine is None:
             st.error("Tesseract OCR yuklu degil! Lutfen Tesseract-OCR kurulumunu kontrol edin.")
             st.stop()
+        eski_sonuclar = st.session_state.get("results", [])
+        if eski_sonuclar:
+            for ek in [k for k in st.session_state if k.startswith("ed_") or k.startswith("iade_")]:
+                st.session_state.pop(ek, None)
         import time as _time
         from concurrent.futures import ThreadPoolExecutor, as_completed
         try:
