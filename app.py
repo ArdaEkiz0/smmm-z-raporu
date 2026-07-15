@@ -60,22 +60,27 @@ sys.excepthook = _global_excepthook
 
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=":ledger:")
 
+import random as _r
+_zaman = datetime.now().strftime("%Y-%m-%d %H:%M")
+_jeton = ''.join(_r.choices('ABCDEF0123456789', k=6))
+st.caption(f"v3.0-REDEPLOY-{_jeton} | {_zaman}")
+
 # Tarayici cache'ini zorla bypass et - eski kod yukluyse hard reload yap
-st.markdown("""
+st.markdown(f"""
 <script>
-(function() {
-    const EXPECTED_VERSION = 'v3.0-OCR-NUCLEAR';
-    try {
+(function() {{
+    const EXPECTED_VERSION = 'v3.0-REDEPLOY-{_jeton}';
+    try {{
         const currentVer = sessionStorage.getItem('app_version');
-        if (currentVer !== EXPECTED_VERSION) {
+        if (currentVer !== EXPECTED_VERSION) {{
             sessionStorage.setItem('app_version', EXPECTED_VERSION);
-            if (currentVer !== null) {
+            if (currentVer !== null) {{
                 console.log('Yeni versiyon tespit edildi, hard reload yapiliyor...');
                 window.location.reload(true);
-            }
-        }
-    } catch(e) {}
-    if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('gurcanekiz.xyz')) {
+            }}
+        }}
+    }} catch(e) {{}}
+    if (window.location.hostname.includes('onrender.com') || window.location.hostname.includes('gurcanekiz.xyz')) {{
         const meta = document.createElement('meta');
         meta.httpEquiv = 'Cache-Control';
         meta.content = 'no-cache, no-store, must-revalidate';
@@ -88,8 +93,8 @@ st.markdown("""
         meta3.httpEquiv = 'Expires';
         meta3.content = '0';
         document.head.appendChild(meta3);
-    }
-})();
+    }}
+}})();
 </script>
 """, unsafe_allow_html=True)
 
@@ -147,7 +152,6 @@ for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
 
 st.title("SMMM Z Raporu ve Fiş Yönetim Sistemi")
-st.caption("v3.0-OCR-NUCLEAR | " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 with st.sidebar:
     st.header("Aygıtlar")
