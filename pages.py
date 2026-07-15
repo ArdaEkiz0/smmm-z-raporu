@@ -375,26 +375,63 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         r["iadeler"] = yeni_iade
                     st.session_state.results = results
                     secili_muk = st.session_state.get("secili_mukellef", "")
+
+                    sozluk_oncesi = len(ogrenilen_sozluk())
+                    alan_oncesi = len(ogrenilen_alanlar() if 'ogrenilen_alanlar' in dir() else {})
                     try:
                         gecmis_kaydet(results, hesap_kodlari, secili_muk)
-                        st.toast(f"✅ {len(degisiklik)} tutar veritabanina kaydedildi.", icon="💾")
                     except Exception as e:
                         log.error(f"Kaydet hatasi: {e}")
-                        st.toast(f"Veritabanina kaydedilemedi: {e}", icon="⚠️")
+
+                    sozluk_sonra = len(ogrenilen_sozluk())
+                    eklenen_kelime = sozluk_sonra - sozluk_oncesi
+                    ogr_mesaj_parts = []
                     if ogr_sayisi > 0:
-                        st.toast(f"✅ {ogr_sayisi} alan öğrenildi! Sonraki OCR'da otomatik uygulanacak.", icon="✅")
+                        ogr_mesaj_parts.append(f"📚 **{ogr_sayisi}** alan öğrenildi (firma/banka/tarih/Z No)")
+                    if eklenen_kelime > 0:
+                        ogr_mesaj_parts.append(f"🔤 **{eklenen_kelime}** yeni kelime düzeltmesi öğrenildi")
+                    if ogr_mesaj_parts:
+                        st.session_state.kaydet_bildirim = {
+                            "tip": "basari",
+                            "mesaj": " | ".join(ogr_mesaj_parts),
+                            "detay": f"💾 {len(degisiklik)} alan veritabanına kaydedildi.",
+                            "ogren_sayisi": ogr_sayisi,
+                            "eklenen_kelime": eklenen_kelime,
+                        }
+                    elif len(degisiklik) > 0:
+                        st.session_state.kaydet_bildirim = {
+                            "tip": "bilgi",
+                            "mesaj": f"💾 {len(degisiklik)} alan güncellendi.",
+                            "detay": "",
+                            "ogren_sayisi": 0,
+                            "eklenen_kelime": 0,
+                        }
                     else:
-                        st.toast(f"✅ {len(degisiklik)} tutar güncellendi.", icon="✅")
-                    if degisiklik:
-                        with st.expander("📋 Yapılan değişiklikler", expanded=True):
-                            for d in degisiklik:
-                                st.write(f"- {d}")
-                    if eslesme_ekisik:
-                        with st.expander("⚠️ Öğrenilemeyen detay düzeltmeler (ham OCR'da eşleşme bulunamadı, ama alan varsayılanı kaydedildi)", expanded=False):
-                            for alan, dogru, yanlis in eslesme_ekisik:
-                                st.write(f"- **{alan}**: '{dogru}' için ham OCR'da benzer satır bulunamadı")
-                            st.info("Yine de alan varsayılanı kaydedildi — sonraki OCR'da otomatik uygulanacak.")
+                        st.session_state.kaydet_bildirim = {
+                            "tip": "bilgi",
+                            "mesaj": "ℹ️ Değişiklik yok, eski değerler korundu.",
+                            "detay": "Ayarlar → OCR Öğrenme bölümünden öğrenilen düzeltmelere bakabilirsiniz.",
+                            "ogren_sayisi": 0,
+                            "eklenen_kelime": 0,
+                        }
                     st.rerun()
+
+        _bildirim = st.session_state.pop("kaydet_bildirim", None)
+        if _bildirim:
+            if _bildirim["tip"] == "basari":
+                st.success(_bildirim["mesaj"])
+                if _bildirim.get("detay"):
+                    st.caption(_bildirim["detay"])
+                st.caption("📖 Öğrenilen düzeltmeleri görmek için → **Ayarlar → OCR Öğrenme**")
+            elif _bildirim["tip"] == "bilgi":
+                st.info(_bildirim["mesaj"])
+                if _bildirim.get("detay"):
+                    st.caption(_bildirim["detay"])
+            if _bildirim.get("ogren_sayisi", 0) > 0 or _bildirim.get("eklenen_kelime", 0) > 0:
+                st.toast(
+                    f"✅ Öğrenildi! ({_bildirim.get('ogren_sayisi', 0)} alan, {_bildirim.get('eklenen_kelime', 0)} kelime)",
+                    icon="📚",
+                )
 
         ozet_data = []
         for i, r in enumerate(results):
@@ -665,7 +702,7 @@ def _page_dashboard():
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Toplam Kayit", f"{len(kayitlar)}")
     c2.metric("Toplam Fis", f"{len(tum_fisler)}")
-    c3.metric("Aktif Mukellef", f"{len(ml)}")
+    c3.metric("Aktif Mükellef", f"{len(ml)}")
     toplam_ciro = sum(f.get("net_toplam", 0) or 0 for f in tum_fisler)
     c4.metric("Toplam Ciro", f"{toplam_ciro:,.0f} TL")
 
@@ -713,13 +750,13 @@ def _page_dashboard():
             st.bar_chart(df_b.set_index("Banka"), use_container_width=True)
 
     with col_mukellef:
-        st.subheader("Mukellef Bazli Ciro")
+        st.subheader("Mükellef Bazlı Ciro")
         musteri_ciro = {}
         for f in tum_fisler:
             m = f.get("mukellef", "") or f.get("mukellef_adi", "") or "Bilinmeyen"
             musteri_ciro[m] = musteri_ciro.get(m, 0) + (f.get("net_toplam", 0) or 0)
         if musteri_ciro:
-            df_m = pd.DataFrame([{"Mukellef": k, "Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
+            df_m = pd.DataFrame([{"Mükellef": k, "Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
             st.bar_chart(df_m.set_index("Mukellef"), use_container_width=True)
 
     st.divider()

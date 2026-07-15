@@ -8,7 +8,10 @@ LIGHT_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
+    html, body, .stApp, [data-testid="stAppViewContainer"],
+    h1, h2, h3, h4, p, span, label, div, input, button, textarea, select, code {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
 
     /* ── Static gradient background (no animation) ── */
     .stApp {
@@ -255,7 +258,10 @@ DARK_CSS = """
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-    * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important; }
+    html, body, .stApp, [data-testid="stAppViewContainer"],
+    h1, h2, h3, h4, p, span, label, div, input, button, textarea, select, code {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
 
     /* ── Static dark background (no animation) ── */
     .stApp {
@@ -412,9 +418,13 @@ DARK_CSS = """
 
 
 def tema_uygula():
+    """Mevcut tema tercihine göre CSS enjekte et.
+    Her render'da değil, sadece tema değişince inject edilir (performans)."""
     tema = st.session_state.get("tema", "light")
     css = DARK_CSS if tema == "dark" else LIGHT_CSS
-    st.markdown(css, unsafe_allow_html=True)
+    if st.session_state.get("_tema_uygulandi") != tema:
+        st.markdown(css, unsafe_allow_html=True)
+        st.session_state["_tema_uygulandi"] = tema
 
 
 def tema_degistirici():
