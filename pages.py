@@ -1247,6 +1247,10 @@ th {{ background: #1a5276; color: white; }}
 def _page_ayarlar():
     st.header("Ayarlar")
 
+    _cu = st.session_state.get("current_user", {})
+    if _cu.get("role") == "admin":
+        _kullanici_yonetimi_paneli()
+
     st.subheader("Yedekleme")
     col_y1, col_y2 = st.columns(2)
     with col_y1:
@@ -1587,3 +1591,88 @@ def _page_efatura_sorgu():
                 "Hata": s.get("hata", "")[:50] or "-",
             } for s in sonuclar])
             st.dataframe(df, width="stretch", hide_index=True)
+
+
+def _kullanici_yonetimi_paneli():
+    """Admin icin kullanici yonetimi paneli."""
+    import pandas as pd
+    from user_manager import (
+        kullanici_listesi_safe, kullanici_ekle, kullanici_sil,
+        kullanici_sifre_degistir, kullanici_admin_mi,
+        DEFAULT_ADMIN_USERNAME,
+    )
+
+    st.subheader("👥 Kullanıcı Yönetimi")
+    st.caption("Yeni kullanıcı ekle, şifre değiştir, rol ayarla")
+
+    kullanicilar = kullanici_listesi_safe()
+    df = pd.DataFrame([{
+        "Kullanıcı": k.get("username"),
+        "Ad Soyad": k.get("full_name", ""),
+        "Rol": "👑 Admin" if k.get("role") == "admin" else "👤 User",
+        "E-posta": k.get("email", "") or "-",
+        "Durum": "✅ Aktif" if k.get("aktif", True) else "❌ Pasif",
+        "Şifre": k.get("password_gizli", "••••"),
+        "Oluşturma": k.get("olusturma", "?"),
+    } for k in kullanicilar])
+    st.dataframe(df, width="stretch", hide_index=True)
+
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        with st.expander("➕ Yeni Kullanıcı Ekle", expanded=False):
+            with st.form("yeni_kullanici_form", clear_on_submit=True):
+                yeni_username = st.text_input("Kullanıcı Adı", placeholder="mehmet")
+                yeni_full = st.text_input("Ad Soyad", placeholder="Mehmet Yılmaz")
+                yeni_email = st.text_input("E-posta (opsiyonel)", placeholder="mehmet@firma.com")
+                yeni_sifre = st.text_input("Şifre (min 4)", type="password")
+                yeni_sifre2 = st.text_input("Şifre Tekrar", type="password")
+                yeni_role = st.selectbox("Rol", ["user", "admin"])
+                ekle_submit = st.form_submit_button("Ekle", type="primary", use_container_width=True)
+                if ekle_submit:
+                    if yeni_sifre != yeni_sifre2:
+                        st.error("Şifreler eşleşmiyor")
+                    else:
+                        sonuc = kullanici_ekle(yeni_username, yeni_sifre, yeni_role, yeni_full, yeni_email)
+                        if sonuc["basarili"]:
+                            st.success(sonuc["mesaj"])
+                            st.rerun()
+                        else:
+                            st.error(sonuc["mesaj"])
+
+    with col_b:
+        with st.expander("🔑 Şifre Değiştir", expanded=False):
+            with st.form("sifre_degistir_form", clear_on_submit=True):
+                mevcut_user = st.session_state.get("current_user", {}).get("username", "")
+                target_user = st.text_input("Kullanıcı Adı", value=mevcut_user)
+                eski_sifre = st.text_input("Mevcut Şifre", type="password")
+                yeni_sifre1 = st.text_input("Yeni Şifre", type="password")
+                yeni_sifre2 = st.text_input("Yeni Şifre Tekrar", type="password")
+                sifre_submit = st.form_submit_button("Şifre Değiştir", type="primary", use_container_width=True)
+                if sifre_submit:
+                    if yeni_sifre1 != yeni_sifre2:
+                        st.error("Yeni şifreler eşleşmiyor")
+                    else:
+                        sonuc = kullanici_sifre_degistir(target_user, eski_sifre, yeni_sifre1)
+                        if sonuc["basarili"]:
+                            st.success(sonuc["mesaj"])
+                        else:
+                            st.error(sonuc["mesaj"])
+
+    with st.expander("🗑️ Kullanıcı Sil", expanded=False):
+        st.warning("⚠️ Bu işlem geri alınamaz!")
+        col_x, col_y = st.columns([3, 1])
+        with col_x:
+            sil_username = st.text_input("Silinecek Kullanıcı Adı", key="sil_input")
+        with col_y:
+            st.write("")
+            st.write("")
+            if st.button("🗑️ Sil", type="primary", key="sil_btn"):
+                sonuc = kullanici_sil(sil_username)
+                if sonuc["basarili"]:
+                    st.success(sonuc["mesaj"])
+                    st.rerun()
+                else:
+                    st.error(sonuc["mesaj"])
+
+    st.caption(f"💡 İlk kurulum: **{DEFAULT_ADMIN_USERNAME}** / **admin123** (ilk girişte değiştirin!)")

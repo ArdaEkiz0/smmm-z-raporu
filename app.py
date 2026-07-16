@@ -64,46 +64,82 @@ if (localStorage.getItem("smmm_auth") === "1" && window.location.search !== "?sm
 </script>
 """, height=0)
 
+def _mevcut_kullanici():
+    """Session state'den aktif kullaniciyi al."""
+    return st.session_state.get("current_user")
+
+
 def auth_ok():
-    if "auth_ok" in st.session_state and st.session_state.auth_ok:
+    """Session state veya query param'da oturum bilgisi var mi?"""
+    cu = _mevcut_kullanici()
+    if cu and cu.get("username"):
         return True
     if st.query_params.get("smmm_auth") == "1":
-        st.session_state.auth_ok = True
+        st.session_state["auth_legacy"] = True
         return True
     return False
 
-if not auth_ok():
-    pws = []
-    if os.path.exists(AUTH_FILE):
-        try:
-            with open(AUTH_FILE, "r", encoding="utf-8") as f:
-                pws = json.load(f).get("passwords", [])
-        except Exception:
-            log.warning("AUTH_FILE okunamadı", exc_info=True)
 
-    def _sifre_esles(girilen, kayitli):
-        import hashlib
-        if isinstance(kayitli, str) and kayitli.startswith("sha256:"):
-            return hashlib.sha256(girilen.encode("utf-8")).hexdigest() == kayitli[7:]
-        return girilen == kayitli
+def _login_ekrani_goster():
+    """Kullanici giris ekrani."""
+    from user_manager import kullanici_dogrula, kullanicilari_yukle, DEFAULT_ADMIN_USERNAME
 
-    if pws:
-        st.title("SMMM Z Raporu Sistemi")
-        st.markdown("Yetkili kullanıcı girişi")
-        pwd = st.text_input("Şifre", type="password", placeholder="Şifrenizi girin")
-        if st.button("Giriş", type="primary"):
-            if any(_sifre_esles(pwd, pw) for pw in pws):
-                st.session_state.auth_ok = True
-                st.components.v1.html("""
-                <script>
-                try { localStorage.setItem("smmm_auth", "1"); } catch(e) {}
-                window.location.search = "?smmm_auth=1";
-                </script>
-                """, height=0)
-                st.rerun()
+    st.markdown("""
+    <div style="text-align:center;padding:2rem 0 1rem 0;">
+        <div style="font-size:2.5rem;font-weight:800;letter-spacing:-0.03em;
+                    background:linear-gradient(135deg,#0F766E,#14B8A6);
+                    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                    background-clip:text;">SMMM</div>
+        <div style="font-size:0.9rem;color:#64748b;margin-top:0.3rem;">Z Raporu ve Fiş Yönetim Sistemi</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("### Kullanıcı Girişi")
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("Kullanıcı Adı", placeholder="admin", key="login_username")
+            password = st.text_input("Şifre", type="password", placeholder="••••••••", key="login_password")
+            col_a, col_b = st.columns(2)
+            with col_a:
+                submit = st.form_submit_button("🔓 Giriş Yap", type="primary", use_container_width=True)
+            with col_b:
+                if st.form_submit_button("Misafir", use_container_width=True):
+                    st.session_state.current_user = {
+                        "username": "misafir",
+                        "role": "user",
+                        "full_name": "Misafir Kullanıcı",
+                        "readonly": True,
+                    }
+                    st.rerun()
+
+        if submit:
+            if not username or not password:
+                st.error("Kullanıcı adı ve şifre gerekli")
             else:
-                st.error("Geçersiz şifre")
-        st.stop()
+                user = kullanici_dogrula(username, password)
+                if user:
+                    st.session_state.current_user = {
+                        "username": user.get("username"),
+                        "role": user.get("role", "user"),
+                        "full_name": user.get("full_name", user.get("username")),
+                        "email": user.get("email", ""),
+                    }
+                    st.success(f"Hoş geldiniz, {user.get('full_name', user.get('username'))}!")
+                    st.rerun()
+                else:
+                    st.error("Kullanıcı adı veya şifre hatalı")
+
+        try:
+            toplam = len(kullanicilari_yukle())
+            st.caption(f"💡 İlk kurulum: **{DEFAULT_ADMIN_USERNAME}** / **admin123** (kullanıcı sayısı: {toplam})")
+        except Exception:
+            pass
+
+
+if not auth_ok():
+    _login_ekrani_goster()
+    st.stop()
 
 if "mod" not in st.session_state:
     st.session_state.mod = "Bilanço"
@@ -115,32 +151,6 @@ tema_uygula()
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
-
-# AUTH_FILE migrate: eski plaintext sifreler sha256:'e cevrilir
-def _migrate_auth_file():
-    if not os.path.exists(AUTH_FILE):
-        return
-    try:
-        import hashlib
-        with open(AUTH_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        pws = data.get("passwords", [])
-        if any(isinstance(p, str) and not p.startswith(("sha256:", "plain:")) for p in pws):
-            upgraded = []
-            for p in pws:
-                if isinstance(p, str) and not p.startswith(("sha256:", "plain:")):
-                    h = hashlib.sha256(p.encode("utf-8")).hexdigest()
-                    upgraded.append(f"sha256:{h}")
-                else:
-                    upgraded.append(p)
-            data["passwords"] = upgraded
-            with open(AUTH_FILE, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            log.info("AUTH_FILE: plaintext sifreler sha256'e donusturuldu")
-    except Exception as e:
-        log.warning(f"AUTH_FILE migrate edilemedi: {e}")
-
-_migrate_auth_file()
 
 st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
 st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek")
@@ -167,6 +177,25 @@ with st.sidebar:
         format_func=lambda x: f"{_sayfa_ikon.get(x, '')} {x}",
         label_visibility="collapsed",
     )
+
+    _cu = _mevcut_kullanici()
+    if _cu:
+        st.divider()
+        rol_ikon = "👑" if _cu.get("role") == "admin" else "👤"
+        st.markdown(
+            f"<div style='padding:0.5rem;background:rgba(15,118,110,0.08);"
+            f"border-radius:8px;font-size:0.85rem;'>"
+            f"{rol_ikon} <b>{_cu.get('full_name', _cu.get('username'))}</b><br>"
+            f"<span style='color:#64748b;font-size:0.75rem;'>@{_cu.get('username')}</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("🚪 Çıkış Yap", key="logout_btn", use_container_width=True):
+            for k in ["current_user", "auth_ok", "auth_legacy", "_fis_ver_version",
+                      "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
+                st.session_state.pop(k, None)
+            st.query_params.clear()
+            st.rerun()
 
     tema_degistirici()
 
