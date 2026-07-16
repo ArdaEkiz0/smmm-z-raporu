@@ -112,12 +112,20 @@ LIGHT_CSS = """
     }
     [data-testid="stMetricLabel"] {
         font-weight: 500 !important;
-        font-size: 0.8rem !important;
+        font-size: 0.75rem !important;
         color: #64748b !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.04em !important;
+        letter-spacing: 0.02em !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
     }
-    [data-testid="stMetricDelta"] svg { display: none !important; }
+    [data-testid="stMetricValue"] {
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+    div[data-testid="stMetric"] {
+        overflow: visible !important;
+    }
 
     /* ── Expander ── */
     .streamlit-expanderHeader {

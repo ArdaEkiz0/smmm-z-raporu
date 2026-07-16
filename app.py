@@ -148,15 +148,15 @@ st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek
 with st.sidebar:
     if not st.session_state.get("_sidebar_brand_done"):
         st.markdown("""
-        <div style="text-align:center;padding:0.5rem 0 1rem 0;">
-            <div style="font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;
+        <div style="text-align:center;padding:1rem 0 0.5rem 0;line-height:1.1;">
+            <div style="font-size:1.8rem;font-weight:800;letter-spacing:-0.02em;
                         background:linear-gradient(135deg,#0F766E,#14B8A6);
                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-                        background-clip:text;">SMMM</div>
-            <div style="font-size:0.75rem;color:#94a3b8;letter-spacing:0.08em;text-transform:uppercase;margin-top:-2px;">Z Raporu Sistemi</div>
+                        background-clip:text;line-height:1.1;display:block;">SMMM</div>
+            <div style="font-size:0.7rem;color:#94a3b8;letter-spacing:0.08em;
+                        text-transform:uppercase;margin-top:0.3rem;display:block;line-height:1.1;">Z Raporu Sistemi</div>
         </div>""", unsafe_allow_html=True)
         st.session_state["_sidebar_brand_done"] = True
-    """, unsafe_allow_html=True)
     st.divider()
     _sayfa_ikon = {"Dashboard": "📊", "Z Raporu Yükle": "📄", "Fiş Geçmişi": "📋",
                    "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️",
