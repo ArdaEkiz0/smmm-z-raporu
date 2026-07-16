@@ -56,6 +56,13 @@ st.markdown("""
 <meta http-equiv="Expires" content="0">
 """, unsafe_allow_html=True)
 
+# Eski ogrenme verilerini istatistiksel motora tasi
+try:
+    from ogrenme_cekirdigi import mevcut_sozlukleri_birlestir
+    mevcut_sozlukleri_birlestir()
+except Exception:
+    pass
+
 st.components.v1.html("""
 <script>
 if (localStorage.getItem("smmm_auth") === "1" && window.location.search !== "?smmm_auth=1") {

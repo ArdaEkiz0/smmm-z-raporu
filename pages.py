@@ -286,6 +286,19 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     st.error(f"❌ {r.get('filename','')}: {r.get('error','')}")
                     continue
                 st.markdown(f"**{r.get('filename','')}**")
+                try:
+                    from ocr_dogrulama import ocr_sonuc_dogrula
+                    _dog = ocr_sonuc_dogrula(r, ham_text=r.get("ocr_text", ""))
+                    _skor = _dog["genel_skor"]
+                    _sorun = _dog["sorunlu_alan_sayisi"]
+                    if _skor >= 80:
+                        st.success(f"✅ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🟢")
+                    elif _skor >= 50:
+                        st.warning(f"⚠️ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🟡")
+                    else:
+                        st.error(f"❌ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🔴")
+                except Exception:
+                    pass
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     _init_text(f"ed_tarih_{tab_idx}", r.get("tarih") or "")
@@ -398,7 +411,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     except Exception as e:
                         kayit_hatasi = f"{type(e).__name__}: {e}"
                         log.error(f"Kaydet hatasi: {e}")
-                        import traceback
                         log.error(traceback.format_exc())
 
                     sozluk_sonra = len(ogrenilen_sozluk())
@@ -891,6 +903,22 @@ def _page_dashboard():
     fis_sayisi_gecen = len([f for f in tum_fisler if _tarih_esles(f, gecen_ay_yil, gecen_ay)])
     st.caption(f"Bu ay {fis_sayisi_ay} fis, gecen ay {fis_sayisi_gecen} fis")
 
+    st.divider()
+    st.subheader("OCR Öğrenme Sistemi")
+    try:
+        from ogrenme_cekirdigi import istatistik_raporu
+        rapor = istatistik_raporu()
+        if rapor["toplam_kayit"] > 0:
+            col_o1, col_o2, col_o3 = st.columns(3)
+            col_o1.metric("Öğrenilen Düzeltme", rapor["toplam_kayit"])
+            col_o2.metric("Yüksek Güvenli", rapor["yuksek_guven"])
+            col_o3.metric("Toplam Uygulama", rapor["istatistik"]["auto_uygulanan"])
+            st.caption(f"Sistem {rapor['toplam_duzeltme_sayisi']} düzeltme deneyimiyle {rapor['yuksek_guven']} yüksek güvenli kural öğrendi.")
+        else:
+            st.caption("Henüz öğrenme verisi yok. Fiş düzelttikçe sistem otomatik öğrenir.")
+    except ImportError:
+        pass
+
 
 def _page_fis_gecmisi(hesap_kodlari):
     import pandas as pd
@@ -1374,6 +1402,35 @@ def _page_ayarlar():
                     cols[j].caption(f"`{yanlis[:15]}` → `{dogru[:15]}`")
     else:
         st.caption("Henüz öğrenilmiş düzeltme yok. Fiş düzelttikçe otomatik öğrenilir.")
+
+    st.divider()
+    st.subheader("İstatistiksel Öğrenme Motoru")
+    st.caption("Yeni nesil öğrenme sistemi - her düzeltme sayılır, güven puanı hesaplanır.")
+    try:
+        from ogrenme_cekirdigi import istatistik_raporu, gecmis_temizle, ogrenme_db_yukle
+        rapor = istatistik_raporu()
+        col_o1, col_o2, col_o3, col_o4 = st.columns(4)
+        with col_o1:
+            st.metric("Toplam Kayıt", rapor["toplam_kayit"])
+        with col_o2:
+            st.metric("Yüksek Güven", rapor["yuksek_guven"])
+        with col_o3:
+            st.metric("Düşük Güven", rapor["dusuk_guven"])
+        with col_o4:
+            st.metric("Toplam Düzeltme", rapor["toplam_duzeltme_sayisi"])
+        if rapor["alan_bazli_kayit"]:
+            st.caption("Alan bazlı düzeltme dağılımı:")
+            for alan, sayi in rapor["alan_bazli_kayit"].items():
+                st.caption(f"  • {alan}: {sayi} kayıt")
+        if st.button("Eski Kayıtları Temizle (365+ gün)", type="secondary", key="ogrenme_temizle"):
+            silinen = gecmis_temizle(365)
+            if silinen > 0:
+                st.success(f"{silinen} eski/düşük güvenli kayıt temizlendi!")
+                st.rerun()
+            else:
+                st.info("Temizlenecek kayıt bulunamadı.")
+    except ImportError:
+        st.caption("İstatistiksel öğrenme motoru yüklenemedi.")
 
     st.divider()
     st.subheader("Tehlikeli İşlemler")
