@@ -24,7 +24,8 @@ from luca import (
 )
 from pages import (
     _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
-    _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar
+    _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar,
+    _page_beyanname_takvimi, _page_efatura_sorgu
 )
 from tema import tema_uygula, tema_degistirici
 
@@ -158,7 +159,8 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.divider()
     _sayfa_ikon = {"Dashboard": "📊", "Z Raporu Yükle": "📄", "Fiş Geçmişi": "📋",
-                   "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️"}
+                   "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️",
+                   "Beyanname Takvimi": "📅", "E-Fatura Sorgu": "🧾"}
     sayfa = st.radio(
         "Sayfa Seç",
         list(_sayfa_ikon.keys()),
@@ -319,6 +321,12 @@ elif sayfa_key == "Mükellef Yönetimi":
 
 elif sayfa_key == "KDV Özeti":
     _page_kdv_ozeti(hesap_kodlari)
+
+elif sayfa_key == "Beyanname Takvimi":
+    _page_beyanname_takvimi()
+
+elif sayfa_key == "E-Fatura Sorgu":
+    _page_efatura_sorgu()
 
 elif sayfa_key == "Ayarlar":
     _page_ayarlar()

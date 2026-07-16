@@ -147,10 +147,20 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 t0 = _time.time()
                 try:
                     if fname.lower().endswith(".pdf"):
+                        sonuclar = []
+                        from pdf_extract import pdf_text_cikar, pdf_sayfalarini_ayir, pdf_text_yeterli_mi
+                        pdf_text, kalite = pdf_text_cikar(data)
+                        if pdf_text and pdf_text_yeterli_mi(kalite, esik=60.0):
+                            parsed = parse_z_raporu(pdf_text)
+                            ogr_alanlari_uygula(parsed)
+                            parsed["filename"] = fname
+                            parsed["ocr_text"] = pdf_text
+                            parsed["mukellef_adi"] = ""
+                            parsed["_kaynak"] = f"PDF text (kalite: {kalite:.0f})"
+                            return idx, [parsed], _time.time() - t0
                         if not PDF2IMAGE_MEVCUT:
                             return idx, [{"filename": fname, "error": "pdf2image yok", "ocr_text": ""}], _time.time() - t0
                         pages = convert_from_bytes(data, dpi=300)
-                        sonuclar = []
                         for pi, page in enumerate(pages):
                             ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
                             parsed = parse_z_raporu(ocr_text)
@@ -158,6 +168,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             parsed["filename"] = f"{fname} - Syf {pi+1}"
                             parsed["ocr_text"] = ocr_text
                             parsed["mukellef_adi"] = ""
+                            parsed["_kaynak"] = "PDF OCR fallback"
                             sonuclar.append(parsed)
                         return idx, sonuclar, _time.time() - t0
                     else:
@@ -732,11 +743,37 @@ def _filtrele_tarih(fisler, bas, son):
 
 def _page_dashboard():
     import pandas as pd
+    from beyanname_takvimi import yaklasan_beyannameler
+
     st.header("Genel Bakis")
 
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
     ml = mukellefler()
+
+    kritik_beyannameler = [b for b in yaklasan_beyannameler(datetime.now(), 30) if b["kalan_gun"] <= 7]
+    if kritik_beyannameler:
+        uyari_sayisi = len(kritik_beyannameler)
+        en_yakin = kritik_beyannameler[0]
+        if en_yakin["kalan_gun"] < 0:
+            st.error(
+                f"🔴 **{uyari_sayisi} beyanname kaçırıldı!** En yakın: {en_yakin['ad']} — {en_yakin['tarih']} ({en_yakin['kalan_text']}). "
+                f"[Beyanname Takvimi sayfasına git →]"
+            )
+        elif en_yakin["kalan_gun"] == 0:
+            st.error(
+                f"🔴 **BUGÜN son gün!** {en_yakin['ad']} ({en_yakin['kod']}). "
+                f"[Beyanname Takvimi →]"
+            )
+        elif en_yakin["kalan_gun"] <= 3:
+            st.warning(
+                f"⚠️ **{uyari_sayisi} yaklaşan beyanname.** En yakın: {en_yakin['ad']} — {en_yakin['kalan_text']} ({en_yakin['tarih']}). "
+                f"[Beyanname Takvimi →]"
+            )
+        else:
+            st.info(
+                f"📅 **{uyari_sayisi} beyanname T-7 içinde.** En yakın: {en_yakin['ad']} — {en_yakin['kalan_text']} ({en_yakin['tarih']})."
+            )
 
     if tum_fisler:
         tum_tarihler = []
@@ -1404,3 +1441,149 @@ def _page_ayarlar():
     with c2:
         st.write(f"Mükellef sayısı: `{len(mukellefler())}`")
         st.write(f"Toplam fiş: `{len(tum_fisleri_yukle())}`")
+
+
+def _page_beyanname_takvimi():
+    """Beyanname takvimi + email hatirlatici."""
+    import pandas as pd
+    from beyanname_takvimi import yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER, email_icerik_olustur
+
+    st.header("Beyanname Takvimi")
+    st.caption("KDV, Muhtasar, BA-BS, Geçici Vergi, Gelir/Kurumlar Vergisi tarihleri")
+
+    col_f1, col_f2, col_f3 = st.columns(3)
+    with col_f1:
+        st.metric("Bugün", datetime.now().strftime("%d.%m.%Y"))
+    with col_f2:
+        st.metric("Yaklaşan (30 gün)", "—")
+    with col_f3:
+        if st.button("📧 Email Gönder", use_container_width=True, key="by_email"):
+            try:
+                from veritabani import email_gonder
+                yaklasan = yaklasan_beyannameler(datetime.now(), 30)
+                konu, icerik = email_icerik_olustur(yaklasan)
+                basarili = email_gonder(konu, icerik)
+                if basarili:
+                    st.success("Email gönderildi!")
+                else:
+                    st.warning("Email gönderilemedi. Ayarlar'dan SMTP yapılandırın.")
+            except Exception as e:
+                st.error(f"Email hatası: {e}")
+
+    st.divider()
+
+    yaklasan = yaklasan_beyannameler(datetime.now(), 60)
+
+    st.subheader("Yaklaşan Beyannameler (60 gün)")
+    if not yaklasan:
+        st.info("Yaklaşan 60 gün içinde beyanname yok.")
+    else:
+        cols = st.columns(min(len(yaklasan), 3))
+        for i, b in enumerate(yaklasan):
+            with cols[i % 3]:
+                with st.container():
+                    if b["kalan_gun"] < 0:
+                        st.error(f"**{b['ad']}**")
+                    elif b["kalan_gun"] <= 3:
+                        st.warning(f"**{b['ad']}**")
+                    else:
+                        st.info(f"**{b['ad']}**")
+                    st.write(f"📅 {b['tarih']}")
+                    st.write(b["kalan_text"])
+                    st.caption(b["aciklama"])
+
+    st.divider()
+    st.subheader("Tüm Beyannameler")
+    tum_veri = []
+    for kod, info in BEYANNAMELER.items():
+        tarih = beyanname_tarihi_hesapla(kod, datetime.now())
+        tarih_sonraki = beyanname_tarihi_hesapla(kod, datetime.now() + timedelta(days=120))
+        tum_veri.append({
+            "Beyanname": info["ad"],
+            "Kod": kod,
+            "Dönem": info["donem"].capitalize(),
+            "Son Gün": tarih.strftime("%d.%m.%Y") if tarih else "-",
+            "Sonraki Dönem": tarih_sonraki.strftime("%d.%m.%Y") if tarih_sonraki else "-",
+            "Açıklama": info["aciklama"],
+        })
+    df = pd.DataFrame(tum_veri)
+    st.dataframe(df, width="stretch", hide_index=True)
+
+
+def _page_efatura_sorgu():
+    """E-fatura mükellef sorgu."""
+    from e_fatura_sorgu import (
+        gib_efatura_sorgula, toplu_sorgula, sorgu_ozet,
+        vergi_no_dogrula, vkn_algo_dogrula, tckn_algo_dogrula,
+    )
+
+    st.header("E-Fatura Mükellef Sorgu")
+    st.caption("GİB e-fatura mükellefiyet kontrolü. Vergi/TC kimlik no ile.")
+
+    col_i1, col_i2 = st.columns([3, 1])
+    with col_i1:
+        vkn_input = st.text_input("Vergi/TC Kimlik No", placeholder="1234567890 veya 11111111111", key="efatura_vkn")
+    with col_i2:
+        sorgula_btn = st.button("🔍 Sorgula", type="primary", use_container_width=True, key="efatura_sorgula_btn")
+
+    if sorgula_btn and vkn_input:
+        vkn_temiz = re.sub(r"\D", "", vkn_input)
+        if not vergi_no_dogrula(vkn_temiz):
+            st.error("Geçersiz format. 10 hane (VKN) veya 11 hane (TCKN) girin.")
+        elif len(vkn_temiz) == 10 and not vkn_algo_dogrula(vkn_temiz):
+            st.error("VKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
+        elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
+            st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
+        else:
+            with st.spinner("GİB sorgulanıyor..."):
+                sonuc = gib_efatura_sorgula(vkn_temiz)
+
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if sonuc.get("efatura"):
+                    st.success("✅ E-Fatura")
+                else:
+                    st.error("❌ E-Fatura")
+            with c2:
+                if sonuc.get("earsiv"):
+                    st.success("✅ E-Arşiv")
+                else:
+                    st.error("❌ E-Arşiv")
+            with c3:
+                st.metric("VKN", vkn_temiz)
+
+            if sonuc.get("unvan"):
+                st.info(f"**Ünvan:** {sonuc['unvan']}")
+            if sonuc.get("hata"):
+                st.warning(f"⚠️ {sonuc['hata']}")
+            else:
+                st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
+
+    st.divider()
+    st.subheader("Toplu Sorgu")
+    st.caption("Her satıra bir VKN/TCKN yazın, virgül veya yeni satırla ayırın")
+    toplu_text = st.text_area("VKN listesi (virgül veya yeni satırla)", height=120,
+                                placeholder="1234567890\n11111111111\n9876543210", key="efatura_toplu")
+    if st.button("🔍 Toplu Sorgula", type="primary", key="efatura_toplu_btn") and toplu_text:
+        vkn_list = re.split(r"[,\n\s]+", toplu_text)
+        vkn_list = [v for v in vkn_list if v.strip()]
+        vkn_list = [re.sub(r"\D", "", v) for v in vkn_list]
+        vkn_list = [v for v in vkn_list if vergi_no_dogrula(v)]
+        if not vkn_list:
+            st.error("Geçerli VKN/TCKN bulunamadı.")
+        else:
+            progress = st.progress(0.0, text="Sorgulanıyor...")
+            sonuclar = []
+            for i, v in enumerate(vkn_list):
+                s = gib_efatura_sorgula(v)
+                sonuclar.append(s)
+                progress.progress((i + 1) / len(vkn_list), text=f"{i+1}/{len(vkn_list)} tamamlandı")
+            import pandas as pd
+            df = pd.DataFrame([{
+                "VKN": s["vkn"],
+                "E-Fatura": "✅" if s.get("efatura") else "❌",
+                "E-Arşiv": "✅" if s.get("earsiv") else "❌",
+                "Ünvan": s.get("unvan", "")[:30],
+                "Hata": s.get("hata", "")[:50] or "-",
+            } for s in sonuclar])
+            st.dataframe(df, width="stretch", hide_index=True)
