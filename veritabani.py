@@ -93,9 +93,12 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
     except Exception as e:
         log.warning(f"Cache invalidate basarisiz: {e}")
 
-    # Aşama 3: Ogrenme (hata olursa logla, KULLANICIYA HATA GOSTERME - dosya zaten kaydedildi)
+    # Aşama 3: Ogrenme (istatistiksel ogrenme motoru ile)
     ogrenme_hatasi = None
     try:
+        from ogrenme_cekirdigi import duzeltme_kaydet, alan_duzeltme_kaydet
+        from ocr import parse_z_raporu, ogrenci_alan_bul
+
         for r in results:
             if "error" in r:
                 continue
@@ -108,14 +111,17 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
                 ogrenme_hatasi = f"parse_z_raporu hatasi: {str(e)[:100]}"
                 log.warning(f"OCR parse basarisiz, ogrenme atlaniyor: {e}")
                 continue
-            for alan in ["firma_adi", "tarih", "banka_adi"]:
+            for alan in ["firma_adi", "tarih", "banka_adi", "z_no", "belge_no",
+                         "brut", "net_toplam", "nakit", "kredi_karti"]:
                 dogru = r.get(alan, "")
                 eski = orj_parsed.get(alan, "")
-                if dogru and dogru != eski:
+                if dogru and eski and str(dogru).strip().upper() != str(eski).strip().upper():
                     try:
                         hali = ogrenci_alan_bul(ham, alan, dogru)
-                        if hali and hali.upper() != dogru.upper():
-                            duzeltme_ogren(hali, dogru)
+                        if hali and hali.upper() != str(dogru).upper():
+                            duzeltme_kaydet(hali.strip(), str(dogru).strip(),
+                                            alan_adi=alan, kaynak="manuel")
+                            alan_duzeltme_kaydet(alan, str(eski).strip(), str(dogru).strip())
                     except Exception as e:
                         log.warning(f"Ogrenme hatasi ({alan}): {e}")
     except Exception as e:

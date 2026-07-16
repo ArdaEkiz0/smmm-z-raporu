@@ -575,6 +575,69 @@ def ocr_gorsel_isle_hibrit(img):
 ocr_engine = load_ocr()
 
 
+def ocr_oku_ve_duzelt(img, dogrulama_yap: bool = True,
+                       mukellef_listesi: list = None,
+                       urun_kodlari: list = None) -> dict:
+    """OCR + otomatik duzeltme + dogrulama pipeline'i.
+
+    Returns:
+        {
+            "ham_text": "...",
+            "duzeltilmis_text": "...",
+            "parsed": {...},
+            "otomatik_duzeltmeler": [...],
+            "alan_duzeltmeleri": [...],
+            "dogrulama": {...}  # ocr_dogrulama ciktisi (varsa)
+            "skor": N,
+        }
+    """
+    from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
+    from ocr_dogrulama import ocr_sonuc_dogrula
+
+    # 1. OCR
+    ham_text = ocr_gorsel_isle_hibrit(img)
+    skor = ocr_skorla(ham_text)
+
+    # 2. Otomatik duzeltme (ogrenilmis sozluk)
+    duzeltilmis_text, otomatik_duzeltmeler = auto_duzeltme_uygula(ham_text)
+
+    # 3. Parse
+    parsed = parse_z_raporu(duzeltilmis_text)
+    parsed["ham_text"] = ham_text
+
+    # 4. Alan bazli duzeltme
+    parsed, alan_duzeltmeleri = alan_duzeltme_uygula(parsed)
+
+    # 5. Dogrulama
+    dogrulama = None
+    if dogrulama_yap:
+        dogrulama = ocr_sonuc_dogrula(
+            parsed, ham_text=ham_text,
+            mukellef_listesi=mukellef_listesi,
+            urun_kodlari=urun_kodlari,
+        )
+
+    # 6. Ogrenme: duzeltilen metindeki degisiklikleri ogren
+    if otomatik_duzeltmeler:
+        for d in otomatik_duzeltmeler:
+            if d.get("uygulandi"):
+                from ogrenme_cekirdigi import duzeltme_kaydet
+                duzeltme_kaydet(
+                    d["yanlis"], d["dogru"],
+                    alan_adi="", kaynak="otomatik"
+                )
+
+    return {
+        "ham_text": ham_text,
+        "duzeltilmis_text": duzeltilmis_text,
+        "parsed": parsed,
+        "otomatik_duzeltmeler": otomatik_duzeltmeler,
+        "alan_duzeltmeleri": alan_duzeltmeleri,
+        "dogrulama": dogrulama,
+        "skor": skor,
+    }
+
+
 def banka_bul(text):
     if not text:
         return None
