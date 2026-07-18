@@ -106,17 +106,29 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     yemek = data.get("yemek_ceki", 0) or 0
     iade = data.get("iadeler", 0) or 0
     musteri = data.get("firma_adi", "") or data.get("mukellef_adi", "") or "Müşteri"
+    brut = data.get("brut", 0) or 0
+
+    # Z raporundan KDV hesapla: Brüt (KDV dahil) - Net (KDV hariç) = KDV
+    z_toplam_kdv = round(brut - net_toplam, 2) if brut > 0 and net_toplam > 0 else 0
+    z_kdv_orani = round((z_toplam_kdv / net_toplam * 100), 0) if net_toplam > 0 else 20
 
     # Ürün bazlı satışlar
     urunler = data.get("urunler", [])
     if urunler:
+        toplam_urun_tutari = sum(u.get("tutar", 0) or 0 for u in urunler)
+        toplam_urun_kdv = 0
+
         for u in urunler:
             urun_adi = u.get("urun", "Ürün")
             tutar = u.get("tutar", 0) or 0
             kdv_orani = u.get("oran", 0) or 0
-            matrah = round(tutar / (1 + kdv_orani / 100), 2) if kdv_orani > 0 else tutar
-            kdv = round(tutar - matrah, 2) if kdv_orani > 0 else 0
-            # Satış hesap kodu
+            if kdv_orani > 0:
+                matrah = round(tutar / (1 + kdv_orani / 100), 2)
+                kdv = round(tutar - matrah, 2)
+            else:
+                matrah = tutar
+                kdv = 0
+            toplam_urun_kdv += kdv
             satis_kod = "satis_" + str(kdv_orani)
             hesap_kodu = hesap_kodlari.get(satis_kod, hesap_kodlari.get("satis_20", "600.04"))
             satis_idx = len(rows)
@@ -126,16 +138,12 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
                 kdv_hk = hesap_kodlari.get(kdv_kod, hesap_kodlari.get("kdv_20", "391.04"))
                 rows.append(satir(kdv_hk, f"KDV %{kdv_orani} - {urun_adi} - {musteri}", 0, kdv))
 
-            # Ürün kodundan hesap kodu & KDV
             if urun_kodlari:
                 eslesme = urun_kodu_bul(urun_kodlari, urun_adi)
                 if eslesme:
                     urun_kodu = eslesme.get("hesap_kodu", "")
                     rows[satis_idx]["Hesap Kodu"] = urun_kodu
-        # Tahsilat
-        toplam_tutar = sum(u.get("tutar", 0) or 0 for u in urunler)
-        if net_toplam > 0 and abs(net_toplam - toplam_tutar) > 0.01:
-            toplam_tutar = net_toplam
+
         if iade > 0:
             _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
             rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
@@ -150,6 +158,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     # Ürün yok - klasik toplu muhasebe
     kdv_kalemleri = data.get("kdv_kalemleri", [])
     if kdv_kalemleri:
+        toplam_kalemden_kdv = sum(kv.get("kdv_tutari", 0) or 0 for kv in kdv_kalemleri)
         for kv in kdv_kalemleri:
             oran = kv.get("oran", 0)
             matrah = kv.get("matrah", 0) or 0
@@ -170,15 +179,13 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
             rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
         return rows
 
-    # En basit: tek satır satış
+    # En basit: tek satır satış - Z raporu değerlerini doğrudan kullan
     if net_toplam <= 0 and nakit <= 0 and kk <= 0 and yemek <= 0:
         return rows
+
     rows.append(satir("600.04", f"Z Raporu Satış - {musteri}", 0, net_toplam))
-    brutt = data.get("brut", 0) or 0
-    if brutt > 0 and brutt != net_toplam:
-        kdv = round(brutt - net_toplam, 2)
-        if kdv > 0:
-            rows.append(satir("391.04", f"KDV %20 - {musteri}", 0, kdv))
+    if z_toplam_kdv > 0:
+        rows.append(satir("391.04", f"KDV %{int(z_kdv_orani)} - {musteri}", 0, z_toplam_kdv))
     _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
     if nakit > 0:
         rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
