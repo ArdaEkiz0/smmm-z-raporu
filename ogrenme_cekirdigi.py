@@ -362,8 +362,15 @@ def gecmis_temizle(gun_limiti: int = 365):
 
 
 def mevcut_sozlukleri_birlestir():
-    """Eski dosya tabanli sozlukleri yeni sisteme birlestir (migration)."""
+    """Eski dosya tabanli sozlukleri yeni sisteme birlestir (migration).
+    Her kayit sadece bir kez import edilir; tekrar import onlenir.
+    """
     from ocr import ogrenilen_sozluk, duzeltme_sozlugu
+    db = ogrenme_db_yukle()
+    import_edildi = db.get("istatistik", {}).get("migration_import", False)
+    if import_edildi:
+        log.info("Sozluk migration zaten yapilmis, atlaniyor")
+        return
 
     eski_ogrenilen = ogrenilen_sozluk()
     for yanlis, dogru in eski_ogrenilen.items():
@@ -372,3 +379,75 @@ def mevcut_sozlukleri_birlestir():
     eski_duzeltme = duzeltme_sozlugu()
     for yanlis, dogru in eski_duzeltme.items():
         duzeltme_kaydet(yanlis, dogru, kaynak="migration_sozluk")
+
+    db = ogrenme_db_yukle()
+    db["istatistik"]["migration_import"] = True
+    ogrenme_db_kaydet(db)
+    log.info(f"Sozluk migration tamam: {len(eski_ogrenilen)} ogrenilen + {len(eski_duzeltme)} duzeltme")
+
+
+def duzeltme_reddet(key: str):
+    """Bir duzeltmeyi reddet: sayac dustur, red sayisini artir.
+    Uc kez reddedilen duzeltme otomatik silinir.
+    """
+    if not key:
+        return False
+    db = ogrenme_db_yukle()
+    nkey = _normalize_key(key)
+    if nkey not in db["sozluk"]:
+        return False
+    kayit = db["sozluk"][nkey]
+    kayit["sayac"] = max(0, kayit.get("sayac", 1) - 2)
+    kayit["son"] = datetime.now().isoformat()
+    db["istatistik"]["reddedilen"] = db["istatistik"].get("reddedilen", 0) + 1
+    red_sayisi = db["istatistik"]["reddedilen"]
+    if kayit["sayac"] <= 0 or red_sayisi > kayit.get("sayac", 0):
+        del db["sozluk"][nkey]
+    ogrenme_db_kaydet(db)
+    return True
+
+
+def duzeltme_listesi(siralama: str = "guven", limit: int = 50) -> List[dict]:
+    """Ogrenilen duzeltmelerin listesi.
+    siralama: 'guven' (varsayilan), 'tarih', 'sayac'
+    """
+    db = ogrenme_db_yukle()
+    entries = []
+    for key, kayit in db.get("sozluk", {}).items():
+        guven = _guven_hesapla(kayit)
+        entries.append({
+            "key": key,
+            "dogru": kayit.get("dogru", ""),
+            "guven": round(guven, 3),
+            "sayac": kayit.get("sayac", 0),
+            "son": kayit.get("son", ""),
+            "alanlar": list(kayit.get("alanlar", {}).keys()),
+            "kaynaklar": kayit.get("kaynaklar", {}),
+        })
+    if siralama == "tarih":
+        entries.sort(key=lambda x: x.get("son", ""), reverse=True)
+    elif siralama == "sayac":
+        entries.sort(key=lambda x: x.get("sayac", 0), reverse=True)
+    else:
+        entries.sort(key=lambda x: x.get("guven", 0), reverse=True)
+    return entries[:limit]
+
+
+def alan_duzeltme_listesi(limit: int = 30) -> List[dict]:
+    """Alan bazli duzeltmelerin listesi."""
+    db = ogrenme_db_yukle()
+    entries = []
+    for key, kayit in db.get("alan_duzeltme", {}).items():
+        sayac = kayit.get("sayac", 0)
+        guven = min(1.0, sayac / (sayac + 1.5))
+        entries.append({
+            "key": key,
+            "alan": kayit.get("alan", ""),
+            "yanlis": kayit.get("yanlis", ""),
+            "dogru": kayit.get("dogru", ""),
+            "guven": round(guven, 3),
+            "sayac": sayac,
+            "son": kayit.get("son", ""),
+        })
+    entries.sort(key=lambda x: x.get("guven", 0), reverse=True)
+    return entries[:limit]

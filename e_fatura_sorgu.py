@@ -12,6 +12,7 @@ import time
 from typing import Optional, Dict, List, Tuple
 
 from config import NILVERA_FILE
+from utils import log
 
 
 def nilvera_config_yukle() -> Dict:
@@ -21,7 +22,7 @@ def nilvera_config_yukle() -> Dict:
             with open(NILVERA_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
-            pass
+            log.warning("Nilvera config yukleme hatasi", exc_info=True)
     return {"api_key": "", "base_url": "https://api.nilvera.com", "aktif": False}
 
 
@@ -357,6 +358,133 @@ def nilvera_earsiv_indir(fatura_id: str, kayit_klasoru: str = None, timeout: flo
     return sonuc
 
 
+def nilvera_fatura_olustur(fatura_veri: Dict, timeout: float = 30.0) -> Dict:
+    """Nilvera üzerinden e-fatura/e-arşiv oluştur.
+    fatura_veri: {
+        "faturaTipi": "Earsiv" | "Efatura",
+        "gonderenVkn": "VKN",
+        "aliciVkn": "VKN",
+        "aliciUnvani": "Firma Adı",
+        "tarih": "YYYY-MM-DD",
+        "paraBirimi": "TRY",
+        "kalemler": [{"aciklama": "...", "miktar": 1, "birimFiyat": 100, "kdvOrani": 20, "tutar": 120}],
+        "toplamTutar": 120,
+        "kdvToplami": 20,
+        "genelToplam": 140,
+    }
+    Returns: {"fatura_id": str, "hata": str|None}
+    """
+    config = nilvera_config_yukle()
+    sonuc = {"fatura_id": None, "hata": None}
+
+    if not config.get("api_key"):
+        sonuc["hata"] = "Nilvera API anahtarı tanımlı değil"
+        return sonuc
+
+    try:
+        import requests
+        base_url = config.get("base_url", "https://api.nilvera.com").rstrip("/")
+        headers = {
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+            "User-Agent": "SMMM-Z-Raporu/1.0",
+        }
+
+        url = f"{base_url}/Fatura"
+        r = requests.post(url, headers=headers, json=fatura_veri, timeout=timeout)
+
+        if r.status_code in (200, 201):
+            data = r.json()
+            sonuc["fatura_id"] = data.get("faturaId") or data.get("id") or data.get("uuid")
+        elif r.status_code == 401:
+            sonuc["hata"] = "Nilvera API anahtarı geçersiz"
+        elif r.status_code == 400:
+            sonuc["hata"] = f"Geçersiz fatura verisi: {r.text[:200]}"
+        else:
+            sonuc["hata"] = f"Nilvera API hata: {r.status_code} - {r.text[:200]}"
+    except Exception as e:
+        sonuc["hata"] = str(e)[:200]
+
+    return sonuc
+
+
+def nilvera_fatura_gonder(fatura_id: str, timeout: float = 30.0) -> Dict:
+    """Nilvera üzerinden fatura oluştur ve GİB'e gönder.
+    Returns: {"basarili": bool, "durum": str, "hata": str|None}
+    """
+    config = nilvera_config_yukle()
+    sonuc = {"basarili": False, "durum": "", "hata": None}
+
+    if not config.get("api_key"):
+        sonuc["hata"] = "Nilvera API anahtarı tanımlı değil"
+        return sonuc
+
+    try:
+        import requests
+        base_url = config.get("base_url", "https://api.nilvera.com").rstrip("/")
+        headers = {
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+            "User-Agent": "SMMM-Z-Raporu/1.0",
+        }
+
+        url = f"{base_url}/Fatura/{fatura_id}/Gonder"
+        r = requests.post(url, headers=headers, timeout=timeout)
+
+        if r.status_code == 200:
+            data = r.json()
+            sonuc["basarili"] = True
+            sonuc["durum"] = data.get("durum", "Gönderildi")
+        elif r.status_code == 401:
+            sonuc["hata"] = "Nilvera API anahtarı geçersiz"
+        elif r.status_code == 404:
+            sonuc["hata"] = f"Fatura bulunamadı: {fatura_id}"
+        else:
+            sonuc["hata"] = f"Nilvera API hata: {r.status_code} - {r.text[:200]}"
+    except Exception as e:
+        sonuc["hata"] = str(e)[:200]
+
+    return sonuc
+
+
+def nilvera_fatura_iptal(fatura_id: str, aciklama: str = "", timeout: float = 30.0) -> Dict:
+    """Nilvera üzerinden fatura iptal et.
+    Returns: {"basarili": bool, "hata": str|None}
+    """
+    config = nilvera_config_yukle()
+    sonuc = {"basarili": False, "hata": None}
+
+    if not config.get("api_key"):
+        sonuc["hata"] = "Nilvera API anahtarı tanımlı değil"
+        return sonuc
+
+    try:
+        import requests
+        base_url = config.get("base_url", "https://api.nilvera.com").rstrip("/")
+        headers = {
+            "Authorization": f"Bearer {config['api_key']}",
+            "Content-Type": "application/json",
+            "User-Agent": "SMMM-Z-Raporu/1.0",
+        }
+
+        url = f"{base_url}/Fatura/{fatura_id}/Iptal"
+        payload = {"aciklama": aciklama} if aciklama else {}
+        r = requests.post(url, headers=headers, json=payload, timeout=timeout)
+
+        if r.status_code == 200:
+            sonuc["basarili"] = True
+        elif r.status_code == 401:
+            sonuc["hata"] = "Nilvera API anahtarı geçersiz"
+        elif r.status_code == 404:
+            sonuc["hata"] = f"Fatura bulunamadı: {fatura_id}"
+        else:
+            sonuc["hata"] = f"Nilvera API hata: {r.status_code} - {r.text[:200]}"
+    except Exception as e:
+        sonuc["hata"] = str(e)[:200]
+
+    return sonuc
+
+
 def nilvera_ozet(sonuc: Dict) -> str:
     """Nilvera sorgu sonucunu kullanici dostu stringe cevir."""
     if sonuc.get("hata"):
@@ -373,3 +501,25 @@ def nilvera_ozet(sonuc: Dict) -> str:
     if sonuc.get("adi_soyadi") and not sonuc.get("unvan"):
         parts.append(f"({sonuc['adi_soyadi']})")
     return " | ".join(parts)
+
+
+def earsiv_pdf_temizle(en_fazla_gun: int = 30):
+    """earsiv_faturalar/ klasorunde en_fazla_gun'den eski PDF'leri sil."""
+    import glob
+    from datetime import datetime, timedelta
+    kayit_klasoru = os.path.join(os.path.dirname(os.path.abspath(__file__)), "earsiv_faturalar")
+    if not os.path.exists(kayit_klasoru):
+        return 0
+    sinir = datetime.now() - timedelta(days=en_fazla_gun)
+    silinen = 0
+    for f in glob.glob(os.path.join(kayit_klasoru, "earsiv_*.pdf")):
+        try:
+            mtime = datetime.fromtimestamp(os.path.getmtime(f))
+            if mtime < sinir:
+                os.remove(f)
+                silinen += 1
+        except Exception:
+            log.warning("Eski earsiv PDF silinemedi", exc_info=True)
+    if silinen > 0:
+        log.info(f"{silinen} eski earsiv PDF temizlendi")
+    return silinen

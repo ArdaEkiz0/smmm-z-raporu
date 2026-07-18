@@ -4,6 +4,7 @@ Termal yazici ciktilarinda (Z raporlari) zaten text var.
 Once metni cikar, kaliteli ise direkt parse et; yoksa OCR'a dus.
 """
 from typing import Tuple, List, Optional
+from utils import log
 
 
 def pdf_sayfalarini_ayir(pdf_bytes: bytes) -> List[bytes]:
@@ -24,6 +25,7 @@ def pdf_sayfalarini_ayir(pdf_bytes: bytes) -> List[bytes]:
             sayfalar.append(buf.getvalue())
         return sayfalar
     except Exception:
+        log.warning("PDF sayfa ayirma basarisiz", exc_info=True)
         return []
 
 
@@ -41,6 +43,7 @@ def pdf_text_cikar(pdf_bytes: bytes) -> Tuple[str, float]:
             try:
                 tum_text += sayfa.extract_text() + "\n"
             except Exception:
+                log.warning("PDF sayfa text cikarma basarisiz", exc_info=True)
                 continue
 
         if not tum_text.strip():
@@ -49,6 +52,7 @@ def pdf_text_cikar(pdf_bytes: bytes) -> Tuple[str, float]:
         kalite = _pdf_kalite_skorla(tum_text)
         return tum_text, kalite
     except Exception:
+        log.warning("PDF text cikarma basarisiz", exc_info=True)
         return "", 0.0
 
 
@@ -99,4 +103,5 @@ def pdf_sayfa_sayisi(pdf_bytes: bytes) -> int:
         reader = pypdf.PdfReader(BytesIO(pdf_bytes))
         return len(reader.pages)
     except Exception:
+        log.warning("PDF sayfa sayisi alinamadi", exc_info=True)
         return 0

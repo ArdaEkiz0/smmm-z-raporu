@@ -170,6 +170,21 @@ def _page_z_raporu_yukle(hesap_kodlari):
             toplam_sure_list = [0.0]
             all_results = [None] * toplam
 
+            def _ocr_duzelt_ve_ogren(ocr_text):
+                """Gen 2 ogrenme pipeline: auto-duzeltme + alan duzeltme + geri besleme."""
+                from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
+                duzeltilmis, duzeltmeler = auto_duzeltme_uygula(ocr_text)
+                parsed = parse_z_raporu(duzeltilmis)
+                parsed, _alan_duzeltmeleri = alan_duzeltme_uygula(parsed)
+                for d in duzeltmeler:
+                    if d.get("uygulandi"):
+                        from ogrenme_cekirdigi import duzeltme_kaydet
+                        duzeltme_kaydet(d["yanlis"], d["dogru"], alan_adi="", kaynak="otomatik")
+                ogr_alanlari_uygula(parsed)
+                if not parsed.get("ham_text"):
+                    parsed["ham_text"] = ocr_text
+                return parsed
+
             def _tek_ocr(idx, fname, data):
                 t0 = _time.time()
                 try:
@@ -190,8 +205,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         pages = convert_from_bytes(data, dpi=300)
                         for pi, page in enumerate(pages):
                             ocr_text = ocr_gorsel_isle_cached(page.convert("RGB"))
-                            parsed = parse_z_raporu(ocr_text)
-                            ogr_alanlari_uygula(parsed)
+                            parsed = _ocr_duzelt_ve_ogren(ocr_text)
                             parsed["filename"] = f"{fname} - Syf {pi+1}"
                             parsed["ocr_text"] = ocr_text
                             parsed["mukellef_adi"] = ""
@@ -201,8 +215,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     else:
                         img = Image.open(io.BytesIO(data))
                         ocr_text = ocr_gorsel_isle_cached(img)
-                        parsed = parse_z_raporu(ocr_text)
-                        ogr_alanlari_uygula(parsed)
+                        parsed = _ocr_duzelt_ve_ogren(ocr_text)
                         parsed["filename"] = fname
                         parsed["ocr_text"] = ocr_text
                         parsed["mukellef_adi"] = ""
@@ -294,7 +307,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     except Exception:
                         r["confidence"] = 50.0
         except ImportError:
-            pass
+            log.warning("ocr_dogrulama modulu yuklenemedi, guven skoru atlanacak", exc_info=True)
 
         siralama = st.selectbox("Sıralama", ["📁 Dosya Adı", "⬆️ Güven Düşükten Yükseğe", "⬇️ Güven Yüksekten Düşüğe"], key="sonuc_siralama")
         if "Güven" in siralama:
@@ -743,9 +756,11 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
         st.divider()
         if st.button("Geçmişe Kaydet", type="primary", use_container_width=True, key="gecmis_kaydet_btn"):
+            kayit_basarili = True
             try:
                 gecmis_kaydet(results, hesap_kodlari, st.session_state.get("secili_mukellef", ""))
             except Exception as e:
+                kayit_basarili = False
                 log.error(f"Gecmis kaydedilemedi: {e}")
             try:
                 kdv_ogren(results, st.session_state.urun_kodlari)
@@ -765,9 +780,12 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 otomatik_yedekle()
             except Exception as e:
                 log.error(f"Otomatik yedek hatası: {e}")
-            st.session_state.pop("results", None)
-            st.session_state.pop("processed", None)
-            st.success("Düzenlenen veriler geçmişe kaydedildi!")
+            if kayit_basarili:
+                st.session_state.pop("results", None)
+                st.session_state.pop("processed", None)
+                st.success("Düzenlenen veriler geçmişe kaydedildi!")
+            else:
+                st.error("Kayıt sırasında hata oluştu, veriler korundu.")
             st.rerun()
 
         with st.expander("OCR Ham Metinler"):
@@ -959,14 +977,26 @@ def _page_dashboard():
     st.divider()
     st.subheader("OCR Öğrenme Sistemi")
     try:
-        from ogrenme_cekirdigi import istatistik_raporu
+        from ogrenme_cekirdigi import istatistik_raporu, duzeltme_listesi, duzeltme_reddet
         rapor = istatistik_raporu()
         if rapor["toplam_kayit"] > 0:
             col_o1, col_o2, col_o3 = st.columns(3)
             col_o1.metric("Öğrenilen Düzeltme", rapor["toplam_kayit"])
             col_o2.metric("Yüksek Güvenli", rapor["yuksek_guven"])
             col_o3.metric("Toplam Uygulama", rapor["istatistik"]["auto_uygulanan"])
-            st.caption(f"Sistem {rapor['toplam_duzeltme_sayisi']} düzeltme deneyimiyle {rapor['yuksek_guven']} yüksek güvenli kural öğrendi.")
+            st.caption(f"Sistem {rapor['toplam_duzeltme_sayisi']} düzeltme deneyimiyle {rapor['yuksek_guven']} yüksek güvenli kural öğrendi. "
+                       f"Reddedilen: {rapor['istatistik'].get('reddedilen', 0)}")
+
+            with st.expander("Öğrenilen Düzeltmeleri Yönet", expanded=False):
+                liste = duzeltme_listesi(siralama="guven", limit=50)
+                for item in liste:
+                    c1, c2, c3, c4 = st.columns([3, 2, 1, 1])
+                    c1.caption(f"`{item['key']}`")
+                    c2.success(f"→ {item['dogru']}")
+                    c3.metric("Güven", f"%{item['guven']*100:.0f}")
+                    if item["guven"] < 0.75 and st.button("Reddet", key=f"red_{item['key']}"):
+                        duzeltme_reddet(item["key"])
+                        st.rerun()
         else:
             st.caption("Henüz öğrenme verisi yok. Fiş düzelttikçe sistem otomatik öğrenir.")
     except ImportError:
@@ -1059,10 +1089,27 @@ def _page_fis_gecmisi(hesap_kodlari):
                             "iadeler": yeni_iade,
                         }
                         if fis_guncelle(secim_duzelt, yeni_veriler):
-                            st.success("Fiş güncellendi!")
+                            ogrenme_mesajlari = []
+                            for alan, eski, yeni in [
+                                ("tarih", secim_duzelt.get("tarih", ""), yeni_tarih),
+                                ("brut", str(secim_duzelt.get("brut", 0)), str(yeni_brut)),
+                                ("net_toplam", str(secim_duzelt.get("net_toplam", 0)), str(yeni_net)),
+                                ("nakit", str(secim_duzelt.get("nakit", 0)), str(yeni_nakit)),
+                                ("kredi_karti", str(secim_duzelt.get("kredi_karti", 0)), str(yeni_kk)),
+                                ("iadeler", str(secim_duzelt.get("iadeler", 0)), str(yeni_iade)),
+                            ]:
+                                if str(eski) != str(yeni) and eski and yeni:
+                                    from ogrenme_cekirdigi import duzeltme_kaydet, alan_duzeltme_kaydet
+                                    ogr_metin = ogrenci_alan_bul(secim_duzelt.get("ocr_text", ""), alan, str(yeni))
+                                    if ogr_metin:
+                                        duzeltme_kaydet(ogr_metin, str(yeni), alan_adi=alan, kaynak="manuel")
+                                        alan_duzeltme_kaydet(alan, str(eski), str(yeni), kaynak="manuel")
+                                        ogrenme_mesajlari.append(f"{alan}: '{ogr_metin}' → '{yeni}'")
+                            if ogrenme_mesajlari:
+                                st.success(f"Fiş güncellendi ve {len(ogrenme_mesajlari)} düzeltme öğrenildi!")
+                            else:
+                                st.success("Fiş güncellendi!")
                             st.rerun()
-                        else:
-                            st.error("Güncelleme başarısız oldu.")
 
             df = pd.DataFrame([{
                 "Tarih": f.get("tarih", "?"), "Z No": f.get("z_no", "?"),
@@ -1637,63 +1684,124 @@ def _page_beyanname_takvimi():
     st.header("Beyanname Takvimi")
     st.caption("KDV, Muhtasar, BA-BS, Geçici Vergi, Gelir/Kurumlar Vergisi tarihleri")
 
-    col_f1, col_f2, col_f3 = st.columns(3)
+    col_f1, col_f2 = st.columns(2)
     with col_f1:
         st.metric("Bugün", datetime.now().strftime("%d.%m.%Y"))
     with col_f2:
-        st.metric("Yaklaşan (30 gün)", "—")
-    with col_f3:
-        if st.button("📧 Email Gönder", use_container_width=True, key="by_email"):
-            try:
-                from veritabani import email_gonder
-                yaklasan = yaklasan_beyannameler(datetime.now(), 30)
-                konu, icerik = email_icerik_olustur(yaklasan)
-                basarili = email_gonder(konu, icerik)
-                if basarili:
-                    st.success("Email gönderildi!")
+        yaklasan_30 = yaklasan_beyannameler(datetime.now(), 30)
+        kritik_sayisi = len([b for b in yaklasan_30 if b["kalan_gun"] <= 3])
+        if kritik_sayisi > 0:
+            st.metric("⚠️ Kritik (≤3 gün)", f"{kritik_sayisi} beyanname")
+        else:
+            st.metric("Yaklaşan (30 gün)", f"{len(yaklasan_30)} beyanname")
+
+    st.divider()
+
+    tab_takvim, tab_email = st.tabs(["📅 Takvim", "📧 Email Bildirim"])
+
+    with tab_takvim:
+        yaklasan = yaklasan_beyannameler(datetime.now(), 60)
+
+        st.subheader("Yaklaşan Beyannameler (60 gün)")
+        if not yaklasan:
+            st.info("Yaklaşan 60 gün içinde beyanname yok.")
+        else:
+            cols = st.columns(min(len(yaklasan), 3))
+            for i, b in enumerate(yaklasan):
+                with cols[i % 3]:
+                    with st.container():
+                        if b["kalan_gun"] < 0:
+                            st.error(f"**{b['ad']}**")
+                        elif b["kalan_gun"] <= 3:
+                            st.warning(f"**{b['ad']}**")
+                        else:
+                            st.info(f"**{b['ad']}**")
+                        st.write(f"📅 {b['tarih']}")
+                        st.write(b["kalan_text"])
+                        st.caption(b["aciklama"])
+
+        st.divider()
+        st.subheader("Tüm Beyannameler")
+        tum_veri = []
+        for kod, info in BEYANNAMELER.items():
+            tarih = beyanname_tarihi_hesapla(kod, datetime.now())
+            tarih_sonraki = beyanname_tarihi_hesapla(kod, datetime.now() + timedelta(days=120))
+            tum_veri.append({
+                "Beyanname": info["ad"],
+                "Kod": kod,
+                "Dönem": info["donem"].capitalize(),
+                "Son Gün": tarih.strftime("%d.%m.%Y") if tarih else "-",
+                "Sonraki Dönem": tarih_sonraki.strftime("%d.%m.%Y") if tarih_sonraki else "-",
+                "Açıklama": info["aciklama"],
+            })
+        df = pd.DataFrame(tum_veri)
+        st.dataframe(df, width="stretch", hide_index=True)
+
+    with tab_email:
+        st.subheader("Email Bildirim Ayarları")
+        email_config = dosya_oku(EMAIL_FILE, {})
+
+        with st.form("email_ayarlar_form", clear_on_submit=False):
+            smtp_server = st.text_input("SMTP Sunucu", value=email_config.get("smtp_server", "smtp.gmail.com"), key="smtp_server")
+            smtp_port = st.number_input("SMTP Port", value=int(email_config.get("port", 587)), key="smtp_port")
+            gonderen = st.text_input("Gönderen Email", value=email_config.get("gonderen", ""), placeholder="ornek@gmail.com", key="gonderen_email")
+            sifre = st.text_input("Uygulama Şifresi", value=email_config.get("sifre", ""), type="password", key="sifre_email",
+                                  help="Gmail için: google.com/account > Güvenlik > Uygulama şifreleri")
+            alici = st.text_input("Alıcı Email (opsiyonel)", value=email_config.get("alici", ""), placeholder="Gönderen ile aynı ise boş bırakın", key="alici_email")
+
+            if st.form_submit_button("💾 Email Ayarlarını Kaydet", type="primary", use_container_width=True):
+                yeni_config = {
+                    "smtp_server": smtp_server,
+                    "port": int(smtp_port),
+                    "gonderen": gonderen,
+                    "sifre": sifre,
+                    "alici": alici or gonderen,
+                }
+                dosya_yaz(EMAIL_FILE, yeni_config)
+                st.success("Email ayarları kaydedildi!")
+                st.rerun()
+
+        st.divider()
+        st.subheader("Manuel Email Gönderimi")
+
+        yaklasan = yaklasan_beyannameler(datetime.now(), 30)
+        if yaklasan:
+            konu, icerik = email_icerik_olustur(yaklasan)
+            with st.expander("📧 Email İçeriği Önizleme", expanded=False):
+                st.text_area("Konu", value=konu, disabled=True, key="onizleme_konu")
+                st.text_area("İçerik", value=icerik, disabled=True, height=200, key="onizleme_icerik")
+
+            if st.button("📧 Email Gönder", type="primary", use_container_width=True, key="by_email_gonder"):
+                if not email_config.get("gonderen") or not email_config.get("sifre"):
+                    st.warning("⚠️ Email ayarları yapılandırılmamış. Önce yukarıdaki formu doldurun.")
                 else:
-                    st.warning("Email gönderilemedi. Ayarlar'dan SMTP yapılandırın.")
-            except Exception as e:
-                st.error(f"Email hatası: {e}")
-
-    st.divider()
-
-    yaklasan = yaklasan_beyannameler(datetime.now(), 60)
-
-    st.subheader("Yaklaşan Beyannameler (60 gün)")
-    if not yaklasan:
-        st.info("Yaklaşan 60 gün içinde beyanname yok.")
-    else:
-        cols = st.columns(min(len(yaklasan), 3))
-        for i, b in enumerate(yaklasan):
-            with cols[i % 3]:
-                with st.container():
-                    if b["kalan_gun"] < 0:
-                        st.error(f"**{b['ad']}**")
-                    elif b["kalan_gun"] <= 3:
-                        st.warning(f"**{b['ad']}**")
+                    with st.spinner("Email gönderiliyor..."):
+                        from veritabani import email_gonder
+                        basarili = email_gonder(konu, icerik)
+                    if basarili:
+                        st.success("✅ Email gönderildi!")
                     else:
-                        st.info(f"**{b['ad']}**")
-                    st.write(f"📅 {b['tarih']}")
-                    st.write(b["kalan_text"])
-                    st.caption(b["aciklama"])
+                        st.error("❌ Email gönderilemedi. SMTP ayarlarını kontrol edin.")
+        else:
+            st.info("Yaklaşan 30 gün içinde beyanname yok, email göndermeye gerek yok.")
 
-    st.divider()
-    st.subheader("Tüm Beyannameler")
-    tum_veri = []
-    for kod, info in BEYANNAMELER.items():
-        tarih = beyanname_tarihi_hesapla(kod, datetime.now())
-        tarih_sonraki = beyanname_tarihi_hesapla(kod, datetime.now() + timedelta(days=120))
-        tum_veri.append({
-            "Beyanname": info["ad"],
-            "Kod": kod,
-            "Dönem": info["donem"].capitalize(),
-            "Son Gün": tarih.strftime("%d.%m.%Y") if tarih else "-",
-            "Sonraki Dönem": tarih_sonraki.strftime("%d.%m.%Y") if tarih_sonraki else "-",
-            "Açıklama": info["aciklama"],
-        })
-    df = pd.DataFrame(tum_veri)
-    st.dataframe(df, width="stretch", hide_index=True)
+        st.divider()
+        st.subheader("Otomatik Hatırlatma Kuralları")
+        st.caption("Hangi günlerde hatırlatma emaili gönderilsin?")
+        kurallar = {
+            "T-7": "7 gün kala",
+            "T-3": "3 gün kala",
+            "T-1": "1 gün kala",
+            "T-0": "Bugün (son gün)",
+        }
+        secili_kurallar = {}
+        for k, v in kurallar.items():
+            secili_kurallar[k] = st.checkbox(v, value=True, key=f"kur_{k}")
+
+        if st.button("💾 Hatırlatma Kurallarını Kaydet", key="kural_kaydet"):
+            kural_config = {"hatirlatma_gunleri": [int(k.replace("T-", "")) if k != "T-0" else 0 for k, v in secili_kurallar.items() if v]}
+            dosya_yaz(os.path.join(DATA_DIR, "hatirlatma_kurallari.json"), kural_config)
+            st.success("Hatırlatma kuralları kaydedildi!")
 
 
 def _page_efatura_sorgu():
@@ -1704,6 +1812,7 @@ def _page_efatura_sorgu():
         nilvera_config_yukle, nilvera_config_kaydet,
         nilvera_sorgula, nilvera_toplu_sorgula, nilvera_fatura_listesi,
         nilvera_fatura_detay, nilvera_earsiv_indir, nilvera_ozet,
+        nilvera_fatura_olustur, nilvera_fatura_gonder, nilvera_fatura_iptal,
     )
 
     st.header("E-Fatura Mükellef Sorgu")
@@ -1829,32 +1938,133 @@ def _page_efatura_sorgu():
                         st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
 
             st.divider()
-            st.subheader("Fatura Listesi")
-            col_f1, col_f2, col_f3 = st.columns(3)
-            with col_f1:
-                fatura_vkn = st.text_input("VKN (boş = tümü)", key="nilvera_fatura_vkn")
-            with col_f2:
-                fatura_bas = st.date_input("Başlangıç", key="nilvera_fatura_bas")
-            with col_f3:
-                fatura_bit = st.date_input("Bitiş", key="nilvera_fatura_bit")
+            st.subheader("Fatura İşlemleri")
 
-            if st.button("📋 Fatura Listesi Getir", key="nilvera_fatura_listesi_btn"):
-                bas_str = fatura_bas.strftime("%Y-%m-%d") if fatura_bas else None
-                bit_str = fatura_bit.strftime("%Y-%m-%d") if fatura_bit else None
-                with st.spinner("Faturalar çekiliyor..."):
-                    sonuc = nilvera_fatura_listesi(
-                        vkn=fatura_vkn if fatura_vkn else None,
-                        baslangic=bas_str, bitis=bit_str,
-                    )
-                if sonuc.get("hata"):
-                    st.error(f"❌ {sonuc['hata']}")
-                elif sonuc.get("faturalar"):
-                    st.success(f"✅ {sonuc['toplam']} fatura bulundu")
-                    import pandas as pd
-                    df = pd.DataFrame(sonuc["faturalar"])
-                    st.dataframe(df, width="stretch", hide_index=True)
-                else:
-                    st.info("Sonuç bulunamadı.")
+            tab_liste, tab_olustur = st.tabs(["📋 Fatura Listesi", "➕ Yeni Fatura Oluştur"])
+
+            with tab_liste:
+                col_f1, col_f2, col_f3 = st.columns(3)
+                with col_f1:
+                    fatura_vkn = st.text_input("VKN (boş = tümü)", key="nilvera_fatura_vkn")
+                with col_f2:
+                    fatura_bas = st.date_input("Başlangıç", key="nilvera_fatura_bas")
+                with col_f3:
+                    fatura_bit = st.date_input("Bitiş", key="nilvera_fatura_bit")
+
+                if st.button("📋 Fatura Listesi Getir", key="nilvera_fatura_listesi_btn"):
+                    bas_str = fatura_bas.strftime("%Y-%m-%d") if fatura_bas else None
+                    bit_str = fatura_bit.strftime("%Y-%m-%d") if fatura_bit else None
+                    with st.spinner("Faturalar çekiliyor..."):
+                        sonuc = nilvera_fatura_listesi(
+                            vkn=fatura_vkn if fatura_vkn else None,
+                            baslangic=bas_str, bitis=bit_str,
+                        )
+                    if sonuc.get("hata"):
+                        st.error(f"❌ {sonuc['hata']}")
+                    elif sonuc.get("faturalar"):
+                        st.success(f"✅ {sonuc['toplam']} fatura bulundu")
+                        import pandas as pd
+                        df = pd.DataFrame(sonuc["faturalar"])
+                        st.dataframe(df, width="stretch", hide_index=True)
+
+                        fatura_id_secim = st.text_input("Fatura ID (işlem için)", key="fatura_id_secim")
+                        col_a, col_b, col_c = st.columns(3)
+                        with col_a:
+                            if st.button("📥 PDF İndir", key="fatura_pdf_indir") and fatura_id_secim:
+                                with st.spinner("İndiriliyor..."):
+                                    indir = nilvera_earsiv_indir(fatura_id_secim)
+                                if indir.get("dosya_yolu"):
+                                    st.success(f"İndirildi: {indir['dosya_yolu']}")
+                                else:
+                                    st.error(f"❌ {indir.get('hata', 'İndirme başarısız')}")
+                        with col_b:
+                            if st.button("📤 Gönder", key="fatura_gonder") and fatura_id_secim:
+                                with st.spinner("Gönderiliyor..."):
+                                    gonder = nilvera_fatura_gonder(fatura_id_secim)
+                                if gonder.get("basarili"):
+                                    st.success(f"Gönderildi! Durum: {gonder.get('durum')}")
+                                else:
+                                    st.error(f"❌ {gonder.get('hata', 'Gönderme başarısız')}")
+                        with col_c:
+                            if st.button("❌ İptal Et", key="fatura_iptal") and fatura_id_secim:
+                                with st.spinner("İptal ediliyor..."):
+                                    iptal = nilvera_fatura_iptal(fatura_id_secim)
+                                if iptal.get("basarili"):
+                                    st.success("Fatura iptal edildi!")
+                                else:
+                                    st.error(f"❌ {iptal.get('hata', 'İptal başarısız')}")
+                    else:
+                        st.info("Sonuç bulunamadı.")
+
+            with tab_olustur:
+                st.caption("Yeni e-arşiv veya e-fatura oluşturun")
+                with st.form("yeni_fatura_form", clear_on_submit=False):
+                    fatura_tipi = st.selectbox("Fatura Tipi", ["Earsiv", "Efatura"], key="fatura_tipi")
+                    gonderen_vkn = st.text_input("Sizin VKN'niz", key="gonderen_vkn")
+                    alici_vkn = st.text_input("Alıcı VKN", key="alici_vkn")
+                    alici_unvan = st.text_input("Alıcı Ünvanı", key="alici_unvan")
+                    fatura_tarih = st.date_input("Fatura Tarihi", key="fatura_tarih")
+                    para_birimi = st.selectbox("Para Birimi", ["TRY", "USD", "EUR"], key="para_birimi")
+
+                    st.markdown("**Fatura Kalemleri**")
+                    kalem_aciklama = st.text_input("Açıklama", placeholder="Mal/Hizmet açıklaması", key="kalem_aciklama")
+                    col_m1, col_m2, col_m3 = st.columns(3)
+                    with col_m1:
+                        kalem_miktar = st.number_input("Miktar", min_value=0.01, value=1.0, key="kalem_miktar")
+                    with col_m2:
+                        kalem_fiyat = st.number_input("Birim Fiyat", min_value=0.01, value=100.0, key="kalem_fiyat")
+                    with col_m3:
+                        kalem_kdv = st.selectbox("KDV %", [0, 1, 10, 20], index=3, key="kalem_kdv")
+
+                    kalem_tutar = kalem_miktar * kalem_fiyat
+                    kdv_tutari = round(kalem_tutar * kalem_kdv / 100, 2)
+                    genel_toplam = kalem_tutar + kdv_tutari
+
+                    col_t1, col_t2, col_t3 = st.columns(3)
+                    with col_t1:
+                        st.metric("Matrah", f"{kalem_tutar:,.2f} TL")
+                    with col_t2:
+                        st.metric("KDV", f"{kdv_tutari:,.2f} TL")
+                    with col_t3:
+                        st.metric("Genel Toplam", f"{genel_toplam:,.2f} TL")
+
+                    if st.form_submit_button("➕ Fatura Oluştur", type="primary", use_container_width=True):
+                        if not gonderen_vkn or not alici_vkn:
+                            st.error("VKN'ler zorunludur.")
+                        elif not vergi_no_dogrula(gonderen_vkn) or not vergi_no_dogrula(alici_vkn):
+                            st.error("Geçersiz VKN formatı.")
+                        else:
+                            fatura_veri = {
+                                "faturaTipi": fatura_tipi,
+                                "gonderenVkn": re.sub(r"\D", "", gonderen_vkn),
+                                "aliciVkn": re.sub(r"\D", "", alici_vkn),
+                                "aliciUnvani": alici_unvan,
+                                "tarih": fatura_tarih.strftime("%Y-%m-%d"),
+                                "paraBirimi": para_birimi,
+                                "kalemler": [{
+                                    "aciklama": kalem_aciklama or "Mal/Hizmet",
+                                    "miktar": kalem_miktar,
+                                    "birimFiyat": kalem_fiyat,
+                                    "kdvOrani": kalem_kdv,
+                                    "tutar": kalem_tutar,
+                                }],
+                                "toplamTutar": kalem_tutar,
+                                "kdvToplami": kdv_tutari,
+                                "genelToplam": genel_toplam,
+                            }
+                            with st.spinner("Fatura oluşturuluyor..."):
+                                sonuc = nilvera_fatura_olustur(fatura_veri)
+                            if sonuc.get("fatura_id"):
+                                st.success(f"Fatura oluşturuldu! ID: {sonuc['fatura_id']}")
+                                if st.button("📤 Hemen Gönder", key="yeni_fatura_gonder"):
+                                    with st.spinner("Gönderiliyor..."):
+                                        gonder = nilvera_fatura_gonder(sonuc["fatura_id"])
+                                    if gonder.get("basarili"):
+                                        st.success(f"Gönderildi! Durum: {gonder.get('durum')}")
+                                    else:
+                                        st.error(f"❌ {gonder.get('hata')}")
+                            else:
+                                st.error(f"❌ {sonuc.get('hata', 'Oluşturma başarısız')}")
 
     # ── TAB 3: Nilvera Ayarları ──
     with tab_ayarlar:

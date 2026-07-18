@@ -19,6 +19,7 @@ from veritabani import (
     mukellefler, gecmis_listele, tum_fisleri_yukle,
     otomatik_yedekle
 )
+from e_fatura_sorgu import earsiv_pdf_temizle
 from luca import (
     urun_kodlari_yukle, urun_kodlari_kaydet, varsayilan_kodlar
 )
@@ -32,6 +33,15 @@ from tema import tema_uygula, tema_degistirici
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("smmm")
+
+try:
+    from logging.handlers import RotatingFileHandler
+    _log_yolu = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smmm.log")
+    _rfh = RotatingFileHandler(_log_yolu, maxBytes=5*1024*1024, backupCount=3, encoding="utf-8")
+    _rfh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+    log.addHandler(_rfh)
+except Exception:
+    pass
 
 import traceback as _tb
 def _global_excepthook(exc_type, exc_value, exc_tb):
@@ -61,7 +71,7 @@ try:
     from ogrenme_cekirdigi import mevcut_sozlukleri_birlestir
     mevcut_sozlukleri_birlestir()
 except Exception:
-    pass
+    log.warning("Sozluk birlestirme hatasi", exc_info=True)
 
 def _mevcut_kullanici():
     """Session state'den aktif kullaniciyi al."""
@@ -116,7 +126,7 @@ def _login_ekrani_goster():
             toplam = len(kullanicilari_yukle())
             st.caption(f"💡 İlk kurulum: **{DEFAULT_ADMIN_USERNAME}** / **admin123** (kullanıcı sayısı: {toplam})")
         except Exception:
-            pass
+            log.warning("Kullanici sayisi gosterilemedi", exc_info=True)
 
         st.divider()
         if st.button("🔑 Şifremi Unuttum — Admin Şifresini Sıfırla", type="secondary", use_container_width=True, key="sifre_sifirla"):
@@ -142,6 +152,11 @@ tema_uygula()
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
+
+try:
+    earsiv_pdf_temizle(en_fazla_gun=30)
+except Exception:
+    pass
 
 st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
 st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek")

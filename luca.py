@@ -141,11 +141,13 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
             urun_adi = u.get("urun", "Ürün")
             tutar = u.get("tutar", 0) or 0
             kdv_orani = u.get("oran", 0) or 0
-            # Orantili matrah: urun tutari * oran_katsayisi
-            matrah = round(tutar * oran, 2)
+            # Z raporundaki tutar KDV DAHIL (brut) degerdir, icinden KDV'yi cikar
+            brüt_tutar = round(tutar * oran, 2)
             if kdv_orani > 0:
-                kdv = round(matrah * kdv_orani / 100, 2)
+                matrah = round(brüt_tutar / (1 + kdv_orani / 100), 2)
+                kdv = round(brüt_tutar - matrah, 2)
             else:
+                matrah = brüt_tutar
                 kdv = 0
             satis_kod = "satis_" + str(kdv_orani)
             hesap_kodu = hesap_kodlari.get(satis_kod, hesap_kodlari.get("satis_20", "600.04"))
@@ -167,13 +169,16 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
         urun_toplam_matrah = sum((r.get("Alacak", 0) or 0) for r in rows if "KDV" not in r.get("AÇIKLAMA", ""))
 
         # KDV farki varsa duzelt (son KDV satirini ayarla)
-        kdv_farki = round(z_toplam_kdv - urun_toplam_kdv, 2)
-        if abs(kdv_farki) > 0.01 and rows:
-            for r in reversed(rows):
-                if "KDV" in r.get("AÇIKLAMA", ""):
-                    eski_kdv = r.get("Alacak", 0) or 0
-                    r["Alacak"] = round(eski_kdv + kdv_farki, 2)
-                    break
+        # Z raporundan okunan KDV (z_toplam_kdv) gecerlise urun KDV'sini ona esle
+        # Z raporu KDV'si 0 ise (net okunamadi = net=brut), urun KDV'sini koru
+        if z_toplam_kdv > 0:
+            kdv_farki = round(z_toplam_kdv - urun_toplam_kdv, 2)
+            if abs(kdv_farki) > 0.01 and rows:
+                for r in reversed(rows):
+                    if "KDV" in r.get("AÇIKLAMA", ""):
+                        eski_kdv = r.get("Alacak", 0) or 0
+                        r["Alacak"] = round(eski_kdv + kdv_farki, 2)
+                        break
 
         _tahsilat_ekle(rows)
         return rows
@@ -277,9 +282,9 @@ th {{ background: #1a5276; color: white; }}
     return html_icerik
 
 
-def generate_excel(data_rows):
+def generate_excel(data_rows, ozet_satiri=True):
     from openpyxl import Workbook
-    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+    from openpyxl.styles import Font, Alignment, Border, Side, PatternFill, numbers
     wb = Workbook()
     ws = wb.active
     ws.title = "Z Raporlari"
@@ -292,13 +297,16 @@ def generate_excel(data_rows):
         return buf.getvalue()
 
     kolonlar = list(data_rows[0].keys())
-    # Remove extra columns
     for ek in ["Hesap Kodu", "Borç", "Alacak"]:
         if ek in kolonlar:
             kolonlar.remove(ek)
 
     header_font = Font(bold=True, color="FFFFFF", size=10)
     header_fill = PatternFill(start_color="1A5276", end_color="1A5276", fill_type="solid")
+    borc_fill = PatternFill(start_color="FADBD8", end_color="FADBD8", fill_type="solid")
+    alacak_fill = PatternFill(start_color="D5F5E3", end_color="D5F5E3", fill_type="solid")
+    toplam_font = Font(bold=True, size=10)
+    toplam_fill = PatternFill(start_color="D6EAF8", end_color="D6EAF8", fill_type="solid")
     thin_border = Border(
         left=Side(style='thin'), right=Side(style='thin'),
         top=Side(style='thin'), bottom=Side(style='thin')
@@ -311,11 +319,43 @@ def generate_excel(data_rows):
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
         cell.border = thin_border
 
+    borc_kolon_idx = None
+    alacak_kolon_idx = None
+    for ci, kolon_adi in enumerate(kolonlar):
+        if kolon_adi == "Borç":
+            borc_kolon_idx = ci
+        elif kolon_adi == "Alacak":
+            alacak_kolon_idx = ci
+
     for ri, row in enumerate(data_rows, 2):
         for ci, kolon_adi in enumerate(kolonlar, 1):
-            cell = ws.cell(row=ri, column=ci, value=row.get(kolon_adi, ""))
+            deger = row.get(kolon_adi, "")
+            cell = ws.cell(row=ri, column=ci, value=deger)
             cell.border = thin_border
             cell.alignment = Alignment(vertical="center", wrap_text=True)
+
+            if borc_kolon_idx is not None and ci - 1 == borc_kolon_idx and isinstance(deger, (int, float)) and deger > 0:
+                cell.fill = borc_fill
+            if alacak_kolon_idx is not None and ci - 1 == alacak_kolon_idx and isinstance(deger, (int, float)) and deger > 0:
+                cell.fill = alacak_fill
+
+    if ozet_satiri and data_rows:
+        toplam_satir = len(data_rows) + 2
+        ws.cell(row=toplam_satir, column=1, value="TOPLAM").font = toplam_font
+        ws.cell(row=toplam_satir, column=1).fill = toplam_fill
+        for ci in range(1, len(kolonlar) + 1):
+            ws.cell(row=toplam_satir, column=ci).border = thin_border
+            ws.cell(row=toplam_satir, column=ci).fill = toplam_fill
+            ws.cell(row=toplam_satir, column=ci).font = toplam_font
+
+        if borc_kolon_idx is not None:
+            toplam_borc = sum((r.get("Borç", 0) or 0) for r in data_rows)
+            cell = ws.cell(row=toplam_satir, column=borc_kolon_idx + 1, value=toplam_borc)
+            cell.number_format = '#,##0.00'
+        if alacak_kolon_idx is not None:
+            toplam_alacak = sum((r.get("Alacak", 0) or 0) for r in data_rows)
+            cell = ws.cell(row=toplam_satir, column=alacak_kolon_idx + 1, value=toplam_alacak)
+            cell.number_format = '#,##0.00'
 
     for col_idx in range(1, len(kolonlar) + 1):
         max_len = 0
@@ -444,6 +484,18 @@ def generate_basit_usul_excel(results, muk_bilgi, sablon_data=None):
 
     ws.auto_filter.ref = ws.dimensions
     ws.freeze_panes = "A2"
+
+    toplam_row_idx = ri + 1
+    ws.cell(row=toplam_row_idx, column=1, value="TOPLAM").font = Font(bold=True)
+    for ci in range(1, len(BASIT_USUL_KOLONLAR) + 1):
+        ws.cell(row=toplam_row_idx, column=ci).fill = PatternFill(start_color="D6EAF8", end_color="D6EAF8", fill_type="solid")
+        ws.cell(row=toplam_row_idx, column=ci).font = Font(bold=True)
+        ws.cell(row=toplam_row_idx, column=ci).border = thin_border
+
+    brut_kolon = BASIT_USUL_KOLONLAR.index("GENEL TOPLAM") + 1 if "GENEL TOPLAM" in BASIT_USUL_KOLONLAR else 29
+    toplam_brut = sum((r.get("brut", 0) or 0) for r in results if "error" not in r)
+    ws.cell(row=toplam_row_idx, column=brut_kolon, value=toplam_brut)
+
     buf = io.BytesIO()
     wb.save(buf)
     buf.seek(0)

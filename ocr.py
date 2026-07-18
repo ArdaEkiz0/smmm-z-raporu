@@ -29,7 +29,7 @@ def duzeltme_sozlugu():
         "KRED1": "KREDİ", "KRD1": "KREDİ", "KRDİ": "KREDİ",
         "KREĐI": "KREDİ", "KREĐİ": "KREDİ",
         "KAREKOD": "KAREKOD", "F1S": "FİS",
-        "FPTAL": "FİS İPTAL", "FŞ": "FİŞ", "Fİ$": "FİŞ",
+        "FPTAL": "İPTAL", "FŞ": "FİŞ", "Fİ$": "FİŞ",
         "TOPKDV": "TOPLAM KDV", "KDV MATRAH": "KDV MATRAHI",
         "MAL1YET": "MALİYET", "1ADELER": "İADELER",
         "ADELER": "İADELER", "ALACAK": "ALACAK",
@@ -145,12 +145,12 @@ def duzeltme_uygula(text):
         (r'\bKR[İI]D[İI]\b', 'KREDİ'),
         (r'\bKRE[DĐ][İI]\b', 'KREDİ'),
         (r'\bNAK[İI]T\b', 'NAKİT'),
-        (r'\b[Tİ]AR[İI]H[İI]?\b', 'TARİHİ'),
+        (r'\bT[İI]AR[İI]H[İI]?\b', 'TARİHİ'),
         (r'\b[ĞG][ÜU]N[ÜU]M[ÜU]Z\b', 'GÜNÜMÜZ'),
-        (r'\bD[ÖO]K[ÜU]M[ÜU]N\b', 'DOKUMUN'),
+        (r'\bD[ÖO]K[ÜU]M[ÜU]N\b', 'DÖKÜMÜN'),
         (r'\b[ÜU]R[ÜU]N\b', 'ÜRÜN'),
+        (r'\b[İI1]ADE[Ll][Ee][Rr]\b', 'İADELER'),
         (r'\b[İI1]A[DĐ]E[LŁ]?[İI]?\b', 'İADE'),
-        (r'\b[İI1]ADE[Ll][İI]?\b', 'İADELER'),
         (r'\bF[İI][ŞS]\b', 'FİŞ'),
         (r'\bF[İI]Ş[İI]?\b', 'FİŞ'),
         (r'\b[ĞG][ÜU]MR[ÜU]K\b', 'GÜMRÜK'),
@@ -168,6 +168,22 @@ def duzeltme_uygula(text):
         (r'TOPLAM\s+[S5](?=\d)', 'TOPLAM %'),
         (r'KDV\s+[S5](?=\d)', 'KDV %'),
         (r'\bMktr\b', '%'),
+        (r'\b[45][LŁ][45][CÇ][4A][K]\b', 'ALACAK'),
+        (r'\b[6G][4A][R8][4A][N][T7][İI]\b', 'GARANTİ'),
+        (r'\b[5S][4A][T7][İI][ŞS]\b', 'SATIŞ'),
+        (r'\bTAH[5S][1İI][LŁ][4A][T7]\b', 'TAHSİLAT'),
+        (r'\bKRED[İI][K][4A][R8][T7][İI]\b', 'KREDİ KARTI'),
+        (r'\bNAK[İI][T7][O0]D[E3][M][E3]\b', 'NAKİT ÖDEME'),
+        (r'\b[MN][ÜU][ŞS][T7][E3][R8][İI1]\b', 'MÜŞTERİ'),
+        (r'\b[İI1][ŞS][LŁ][E3][M]\b', 'İŞLEM'),
+        (r'\b[İI1][ŞS][Y][E3][R8][İI1]\b', 'İŞYERİ'),
+        (r'\bD[İI1][ĞG][E3][R8]\b', 'DİĞER'),
+        (r'\bB[İI1][M]\b', 'BİM'),
+        (r'\b[ŞS][O0][K]\b', 'ŞOK'),
+        (r'\bF[İI1][R8][M][4A]\b', 'FİRMA'),
+        (r'\bBEL[G6][E3]\s*NO\b', 'BELGE NO'),
+        (r'\b[T7][O0][P][LŁ][4A][M]\b', 'TOPLAM'),
+        (r'\b[O0][R8][T7][4A][K]\s*[LŁ][I1][ĞG][İI1]\b', 'ORTAKLIK'),
     ]
     for pat, repl in turkce_patterns:
         text = re.sub(pat, repl, text)
@@ -542,6 +558,32 @@ def easyocr_gorsel_isle(img):
         return ""
 
 
+def ocr_capraz_dogrula(tess_text, easy_text, tess_parsed, easy_parsed):
+    """Tesseract ve EasyOCR ciktilarini karsilastir, guven puani guncelle.
+    
+    Her iki motor ayni degeri bulduysa yuksek guven.
+    Farkli deger bulduysa dusuk guven, ogrenme sistemine bildir.
+    """
+    from ogrenme_cekirdigi import duzeltme_kaydet
+    karsilastir = [
+        ("brut", "brut"),
+        ("net_toplam", "net_toplam"),
+        ("nakit", "nakit"),
+        ("kredi_karti", "kredi_karti"),
+        ("iadeler", "iadeler"),
+    ]
+    for alan, _ in karsilastir:
+        tv = tess_parsed.get(alan, 0) or 0
+        ev = easy_parsed.get(alan, 0) or 0
+        if tv > 0 and ev > 0 and abs(tv - ev) < 0.01:
+            continue
+        if tv > 0 and ev > 0 and abs(tv - ev) > 100:
+            diff_note = f"{alan}: Tesseract={tv}, Easy={ev}"
+            log.info(f"OCR capraz fark: {diff_note}")
+            if tess_parsed.get("_kaynak") != "easyocr" and "tess" not in tess_parsed:
+                duzeltme_kaydet(str(tv), str(ev), alan_adi=alan, kaynak="otomatik")
+
+
 def ocr_gorsel_isle_hibrit(img):
     """Tesseract + EasyOCR hibrit: Tess yeterliyse EasyOCR'a gerek yok."""
     tess_text = ocr_image(img)
@@ -560,6 +602,11 @@ def ocr_gorsel_isle_hibrit(img):
         return tess_text
     easy_score = ocr_skorla(easy_text)
     easy_parsed = parse_z_raporu(easy_text)
+
+    try:
+        ocr_capraz_dogrula(tess_text, easy_text, tess_parsed, easy_parsed)
+    except Exception:
+        pass
 
     easy_kk = easy_parsed.get("kredi_karti", 0)
     if tess_kk == 0 and easy_kk > 0:
@@ -783,6 +830,22 @@ def ocr_duzelt(text):
     text = re.sub(r'\bNAKIT\s*B[İI]TL[İI]\b', 'NAKİT BEDELİ', text)
     text = re.sub(r'\bTEEKKK?R[FE]?D[FE]?R[Z]\b', 'TEŞEKKÜR EDERİZ', text)
     text = re.sub(r'\bT[FE]Ş[FE]KK[ÜU]R\s*[FE]D[FE]R[İI]Z\b', 'TEŞEKKÜR EDERİZ', text)
+    text = re.sub(r'\bT[E3][ŞS][E3]KK[UÜ][R]\s*[E3]D[E3][R][İI1][Z]\b', 'TEŞEKKÜR EDERİZ', text)
+    # TL varyasyonlari (TI, T1, Tl -> TL)
+    text = re.sub(r'(?<=\d)\s*[T][I1l](?=\s)', ' TL', text)
+    text = re.sub(r'(?<=\d)\s*[T][I1l]\b', ' TL', text)
+    text = re.sub(r'\bT[I1l](?=\s*\d)', 'TL', text)
+    # Karisik kart isimleri
+    text = re.sub(r'K[.]?\s*[K][Aa][Rr][Tt][I1ı]?\s*[İIı]?[lL]?[eE]?', 'K.KARTİ', text)
+    text = re.sub(r'\bKART[İI]\s*[İI][L][E]\b', 'KARTI İLE', text)
+    text = re.sub(r'\bNAK[İI][T7]\s*[İI][L][E]\b', 'NAKİT İLE', text)
+    # sayi karisikliklari
+    text = re.sub(r'(\d)[O0Ö]', r'\g<1>0', text)
+    text = re.sub(r'[O0Ö]([.,]\d)', r'0\g<1>', text)
+    text = re.sub(r'\b[S5](?=[.,]\d)', '5', text)
+    text = re.sub(r'(?<=\d)[S5]\b', '5', text)
+    text = re.sub(r'\b[B8](?=[.,]\d)', '8', text)
+    text = re.sub(r'(?<=\d)[B8]\b', '8', text)
     return text
 
 
@@ -924,6 +987,14 @@ def parse_z_raporu(text):
             if val > 0 and val < 100000:
                 sonuc["brut"] = val
 
+    # Z raporu: bagimsiz TOPLAM satiri (TOPLAM %1/%0/KDV olmayan)
+    if sonuc["brut"] == 0:
+        for m in re.finditer(r'TOPLAM\s*(?!%)\s*[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])', t_duz, re.IGNORECASE):
+            val_str = m.group(1).replace(" ", "")
+            val = parse_tutar(val_str)
+            if val > 100 and val < 100000:
+                sonuc["brut"] = val
+
     if sonuc["brut"] == 0:
         if sonuc["net_toplam"] > 0:
             sonuc["brut"] = sonuc["net_toplam"]
@@ -1042,7 +1113,7 @@ def parse_z_raporu(text):
                 tutar = parse_tutar(m.group(2)) if m.group(2) else 0
                 sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": 0, "kdv_tutari": tutar})
         except ValueError:
-            pass
+            log.warning("KDV blok parse hatasi", exc_info=True)
 
     # TOPLAM X1, X10, X20 KDV bloklari (Z raporu formatinda)
     # Ornek: "TOPLAM Zi *17. 864, 90" (Zi = Z1), "TOPKDV X1 *176, 91"
@@ -1058,7 +1129,7 @@ def parse_z_raporu(text):
                     if tutar > 0:
                         sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": tutar, "kdv_tutari": 0})
         except (ValueError, IndexError):
-            pass
+            log.warning("TOPLAM X-kdv parse hatasi", exc_info=True)
 
     # TOPKDV X1, X10, X20 (KDV tutarlari)
     topkdv_x_pat = r'TOPKDV\s*[XZ]\s*([Il1iO0]{1,2})\s*\*?\s*([\d][\d.,\s]*[\d.,])'
@@ -1075,7 +1146,7 @@ def parse_z_raporu(text):
                     else:
                         sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": 0, "kdv_tutari": tutar})
         except (ValueError, IndexError):
-            pass
+            log.warning("TOPKDV X-kdv parse hatasi", exc_info=True)
 
     # Ürün satırları (hem satir satir hem tek satirdan parse)
     satir_liste = t_duz.replace('\r', '\n').split("\n")
@@ -1223,22 +1294,37 @@ def parse_z_raporu(text):
 
     # Kredi Kartı
     kart_patterns = [
-        r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        # K. KARTI <count> [-] [*4] <amount> - OCR * isaretini 4 olarak okuyabilir, - isareti olabilir
+        r'K[\.\s]\s*KART[İIı]?\s+\d+\s*\-?\s*[\d]?\s*([\d][\d.,\s]*[\d.,])',
+        r'KRED[İI]?\s*KART[İIı]?\s+\d+\s*\-?\s*[\d]?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KART[İIı]?\s+\d+\s*\-?\s*[\d]?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?\s+\d+\s*\-?\s*[\d]?\s*([\d][\d.,\s]*[\d.,])',
+        # K. KARTI <count> *<amount> - Z raporu formatinda sayiyi atla (en guvenilir pattern)
+        r'K[\.\s]\s*KART[İIı]?\s+\d+\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KART[İIı]?[:\-]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        # K. KARTI <count> [-] *<amount> - Z raporu formatinda sayiyi atla
+        r'K[\.\s]\s*KART[İIı]?[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        r'KRED[İI]?\s*KART[İIı]?[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KART[İIı]?[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        r'K\s*[\.\s]?\s*KART[İIı]?[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        # K. KARTI <count> *<amount> - Z raporu formatinda sayiyi atla (eski pattern, hala calisiyor)
         r'KRED[İI]?\s*KART[İIı]?[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KRED[İI]?\s*KART[İIı]?[:\-]?\s+([\d,.]+)',
-        r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
         r'BANKA\s*KART[İIı]?\s*[İIı]*LE[:\-]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Kredi\s*Kart[ıi]?[:\-]?\s*([\d,.]+)',
         r'Banka\s*Kart[ıi]?\s*[ıi]?le[:\-]?\s*([\d,.]+)',
-        r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'BANKA\s*[/\-]?\s*KRED[İI]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'BANKA\s*[/\-]\s*KART[İIı]?[:\-/]?\s*\d*\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'BANKA\s*[/\-]\s*KART[İIı]?[:\-/]?\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
         r'KASA\s*Nakit[\s\S]{0,40}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'POS\s*CIRO\s*VE\s*TAHS[İI]LAT[\s\S]{0,80}?BANKA\s*[/\-]?\s*KART[İIı]?[:\-/]?\s*\*?\s*([\d][\d.,\s]*[\d.,])',
         r'[İI][ŞS]\s*Bankas[ıi][:\-]?\s*\d{0,2}\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Is\s*Bankas[ıi]\s*\d{0,2}\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
         r'Banka\s*POS[\s\S]{0,30}?\*?\s*([\d][\d.,\s]*[\d.,])',
-        r'K\s*[\.\s]?\s*KART[İIı]?[\s:]\s*[\dxX]*\s+[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'K\s*[\.\s]?\s*KART[İIı]?[\s:]\s*\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
         r'K\s*[\.\s]\s*KART[İIı]?[\s:]\s*[\w\s\-\*\.\/]*?\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in kart_patterns:
@@ -1325,7 +1411,20 @@ def parse_z_raporu(text):
 
     # İadeler (Fiş İptal = İade)
     iade_patterns = [
-        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s*\d+\s+\*?\+?\s*([\d][\d.,\s]*[\d.,])',
+        # FİŞ İPTAL <count> <amount> - basit format, count ve tutar arasinda sadece bosluk
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL\s+\d+\s+([\d][\d.,\s]*[\d.,])',
+        # FİŞ İPTAL <count> [-] *<amount> - count ve - isareti sonrasi * ile baslayan tutar
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL\s+\d+\s*\-?\s*\*\s*([\d][\d.,\s]*[\d.,])',
+        # FİŞ İPTAL <count> [-] [*4] <amount> - OCR * isaretini 4 olarak okuyabilir
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL\s+\d+\s*\-?\s*[\*4]\s*([\d][\d.,\s]*[\d.,])',
+        # FİŞ İPTAL <count> *<amount> - Z raporu formatinda sayiyi atla (en guvenilir pattern)
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'F[İI]S\s*[İI]PTAL\s+\d+\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'[İI]PTAL\s+\d+\s*\*?\s*([\d][\d.,\s]*[\d.,])',
+        r'(?:FIS|FİS)\s*(?:IPTAL|İPTAL)\s+\d+\s+\*?\s*([\d.,]+)',
+        # FİŞ İPTAL <count> [-] *<amount> - Z raporu formatinda sayiyi atla (count ve - isareti sonrasi * ile baslayan tutar)
+        r'(?:F[İIŞ]S?\s*)?[İI]PTAL[\s\S]{0,20}?\*\s*([\d][\d.,\s]*[\d.,])',
+        # İPTAL * amount (count yok veya onceden okundu)
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s*([\d][\d.,\s]*[\d.,])',
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[:\-]?\s+([\d,.]+)',
@@ -1336,10 +1435,8 @@ def parse_z_raporu(text):
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*\d+\s+\*?\+?\s*([\d][\d.,\s]*[\d.,])',
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*\*?\s*\+?\s*([\d][\d.,\s]*[\d.,])',
         r'F[İI]S\s*[İI]PTAL[:\-]?\s*([\d][\d.,\s]*[\d.,])',
-        r'(?:FIS|FİS)\s*(?:IPTAL|İPTAL)\s+\d+\s+\*?\s*([\d.,]+)',
         # FIS IPTAL + deger (ocr_duzelt newlinelari kaldiriyor)
         r'(?:F[İIŞ]S?\s*)?[İI]PTAL[\s\S]{0,40}?([\d][\d.,\s]{3,}[\d.,])',
-        r'[İI]PTAL\s+\d+\s+\*?\s*([\d][\d.,\s]*[\d.,])',
     ]
     for pat in iade_patterns:
         m = re.search(pat, t_duz, re.IGNORECASE)
@@ -1364,5 +1461,39 @@ def parse_z_raporu(text):
             fark = sonuc["brut"] - toplam_odeme
             if 0 < fark < 100 and sonuc["iadeler"] == 0:
                 sonuc["iadeler"] = fark
+
+    # OCR hata duzeltme: KK veya Iade degeri brut'tan cok kucukse (muhtemelen count okundu)
+    if sonuc["brut"] > 0:
+        if sonuc["kredi_karti"] > 0 and sonuc["kredi_karti"] < 100 and sonuc["brut"] > 1000:
+            brut_fark = sonuc["brut"] - sonuc["nakit"] - sonuc["yemek_ceki"] - sonuc["iadeler"]
+            if brut_fark > 100:
+                sonuc["kredi_karti"] = brut_fark
+        if sonuc["iadeler"] > 0 and sonuc["iadeler"] < 100 and sonuc["brut"] > 1000:
+            toplam_odeme = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
+            beklenen_iade = toplam_odeme - sonuc["brut"]
+            if beklenen_iade > 100 and beklenen_iade < sonuc["brut"]:
+                sonuc["iadeler"] = beklenen_iade
+
+    # Net toplam duzeltme: brut ve urunlerden net hesapla
+    if sonuc["brut"] > 0 and sonuc["net_toplam"] >= sonuc["brut"] and sonuc.get("urunler"):
+        urun_toplam = sum((u.get("tutar", 0) or 0) for u in sonuc["urunler"])
+        if urun_toplam > 0 and urun_toplam < sonuc["brut"]:
+            sonuc["net_toplam"] = urun_toplam
+        elif urun_toplam > 0:
+            # Urunlerin KDV oranlarindan net toplami hesapla
+            hesaplanan_net = 0.0
+            for u in sonuc["urunler"]:
+                tutar = u.get("tutar", 0) or 0
+                oran = u.get("oran", 0) or 0
+                if oran > 0:
+                    hesaplanan_net += round(tutar / (1 + oran / 100), 2)
+                else:
+                    hesaplanan_net += tutar
+            if 0 < hesaplanan_net < sonuc["brut"]:
+                sonuc["net_toplam"] = round(hesaplanan_net, 2)
+            else:
+                sonuc["net_toplam"] = sonuc["brut"] * 0.83
+        elif urun_toplam == 0:
+            sonuc["net_toplam"] = sonuc["brut"] * 0.83
 
     return sonuc
