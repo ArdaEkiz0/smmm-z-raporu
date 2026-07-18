@@ -1805,303 +1805,86 @@ def _page_beyanname_takvimi():
 
 
 def _page_efatura_sorgu():
-    """E-fatura mükellef sorgu + Nilvera entegrasyonu."""
+    """E-fatura mükellef sorgu paneli."""
     from e_fatura_sorgu import (
         gib_efatura_sorgula, toplu_sorgula, sorgu_ozet,
         vergi_no_dogrula, vkn_algo_dogrula, tckn_algo_dogrula,
-        nilvera_config_yukle, nilvera_config_kaydet,
-        nilvera_sorgula, nilvera_toplu_sorgula, nilvera_fatura_listesi,
-        nilvera_fatura_detay, nilvera_earsiv_indir, nilvera_ozet,
-        nilvera_fatura_olustur, nilvera_fatura_gonder, nilvera_fatura_iptal,
     )
 
     st.header("E-Fatura Mükellef Sorgu")
-    st.caption("GİB e-fatura mükellefiyet kontrolü + Nilvera API entegrasyonu")
+    st.caption("GİB e-fatura mükellefiyet kontrolü")
+    st.info("ℹ️ GİB e-fatura public API'si artık doğrudan erişilebilir değil "
+            "(CAPTCHA + e-Devlet doğrulaması gerektirir). Bu sorgu yalnızca format/algoritma "
+            "doğrulaması yapar; gerçek mükellefiyet kontrolü için bir e-Fatura entegratörü "
+            "(Foriba, Mikro, vs.) kullanın.")
 
-    nilvera_cfg = nilvera_config_yukle()
-    if not nilvera_cfg.get("api_key"):
-        st.info("ℹ️ GİB e-fatura public API'si artık doğrudan erişilebilir değil. "
-                "Sorgu için bir e-Fatura entegratörü (Nilvera önerilir) kullanın. "
-                "Aşağıdaki 'Nilvera Ayarları' sekmesinden API anahtarı girebilirsiniz.")
+    col_i1, col_i2 = st.columns([3, 1])
+    with col_i1:
+        vkn_input = st.text_input("Vergi/TC Kimlik No", placeholder="1234567890 veya 11111111111", key="efatura_vkn")
+    with col_i2:
+        sorgula_btn = st.button("🔍 Sorgula", type="primary", use_container_width=True, key="efatura_sorgula_btn")
 
-    tab_gib, tab_nilvera, tab_ayarlar = st.tabs(["🏛️ GİB Sorgu", "🔗 Nilvera API", "⚙️ Nilvera Ayarları"])
-
-    # ── TAB 1: GİB Sorgu ──
-    with tab_gib:
-        col_i1, col_i2 = st.columns([3, 1])
-        with col_i1:
-            vkn_input = st.text_input("Vergi/TC Kimlik No", placeholder="1234567890 veya 11111111111", key="efatura_vkn")
-        with col_i2:
-            sorgula_btn = st.button("🔍 Sorgula", type="primary", use_container_width=True, key="efatura_sorgula_btn")
-
-        if sorgula_btn and vkn_input:
-            vkn_temiz = re.sub(r"\D", "", vkn_input)
-            if not vergi_no_dogrula(vkn_temiz):
-                st.error("Geçersiz format. 10 hane (VKN) veya 11 hane (TCKN) girin.")
-            elif len(vkn_temiz) == 10 and not vkn_algo_dogrula(vkn_temiz):
-                st.error("VKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
-            elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
-                st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
-            else:
-                with st.spinner("Sorgulanıyor..."):
-                    sonuc = gib_efatura_sorgula(vkn_temiz)
-
-                c1, c2, c3 = st.columns(3)
-                with c1:
-                    if sonuc.get("efatura"):
-                        st.success("✅ E-Fatura")
-                    else:
-                        st.error("❌ E-Fatura")
-                with c2:
-                    if sonuc.get("earsiv"):
-                        st.success("✅ E-Arşiv")
-                    else:
-                        st.error("❌ E-Arşiv")
-                with c3:
-                    st.metric("VKN", vkn_temiz)
-
-                if sonuc.get("unvan"):
-                    st.info(f"**Ünvan:** {sonuc['unvan']}")
-                if sonuc.get("hata"):
-                    st.warning(f"⚠️ {sonuc['hata']}")
-                else:
-                    st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
-
-        st.divider()
-        st.subheader("Toplu Sorgu")
-        st.caption("Her satıra bir VKN/TCKN yazın, virgül veya yeni satırla ayırın")
-        toplu_text = st.text_area("VKN listesi (virgül veya yeni satırla)", height=120,
-                                    placeholder="1234567890\n11111111111\n9876543210", key="efatura_toplu")
-        if st.button("🔍 Toplu Sorgula", type="primary", key="efatura_toplu_btn") and toplu_text:
-            vkn_list = re.split(r"[,\n\s]+", toplu_text)
-            vkn_list = [v for v in vkn_list if v.strip()]
-            vkn_list = [re.sub(r"\D", "", v) for v in vkn_list]
-            vkn_list = [v for v in vkn_list if vergi_no_dogrula(v)]
-            if not vkn_list:
-                st.error("Geçerli VKN/TCKN bulunamadı.")
-            else:
-                progress = st.progress(0.0, text="Sorgulanıyor...")
-                sonuclar = []
-                for i, v in enumerate(vkn_list):
-                    s = gib_efatura_sorgula(v)
-                    sonuclar.append(s)
-                    progress.progress((i + 1) / len(vkn_list), text=f"{i+1}/{len(vkn_list)} tamamlandı")
-                import pandas as pd
-                df = pd.DataFrame([{
-                    "VKN": s["vkn"],
-                    "E-Fatura": "✅" if s.get("efatura") else "❌",
-                    "E-Arşiv": "✅" if s.get("earsiv") else "❌",
-                    "Ünvan": s.get("unvan", "")[:30],
-                    "Hata": s.get("hata", "")[:50] or "-",
-                } for s in sonuclar])
-                st.dataframe(df, width="stretch", hide_index=True)
-
-    # ── TAB 2: Nilvera API ──
-    with tab_nilvera:
-        config = nilvera_config_yukle()
-        if not config.get("api_key"):
-            st.warning("⚠️ Nilvera API anahtarı tanımlı değil. 'Nilvera Ayarları' sekmesinden girin.")
+    if sorgula_btn and vkn_input:
+        vkn_temiz = re.sub(r"\D", "", vkn_input)
+        if not vergi_no_dogrula(vkn_temiz):
+            st.error("Geçersiz format. 10 hane (VKN) veya 11 hane (TCKN) girin.")
+        elif len(vkn_temiz) == 10 and not vkn_algo_dogrula(vkn_temiz):
+            st.error("VKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
+        elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
+            st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
         else:
-            st.success("🟢 Nilvera API bağlı")
+            with st.spinner("Sorgulanıyor..."):
+                sonuc = gib_efatura_sorgula(vkn_temiz)
 
-            col_n1, col_n2 = st.columns([3, 1])
-            with col_n1:
-                nilvera_vkn = st.text_input("VKN/TCKN Sorgula", placeholder="1234567890", key="nilvera_vkn")
-            with col_n2:
-                nilvera_btn = st.button("🔍 Nilvera Sorgula", type="primary", use_container_width=True, key="nilvera_sorgula_btn")
-
-            if nilvera_btn and nilvera_vkn:
-                vkn_temiz = re.sub(r"\D", "", nilvera_vkn)
-                if not vergi_no_dogrula(vkn_temiz):
-                    st.error("Geçersiz VKN/TCKN formatı.")
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if sonuc.get("efatura"):
+                    st.success("✅ E-Fatura")
                 else:
-                    with st.spinner("Nilvera API sorgulanıyor..."):
-                        sonuc = nilvera_sorgula(vkn_temiz)
-
-                    c1, c2, c3 = st.columns(3)
-                    with c1:
-                        if sonuc.get("efatura"):
-                            st.success("✅ E-Fatura")
-                        else:
-                            st.error("❌ E-Fatura")
-                    with c2:
-                        if sonuc.get("earsiv"):
-                            st.success("✅ E-Arşiv")
-                        else:
-                            st.error("❌ E-Arşiv")
-                    with c3:
-                        st.metric("VKN", vkn_temiz)
-
-                    if sonuc.get("unvan"):
-                        st.info(f"**Ünvan:** {sonuc['unvan']}")
-                    if sonuc.get("adi_soyadi"):
-                        st.info(f"**Adı Soyadı:** {sonuc['adi_soyadi']}")
-                    if sonuc.get("vergi_dairesi"):
-                        st.info(f"**Vergi Dairesi:** {sonuc['vergi_dairesi']}")
-                    if sonuc.get("hata"):
-                        st.warning(f"⚠️ {sonuc['hata']}")
-                    else:
-                        st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
-
-            st.divider()
-            st.subheader("Fatura İşlemleri")
-
-            tab_liste, tab_olustur = st.tabs(["📋 Fatura Listesi", "➕ Yeni Fatura Oluştur"])
-
-            with tab_liste:
-                col_f1, col_f2, col_f3 = st.columns(3)
-                with col_f1:
-                    fatura_vkn = st.text_input("VKN (boş = tümü)", key="nilvera_fatura_vkn")
-                with col_f2:
-                    fatura_bas = st.date_input("Başlangıç", key="nilvera_fatura_bas")
-                with col_f3:
-                    fatura_bit = st.date_input("Bitiş", key="nilvera_fatura_bit")
-
-                if st.button("📋 Fatura Listesi Getir", key="nilvera_fatura_listesi_btn"):
-                    bas_str = fatura_bas.strftime("%Y-%m-%d") if fatura_bas else None
-                    bit_str = fatura_bit.strftime("%Y-%m-%d") if fatura_bit else None
-                    with st.spinner("Faturalar çekiliyor..."):
-                        sonuc = nilvera_fatura_listesi(
-                            vkn=fatura_vkn if fatura_vkn else None,
-                            baslangic=bas_str, bitis=bit_str,
-                        )
-                    if sonuc.get("hata"):
-                        st.error(f"❌ {sonuc['hata']}")
-                    elif sonuc.get("faturalar"):
-                        st.success(f"✅ {sonuc['toplam']} fatura bulundu")
-                        import pandas as pd
-                        df = pd.DataFrame(sonuc["faturalar"])
-                        st.dataframe(df, width="stretch", hide_index=True)
-
-                        fatura_id_secim = st.text_input("Fatura ID (işlem için)", key="fatura_id_secim")
-                        col_a, col_b, col_c = st.columns(3)
-                        with col_a:
-                            if st.button("📥 PDF İndir", key="fatura_pdf_indir") and fatura_id_secim:
-                                with st.spinner("İndiriliyor..."):
-                                    indir = nilvera_earsiv_indir(fatura_id_secim)
-                                if indir.get("dosya_yolu"):
-                                    st.success(f"İndirildi: {indir['dosya_yolu']}")
-                                else:
-                                    st.error(f"❌ {indir.get('hata', 'İndirme başarısız')}")
-                        with col_b:
-                            if st.button("📤 Gönder", key="fatura_gonder") and fatura_id_secim:
-                                with st.spinner("Gönderiliyor..."):
-                                    gonder = nilvera_fatura_gonder(fatura_id_secim)
-                                if gonder.get("basarili"):
-                                    st.success(f"Gönderildi! Durum: {gonder.get('durum')}")
-                                else:
-                                    st.error(f"❌ {gonder.get('hata', 'Gönderme başarısız')}")
-                        with col_c:
-                            if st.button("❌ İptal Et", key="fatura_iptal") and fatura_id_secim:
-                                with st.spinner("İptal ediliyor..."):
-                                    iptal = nilvera_fatura_iptal(fatura_id_secim)
-                                if iptal.get("basarili"):
-                                    st.success("Fatura iptal edildi!")
-                                else:
-                                    st.error(f"❌ {iptal.get('hata', 'İptal başarısız')}")
-                    else:
-                        st.info("Sonuç bulunamadı.")
-
-            with tab_olustur:
-                st.caption("Yeni e-arşiv veya e-fatura oluşturun")
-                with st.form("yeni_fatura_form", clear_on_submit=False):
-                    fatura_tipi = st.selectbox("Fatura Tipi", ["Earsiv", "Efatura"], key="fatura_tipi")
-                    gonderen_vkn = st.text_input("Sizin VKN'niz", key="gonderen_vkn")
-                    alici_vkn = st.text_input("Alıcı VKN", key="alici_vkn")
-                    alici_unvan = st.text_input("Alıcı Ünvanı", key="alici_unvan")
-                    fatura_tarih = st.date_input("Fatura Tarihi", key="fatura_tarih")
-                    para_birimi = st.selectbox("Para Birimi", ["TRY", "USD", "EUR"], key="para_birimi")
-
-                    st.markdown("**Fatura Kalemleri**")
-                    kalem_aciklama = st.text_input("Açıklama", placeholder="Mal/Hizmet açıklaması", key="kalem_aciklama")
-                    col_m1, col_m2, col_m3 = st.columns(3)
-                    with col_m1:
-                        kalem_miktar = st.number_input("Miktar", min_value=0.01, value=1.0, key="kalem_miktar")
-                    with col_m2:
-                        kalem_fiyat = st.number_input("Birim Fiyat", min_value=0.01, value=100.0, key="kalem_fiyat")
-                    with col_m3:
-                        kalem_kdv = st.selectbox("KDV %", [0, 1, 10, 20], index=3, key="kalem_kdv")
-
-                    kalem_tutar = kalem_miktar * kalem_fiyat
-                    kdv_tutari = round(kalem_tutar * kalem_kdv / 100, 2)
-                    genel_toplam = kalem_tutar + kdv_tutari
-
-                    col_t1, col_t2, col_t3 = st.columns(3)
-                    with col_t1:
-                        st.metric("Matrah", f"{kalem_tutar:,.2f} TL")
-                    with col_t2:
-                        st.metric("KDV", f"{kdv_tutari:,.2f} TL")
-                    with col_t3:
-                        st.metric("Genel Toplam", f"{genel_toplam:,.2f} TL")
-
-                    if st.form_submit_button("➕ Fatura Oluştur", type="primary", use_container_width=True):
-                        if not gonderen_vkn or not alici_vkn:
-                            st.error("VKN'ler zorunludur.")
-                        elif not vergi_no_dogrula(gonderen_vkn) or not vergi_no_dogrula(alici_vkn):
-                            st.error("Geçersiz VKN formatı.")
-                        else:
-                            fatura_veri = {
-                                "faturaTipi": fatura_tipi,
-                                "gonderenVkn": re.sub(r"\D", "", gonderen_vkn),
-                                "aliciVkn": re.sub(r"\D", "", alici_vkn),
-                                "aliciUnvani": alici_unvan,
-                                "tarih": fatura_tarih.strftime("%Y-%m-%d"),
-                                "paraBirimi": para_birimi,
-                                "kalemler": [{
-                                    "aciklama": kalem_aciklama or "Mal/Hizmet",
-                                    "miktar": kalem_miktar,
-                                    "birimFiyat": kalem_fiyat,
-                                    "kdvOrani": kalem_kdv,
-                                    "tutar": kalem_tutar,
-                                }],
-                                "toplamTutar": kalem_tutar,
-                                "kdvToplami": kdv_tutari,
-                                "genelToplam": genel_toplam,
-                            }
-                            with st.spinner("Fatura oluşturuluyor..."):
-                                sonuc = nilvera_fatura_olustur(fatura_veri)
-                            if sonuc.get("fatura_id"):
-                                st.success(f"Fatura oluşturuldu! ID: {sonuc['fatura_id']}")
-                                if st.button("📤 Hemen Gönder", key="yeni_fatura_gonder"):
-                                    with st.spinner("Gönderiliyor..."):
-                                        gonder = nilvera_fatura_gonder(sonuc["fatura_id"])
-                                    if gonder.get("basarili"):
-                                        st.success(f"Gönderildi! Durum: {gonder.get('durum')}")
-                                    else:
-                                        st.error(f"❌ {gonder.get('hata')}")
-                            else:
-                                st.error(f"❌ {sonuc.get('hata', 'Oluşturma başarısız')}")
-
-    # ── TAB 3: Nilvera Ayarları ──
-    with tab_ayarlar:
-        st.subheader("Nilvera API Ayarları")
-        st.caption("api.nilvera.com'dan API anahtarı almanız gerekir.")
-
-        config = nilvera_config_yukle()
-        with st.form("nilvera_ayarlar_form", clear_on_submit=False):
-            api_key = st.text_input("API Anahtarı", value=config.get("api_key", ""),
-                                     type="password", key="nilvera_api_key")
-            base_url = st.text_input("API Base URL", value=config.get("base_url", "https://api.nilvera.com"),
-                                      key="nilvera_base_url")
-            aktif = st.checkbox("Nilvera API aktif", value=config.get("aktif", False), key="nilvera_aktif")
-
-            if st.form_submit_button("💾 Kaydet", type="primary", use_container_width=True):
-                yeni_config = {"api_key": api_key, "base_url": base_url, "aktif": aktif}
-                sonuc = nilvera_config_kaydet(yeni_config)
-                if sonuc["basarili"]:
-                    st.success(f"✅ {sonuc['mesaj']}")
+                    st.error("❌ E-Fatura")
+            with c2:
+                if sonuc.get("earsiv"):
+                    st.success("✅ E-Arşiv")
                 else:
-                    st.error(f"❌ {sonuc['mesaj']}")
+                    st.error("❌ E-Arşiv")
+            with c3:
+                st.metric("VKN", vkn_temiz)
 
-        if config.get("api_key"):
-            with st.expander("🧪 API Bağlantı Testi"):
-                if st.button("Test Sorgusu Yap", key="nilvera_test_btn"):
-                    with st.spinner("Test sorgulanıyor..."):
-                        test_sonuc = nilvera_sorgula("1234567890")
-                    if test_sonuc.get("hata"):
-                        st.warning(f"⚠️ {test_sonuc['hata']}")
-                    else:
-                        st.success("✅ Nilvera API bağlantısı başarılı!")
+            if sonuc.get("unvan"):
+                st.info(f"**Ünvan:** {sonuc['unvan']}")
+            if sonuc.get("hata"):
+                st.warning(f"⚠️ {sonuc['hata']}")
+            else:
+                st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
+
+    st.divider()
+    st.subheader("Toplu Sorgu")
+    st.caption("Her satıra bir VKN/TCKN yazın, virgül veya yeni satırla ayırın")
+    toplu_text = st.text_area("VKN listesi (virgül veya yeni satırla)", height=120,
+                                placeholder="1234567890\n11111111111\n9876543210", key="efatura_toplu")
+    if st.button("🔍 Toplu Sorgula", type="primary", key="efatura_toplu_btn") and toplu_text:
+        vkn_list = re.split(r"[,\n\s]+", toplu_text)
+        vkn_list = [v for v in vkn_list if v.strip()]
+        vkn_list = [re.sub(r"\D", "", v) for v in vkn_list]
+        vkn_list = [v for v in vkn_list if vergi_no_dogrula(v)]
+        if not vkn_list:
+            st.error("Geçerli VKN/TCKN bulunamadı.")
+        else:
+            progress = st.progress(0.0, text="Sorgulanıyor...")
+            sonuclar = []
+            for i, v in enumerate(vkn_list):
+                s = gib_efatura_sorgula(v)
+                sonuclar.append(s)
+                progress.progress((i + 1) / len(vkn_list), text=f"{i+1}/{len(vkn_list)} tamamlandı")
+            import pandas as pd
+            df = pd.DataFrame([{
+                "VKN": s["vkn"],
+                "E-Fatura": "✅" if s.get("efatura") else "❌",
+                "E-Arşiv": "✅" if s.get("earsiv") else "❌",
+                "Ünvan": s.get("unvan", "")[:30],
+                "Hata": s.get("hata", "")[:50] or "-",
+            } for s in sonuclar])
+            st.dataframe(df, width="stretch", hide_index=True)
 
 
 def _kullanici_yonetimi_paneli():

@@ -19,7 +19,6 @@ from veritabani import (
     mukellefler, gecmis_listele, tum_fisleri_yukle,
     otomatik_yedekle
 )
-from e_fatura_sorgu import earsiv_pdf_temizle
 from luca import (
     urun_kodlari_yukle, urun_kodlari_kaydet, varsayilan_kodlar
 )
@@ -152,11 +151,6 @@ tema_uygula()
 
 for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
-
-try:
-    earsiv_pdf_temizle(en_fazla_gun=30)
-except Exception:
-    pass
 
 st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
 st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek")

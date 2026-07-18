@@ -20,6 +20,7 @@ test_*.py
 secrets.json
 auth_config.json
 email_config.json
+nilvera_config.json
 urun_kodlari.json
 hesap_kodlari.json
 mukellefler.json
