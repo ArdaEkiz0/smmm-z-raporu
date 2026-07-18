@@ -111,6 +111,21 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     # Z raporundan KDV hesapla: Brüt (KDV dahil) - Net (KDV hariç) = KDV
     z_toplam_kdv = round(brut - net_toplam, 2) if brut > 0 and net_toplam > 0 else 0
 
+    # İade zaten brut'a dahil mi kontrol et
+    # brut = nakit + kk + yemek ise iade zaten dahil, ayrıca ekleme
+    tahsilat_toplam = nakit + kk + yemek
+    iade_ayri = abs(brut - tahsilat_toplam) > 0.01 and iade > 0
+
+    def _tahsilat_ekle(rows):
+        if iade_ayri and iade > 0:
+            rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
+        if nakit > 0:
+            rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
+        if kk > 0:
+            rows.append(satir(hesap_kodlari.get("kredi_karti", "108.01"), f"KK Tahsilat - {musteri}", kk, 0))
+        if yemek > 0:
+            rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
+
     # Ürün bazlı satışlar - Z raporu degerlerine gore orantili dagilim
     urunler = data.get("urunler", [])
     if urunler:
@@ -160,21 +175,12 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
                     r["Alacak"] = round(eski_kdv + kdv_farki, 2)
                     break
 
-        if iade > 0:
-            _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
-            rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
-        if nakit > 0:
-            rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
-        if kk > 0:
-            rows.append(satir(hesap_kodlari.get("kredi_karti", "108.01"), f"KK Tahsilat - {musteri}", kk, 0))
-        if yemek > 0:
-            rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
+        _tahsilat_ekle(rows)
         return rows
 
     # Ürün yok - klasik toplu muhasebe
     kdv_kalemleri = data.get("kdv_kalemleri", [])
     if kdv_kalemleri:
-        toplam_kalemden_kdv = sum(kv.get("kdv_tutari", 0) or 0 for kv in kdv_kalemleri)
         for kv in kdv_kalemleri:
             oran = kv.get("oran", 0)
             matrah = kv.get("matrah", 0) or 0
@@ -184,15 +190,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
                 rows.append(satir(hesap_kodlari.get(satis_key, "600.04"), f"Satış %{oran} - {musteri}", 0, matrah))
                 kdv_key = "kdv_" + str(oran)
                 rows.append(satir(hesap_kodlari.get(kdv_key, "391.04"), f"KDV %{oran} - {musteri}", 0, kdv_t))
-        if iade > 0:
-            _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
-            rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
-        if nakit > 0:
-            rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
-        if kk > 0:
-            rows.append(satir(hesap_kodlari.get("kredi_karti", "108.01"), f"KK Tahsilat - {musteri}", kk, 0))
-        if yemek > 0:
-            rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
+        _tahsilat_ekle(rows)
         return rows
 
     # En basit: tek satır satış - Z raporu değerlerini doğrudan kullan
@@ -202,15 +200,7 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     rows.append(satir("600.04", f"Z Raporu Satış - {musteri}", 0, net_toplam))
     if z_toplam_kdv > 0:
         rows.append(satir("391.04", f"KDV - {musteri}", 0, z_toplam_kdv))
-    _, _, _, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
-    if nakit > 0:
-        rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
-    if kk > 0:
-        rows.append(satir(hesap_kodlari.get("kredi_karti", "108.01"), f"KK Tahsilat - {musteri}", kk, 0))
-    if yemek > 0:
-        rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
-    if iade > 0:
-        rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
+    _tahsilat_ekle(rows)
     return rows
 
 
