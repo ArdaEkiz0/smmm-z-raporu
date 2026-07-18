@@ -48,6 +48,8 @@ def _init_num(key, value):
 def _page_z_raporu_yukle(hesap_kodlari):
     from PIL import Image
     import pandas as pd
+    import zipfile
+    import io
     st.header("Z Raporu Fotoğraf Yükleme ve OCR")
 
     urun_kodlari = st.session_state.get("urun_kodlari", [])
@@ -63,7 +65,28 @@ def _page_z_raporu_yukle(hesap_kodlari):
     else:
         st.warning("Mükellef seçilmedi. Sidebar'dan mükellef seçin.")
 
-    uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True)
+    yukleme_modu = st.radio("Yükleme modu", ["📷 Dosya Seç", "📦 ZIP Yükle"], horizontal=True, key="yukleme_modu")
+
+    uploaded_files = []
+
+    if yukleme_modu == "📷 Dosya Seç":
+        uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True, key="dosya_yukle")
+    else:
+        zip_dosya = st.file_uploader("ZIP dosyası yükle (içinde JPG/PNG/PDF)", type=["zip"], key="zip_yukle")
+        if zip_dosya:
+            try:
+                with zipfile.ZipFile(io.BytesIO(zip_dosya.read())) as zf:
+                    dosya_adi_list = [n for n in zf.namelist() if n.lower().endswith(('.jpg', '.jpeg', '.png', '.pdf')) and not n.startswith('__MACOSX')]
+                    if not dosya_adi_list:
+                        st.error("ZIP içinde uygun görsel/PDF bulunamadı.")
+                    else:
+                        st.success(f"📦 ZIP'te {len(dosya_adi_list)} dosya bulundu")
+                        for da in dosya_adi_list:
+                            dosya_icerik = zf.read(da)
+                            dosya_adi = os.path.basename(da)
+                            uploaded_files.append(type('UploadedFile', (), {'name': dosya_adi, 'read': lambda d=dosya_icerik: d, 'seek': lambda s, *a: None})())
+            except zipfile.BadZipFile:
+                st.error("Geçersiz ZIP dosyası.")
 
     if uploaded_files:
         yeni_dosya_sayisi = len(uploaded_files)
@@ -79,9 +102,13 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 if f.name.lower().endswith(".pdf"):
                     st.caption(f"📄 {f.name[:20]}")
                 else:
-                    img = Image.open(f)
-                    st.image(img, caption=f.name[:20], width="stretch")
-                    f.seek(0)
+                    try:
+                        f.seek(0)
+                        img = Image.open(f)
+                        st.image(img, caption=f.name[:20], width="stretch")
+                        f.seek(0)
+                    except Exception:
+                        st.caption(f"📄 {f.name[:20]}")
 
     if BARCODE_MEVCUT and uploaded_files:
         with st.expander("Barkod Okuma", expanded=False):
@@ -257,8 +284,34 @@ def _page_z_raporu_yukle(hesap_kodlari):
         st.divider()
         st.subheader(f"Sonuçlar ({len(results)} Z Raporu)")
 
+        try:
+            from ocr_dogrulama import ocr_sonuc_dogrula
+            for r in results:
+                if "error" not in r and "confidence" not in r:
+                    try:
+                        _dog = ocr_sonuc_dogrula(r, ham_text=r.get("ocr_text", ""))
+                        r["confidence"] = _dog["genel_skor"]
+                    except Exception:
+                        r["confidence"] = 50.0
+        except ImportError:
+            pass
+
+        siralama = st.selectbox("Sıralama", ["📁 Dosya Adı", "⬆️ Güven Düşükten Yükseğe", "⬇️ Güven Yüksekten Düşüğe"], key="sonuc_siralama")
+        if "Güven" in siralama:
+            results_sorted = sorted(enumerate(results), key=lambda x: x[1].get("confidence", 50), reverse="Yüksekten" in siralama)
+            results = [r for _, r in results_sorted]
+
         if len(results) > 1:
-            tab_labels = [f"📄 {r.get('filename','?')[:18]}" for r in results]
+            tab_labels = []
+            for r in results:
+                conf = r.get("confidence", 50)
+                if conf >= 80:
+                    icon = "🟢"
+                elif conf >= 50:
+                    icon = "🟡"
+                else:
+                    icon = "🔴"
+                tab_labels.append(f"{icon} {r.get('filename','?')[:16]}")
             tab_labels.append("📊 Özet")
             tabs = st.tabs(tab_labels)
         else:
@@ -1271,6 +1324,78 @@ th {{ background: #1a5276; color: white; }}
                     f"kdv_beyanname_{yil}_{ay:02d}.html", "text/html", width="stretch",
                     help="HTML dosyasını tarayıcıda açıp Ctrl+P ile PDF olarak kaydedin")
 
+                try:
+                    from fpdf import FPDF
+                    class KDV_PDF(FPDF):
+                        def header(self):
+                            self.set_font('Helvetica', 'B', 14)
+                            self.cell(0, 10, 'KDV Beyanname Ozeti', ln=True, align='C')
+                            self.set_font('Helvetica', '', 10)
+                            self.cell(0, 6, f'{muk_baslik} | {ay:02d}/{yil} | {len(ay_fisler)} Fis', ln=True, align='C')
+                            self.ln(4)
+                        def footer(self):
+                            self.set_y(-15)
+                            self.set_font('Helvetica', 'I', 8)
+                            self.cell(0, 10, f'SMMM Z Raporu Sistemi | Sayfa {self.page_no()}/{{nb}}', align='C')
+
+                    pdf = KDV_PDF()
+                    pdf.alias_nb_pages()
+                    pdf.add_page()
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 8, 'KDV Dokumu', ln=True)
+                    pdf.set_font('Helvetica', 'B', 9)
+                    pdf.set_fill_color(26, 82, 118)
+                    pdf.set_text_color(255, 255, 255)
+                    pdf.cell(40, 7, 'KDV Orani', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'Brut Tutar', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'Matrah', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'KDV Tutari', border=1, fill=True, align='C')
+                    pdf.ln()
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.set_font('Helvetica', '', 9)
+                    genel_kdv_pdf = 0
+                    for oran in sorted(kdv_toplamlari.keys()):
+                        k = kdv_toplamlari[oran]
+                        pdf.cell(40, 6, f'%{oran}', border=1, align='C')
+                        pdf.cell(45, 6, f'{k["brut"]:,.2f}', border=1, align='R')
+                        pdf.cell(45, 6, f'{k["matrah"]:,.2f}', border=1, align='R')
+                        pdf.cell(45, 6, f'{k["kdv"]:,.2f}', border=1, align='R')
+                        pdf.ln()
+                        genel_kdv_pdf += k['kdv']
+                    pdf.set_font('Helvetica', 'B', 9)
+                    pdf.set_fill_color(232, 246, 243)
+                    pdf.cell(40, 7, 'TOPLAM', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, f'{toplam_ciro:,.2f}', border=1, fill=True, align='R')
+                    pdf.cell(45, 7, f'{toplam_matrah:,.2f}', border=1, fill=True, align='R')
+                    pdf.cell(45, 7, f'{genel_kdv_pdf:,.2f}', border=1, fill=True, align='R')
+                    pdf.ln(12)
+                    pdf.set_font('Helvetica', 'B', 11)
+                    pdf.cell(0, 8, 'Odeme Turlerine Gore', ln=True)
+                    pdf.set_font('Helvetica', 'B', 9)
+                    pdf.set_fill_color(26, 82, 118)
+                    pdf.set_text_color(255, 255, 255)
+                    pdf.cell(45, 7, 'Nakit', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'Kredi Karti', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'Iade', border=1, fill=True, align='C')
+                    pdf.cell(45, 7, 'Net Toplam', border=1, fill=True, align='C')
+                    pdf.ln()
+                    pdf.set_text_color(0, 0, 0)
+                    pdf.set_font('Helvetica', '', 9)
+                    pdf.cell(45, 6, f'{toplam_nakit:,.2f}', border=1, align='R')
+                    pdf.cell(45, 6, f'{toplam_kk:,.2f}', border=1, align='R')
+                    pdf.cell(45, 6, f'{toplam_iptal:,.2f}', border=1, align='R')
+                    pdf.cell(45, 6, f'{toplam_ciro:,.2f}', border=1, align='R')
+                    pdf.ln(15)
+                    pdf.set_font('Helvetica', 'I', 8)
+                    pdf.cell(0, 5, 'SMMM Z Raporu ve Fis Yonetim Sistemi', ln=True, align='C')
+                    pdf_bytes = bytes(pdf.output())
+                    st.download_button(f"KDV Beyanname PDF Indir ({ay:02d}/{yil})", pdf_bytes,
+                        f"kdv_beyanname_{yil}_{ay:02d}.pdf", "application/pdf", width="stretch")
+                except ImportError:
+                    st.caption("PDF cikisi icin fpdf2 kurun: pip install fpdf2")
+                except Exception as e:
+                    st.warning(f"PDF olusturulamadi: {e}")
+
 
 def _page_ayarlar():
     st.header("Ayarlar")
@@ -1572,82 +1697,195 @@ def _page_beyanname_takvimi():
 
 
 def _page_efatura_sorgu():
-    """E-fatura mükellef sorgu."""
+    """E-fatura mükellef sorgu + Nilvera entegrasyonu."""
     from e_fatura_sorgu import (
         gib_efatura_sorgula, toplu_sorgula, sorgu_ozet,
         vergi_no_dogrula, vkn_algo_dogrula, tckn_algo_dogrula,
+        nilvera_config_yukle, nilvera_config_kaydet,
+        nilvera_sorgula, nilvera_toplu_sorgula, nilvera_fatura_listesi,
+        nilvera_fatura_detay, nilvera_earsiv_indir, nilvera_ozet,
     )
 
     st.header("E-Fatura Mükellef Sorgu")
-    st.caption("GİB e-fatura mükellefiyet kontrolü. Vergi/TC kimlik no ile.")
+    st.caption("GİB e-fatura mükellefiyet kontrolü + Nilvera API entegrasyonu")
 
-    col_i1, col_i2 = st.columns([3, 1])
-    with col_i1:
-        vkn_input = st.text_input("Vergi/TC Kimlik No", placeholder="1234567890 veya 11111111111", key="efatura_vkn")
-    with col_i2:
-        sorgula_btn = st.button("🔍 Sorgula", type="primary", use_container_width=True, key="efatura_sorgula_btn")
+    tab_gib, tab_nilvera, tab_ayarlar = st.tabs(["🏛️ GİB Sorgu", "🔗 Nilvera API", "⚙️ Nilvera Ayarları"])
 
-    if sorgula_btn and vkn_input:
-        vkn_temiz = re.sub(r"\D", "", vkn_input)
-        if not vergi_no_dogrula(vkn_temiz):
-            st.error("Geçersiz format. 10 hane (VKN) veya 11 hane (TCKN) girin.")
-        elif len(vkn_temiz) == 10 and not vkn_algo_dogrula(vkn_temiz):
-            st.error("VKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
-        elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
-            st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
-        else:
-            with st.spinner("GİB sorgulanıyor..."):
-                sonuc = gib_efatura_sorgula(vkn_temiz)
+    # ── TAB 1: GİB Sorgu ──
+    with tab_gib:
+        col_i1, col_i2 = st.columns([3, 1])
+        with col_i1:
+            vkn_input = st.text_input("Vergi/TC Kimlik No", placeholder="1234567890 veya 11111111111", key="efatura_vkn")
+        with col_i2:
+            sorgula_btn = st.button("🔍 Sorgula", type="primary", use_container_width=True, key="efatura_sorgula_btn")
 
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                if sonuc.get("efatura"):
-                    st.success("✅ E-Fatura")
-                else:
-                    st.error("❌ E-Fatura")
-            with c2:
-                if sonuc.get("earsiv"):
-                    st.success("✅ E-Arşiv")
-                else:
-                    st.error("❌ E-Arşiv")
-            with c3:
-                st.metric("VKN", vkn_temiz)
-
-            if sonuc.get("unvan"):
-                st.info(f"**Ünvan:** {sonuc['unvan']}")
-            if sonuc.get("hata"):
-                st.warning(f"⚠️ {sonuc['hata']}")
+        if sorgula_btn and vkn_input:
+            vkn_temiz = re.sub(r"\D", "", vkn_input)
+            if not vergi_no_dogrula(vkn_temiz):
+                st.error("Geçersiz format. 10 hane (VKN) veya 11 hane (TCKN) girin.")
+            elif len(vkn_temiz) == 10 and not vkn_algo_dogrula(vkn_temiz):
+                st.error("VKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
+            elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
+                st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
             else:
-                st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
+                with st.spinner("GİB sorgulanıyor..."):
+                    sonuc = gib_efatura_sorgula(vkn_temiz)
 
-    st.divider()
-    st.subheader("Toplu Sorgu")
-    st.caption("Her satıra bir VKN/TCKN yazın, virgül veya yeni satırla ayırın")
-    toplu_text = st.text_area("VKN listesi (virgül veya yeni satırla)", height=120,
-                                placeholder="1234567890\n11111111111\n9876543210", key="efatura_toplu")
-    if st.button("🔍 Toplu Sorgula", type="primary", key="efatura_toplu_btn") and toplu_text:
-        vkn_list = re.split(r"[,\n\s]+", toplu_text)
-        vkn_list = [v for v in vkn_list if v.strip()]
-        vkn_list = [re.sub(r"\D", "", v) for v in vkn_list]
-        vkn_list = [v for v in vkn_list if vergi_no_dogrula(v)]
-        if not vkn_list:
-            st.error("Geçerli VKN/TCKN bulunamadı.")
+                c1, c2, c3 = st.columns(3)
+                with c1:
+                    if sonuc.get("efatura"):
+                        st.success("✅ E-Fatura")
+                    else:
+                        st.error("❌ E-Fatura")
+                with c2:
+                    if sonuc.get("earsiv"):
+                        st.success("✅ E-Arşiv")
+                    else:
+                        st.error("❌ E-Arşiv")
+                with c3:
+                    st.metric("VKN", vkn_temiz)
+
+                if sonuc.get("unvan"):
+                    st.info(f"**Ünvan:** {sonuc['unvan']}")
+                if sonuc.get("hata"):
+                    st.warning(f"⚠️ {sonuc['hata']}")
+                else:
+                    st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
+
+        st.divider()
+        st.subheader("Toplu Sorgu")
+        st.caption("Her satıra bir VKN/TCKN yazın, virgül veya yeni satırla ayırın")
+        toplu_text = st.text_area("VKN listesi (virgül veya yeni satırla)", height=120,
+                                    placeholder="1234567890\n11111111111\n9876543210", key="efatura_toplu")
+        if st.button("🔍 Toplu Sorgula", type="primary", key="efatura_toplu_btn") and toplu_text:
+            vkn_list = re.split(r"[,\n\s]+", toplu_text)
+            vkn_list = [v for v in vkn_list if v.strip()]
+            vkn_list = [re.sub(r"\D", "", v) for v in vkn_list]
+            vkn_list = [v for v in vkn_list if vergi_no_dogrula(v)]
+            if not vkn_list:
+                st.error("Geçerli VKN/TCKN bulunamadı.")
+            else:
+                progress = st.progress(0.0, text="Sorgulanıyor...")
+                sonuclar = []
+                for i, v in enumerate(vkn_list):
+                    s = gib_efatura_sorgula(v)
+                    sonuclar.append(s)
+                    progress.progress((i + 1) / len(vkn_list), text=f"{i+1}/{len(vkn_list)} tamamlandı")
+                import pandas as pd
+                df = pd.DataFrame([{
+                    "VKN": s["vkn"],
+                    "E-Fatura": "✅" if s.get("efatura") else "❌",
+                    "E-Arşiv": "✅" if s.get("earsiv") else "❌",
+                    "Ünvan": s.get("unvan", "")[:30],
+                    "Hata": s.get("hata", "")[:50] or "-",
+                } for s in sonuclar])
+                st.dataframe(df, width="stretch", hide_index=True)
+
+    # ── TAB 2: Nilvera API ──
+    with tab_nilvera:
+        config = nilvera_config_yukle()
+        if not config.get("api_key"):
+            st.warning("⚠️ Nilvera API anahtarı tanımlı değil. 'Nilvera Ayarları' sekmesinden girin.")
         else:
-            progress = st.progress(0.0, text="Sorgulanıyor...")
-            sonuclar = []
-            for i, v in enumerate(vkn_list):
-                s = gib_efatura_sorgula(v)
-                sonuclar.append(s)
-                progress.progress((i + 1) / len(vkn_list), text=f"{i+1}/{len(vkn_list)} tamamlandı")
-            import pandas as pd
-            df = pd.DataFrame([{
-                "VKN": s["vkn"],
-                "E-Fatura": "✅" if s.get("efatura") else "❌",
-                "E-Arşiv": "✅" if s.get("earsiv") else "❌",
-                "Ünvan": s.get("unvan", "")[:30],
-                "Hata": s.get("hata", "")[:50] or "-",
-            } for s in sonuclar])
-            st.dataframe(df, width="stretch", hide_index=True)
+            st.success("🟢 Nilvera API bağlı")
+
+            col_n1, col_n2 = st.columns([3, 1])
+            with col_n1:
+                nilvera_vkn = st.text_input("VKN/TCKN Sorgula", placeholder="1234567890", key="nilvera_vkn")
+            with col_n2:
+                nilvera_btn = st.button("🔍 Nilvera Sorgula", type="primary", use_container_width=True, key="nilvera_sorgula_btn")
+
+            if nilvera_btn and nilvera_vkn:
+                vkn_temiz = re.sub(r"\D", "", nilvera_vkn)
+                if not vergi_no_dogrula(vkn_temiz):
+                    st.error("Geçersiz VKN/TCKN formatı.")
+                else:
+                    with st.spinner("Nilvera API sorgulanıyor..."):
+                        sonuc = nilvera_sorgula(vkn_temiz)
+
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        if sonuc.get("efatura"):
+                            st.success("✅ E-Fatura")
+                        else:
+                            st.error("❌ E-Fatura")
+                    with c2:
+                        if sonuc.get("earsiv"):
+                            st.success("✅ E-Arşiv")
+                        else:
+                            st.error("❌ E-Arşiv")
+                    with c3:
+                        st.metric("VKN", vkn_temiz)
+
+                    if sonuc.get("unvan"):
+                        st.info(f"**Ünvan:** {sonuc['unvan']}")
+                    if sonuc.get("adi_soyadi"):
+                        st.info(f"**Adı Soyadı:** {sonuc['adi_soyadi']}")
+                    if sonuc.get("vergi_dairesi"):
+                        st.info(f"**Vergi Dairesi:** {sonuc['vergi_dairesi']}")
+                    if sonuc.get("hata"):
+                        st.warning(f"⚠️ {sonuc['hata']}")
+                    else:
+                        st.caption(f"Kaynak: {sonuc.get('kaynak', '?')}")
+
+            st.divider()
+            st.subheader("Fatura Listesi")
+            col_f1, col_f2, col_f3 = st.columns(3)
+            with col_f1:
+                fatura_vkn = st.text_input("VKN (boş = tümü)", key="nilvera_fatura_vkn")
+            with col_f2:
+                fatura_bas = st.date_input("Başlangıç", key="nilvera_fatura_bas")
+            with col_f3:
+                fatura_bit = st.date_input("Bitiş", key="nilvera_fatura_bit")
+
+            if st.button("📋 Fatura Listesi Getir", key="nilvera_fatura_listesi_btn"):
+                bas_str = fatura_bas.strftime("%Y-%m-%d") if fatura_bas else None
+                bit_str = fatura_bit.strftime("%Y-%m-%d") if fatura_bit else None
+                with st.spinner("Faturalar çekiliyor..."):
+                    sonuc = nilvera_fatura_listesi(
+                        vkn=fatura_vkn if fatura_vkn else None,
+                        baslangic=bas_str, bitis=bit_str,
+                    )
+                if sonuc.get("hata"):
+                    st.error(f"❌ {sonuc['hata']}")
+                elif sonuc.get("faturalar"):
+                    st.success(f"✅ {sonuc['toplam']} fatura bulundu")
+                    import pandas as pd
+                    df = pd.DataFrame(sonuc["faturalar"])
+                    st.dataframe(df, width="stretch", hide_index=True)
+                else:
+                    st.info("Sonuç bulunamadı.")
+
+    # ── TAB 3: Nilvera Ayarları ──
+    with tab_ayarlar:
+        st.subheader("Nilvera API Ayarları")
+        st.caption("api.nilvera.com'dan API anahtarı almanız gerekir.")
+
+        config = nilvera_config_yukle()
+        with st.form("nilvera_ayarlar_form", clear_on_submit=False):
+            api_key = st.text_input("API Anahtarı", value=config.get("api_key", ""),
+                                     type="password", key="nilvera_api_key")
+            base_url = st.text_input("API Base URL", value=config.get("base_url", "https://api.nilvera.com"),
+                                      key="nilvera_base_url")
+            aktif = st.checkbox("Nilvera API aktif", value=config.get("aktif", False), key="nilvera_aktif")
+
+            if st.form_submit_button("💾 Kaydet", type="primary", use_container_width=True):
+                yeni_config = {"api_key": api_key, "base_url": base_url, "aktif": aktif}
+                sonuc = nilvera_config_kaydet(yeni_config)
+                if sonuc["basarili"]:
+                    st.success(f"✅ {sonuc['mesaj']}")
+                else:
+                    st.error(f"❌ {sonuc['mesaj']}")
+
+        if config.get("api_key"):
+            with st.expander("🧪 API Bağlantı Testi"):
+                if st.button("Test Sorgusu Yap", key="nilvera_test_btn"):
+                    with st.spinner("Test sorgulanıyor..."):
+                        test_sonuc = nilvera_sorgula("1234567890")
+                    if test_sonuc.get("hata"):
+                        st.warning(f"⚠️ {test_sonuc['hata']}")
+                    else:
+                        st.success("✅ Nilvera API bağlantısı başarılı!")
 
 
 def _kullanici_yonetimi_paneli():
