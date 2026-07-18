@@ -80,6 +80,13 @@ def tckn_algo_dogrula(tckn: str) -> bool:
 
 def gib_efatura_sorgula(vkn: str, timeout: float = 10.0) -> Dict:
     """GİB e-fatura mükellef sorgusu.
+
+    Akış:
+      1) GİB public API'yi dene (genelde CAPTCHA/e-Devlet gerektirdiği için
+         erişilemez durumda).
+      2) Başarısız olursa Nilvera API ayarlıysa onunla dene.
+      3) İkisi de başarısızsa anlamlı hata döndür.
+
     Returns: {"vkn", "efatura": bool, "earsiv": bool, "unvan": str, "kaynak": str, "hata": str|None}
     """
     sonuc = {
@@ -104,6 +111,8 @@ def gib_efatura_sorgula(vkn: str, timeout: float = 10.0) -> Dict:
         sonuc["hata"] = "TCKN algoritma doğrulaması başarısız"
         return sonuc
 
+    # 1) GİB public API dene (erişilemeyebilir)
+    gib_basarisiz = False
     try:
         import requests
         url = f"https://www.efatura.gov.tr/api/efatura/vkn/{vkn_temiz}"
@@ -113,16 +122,44 @@ def gib_efatura_sorgula(vkn: str, timeout: float = 10.0) -> Dict:
         }
         r = requests.get(url, headers=headers, timeout=timeout)
         if r.status_code == 200:
-            data = r.json()
-            sonuc["efatura"] = bool(data.get("efaturaMukellef") or data.get("efatura"))
-            sonuc["earsiv"] = bool(data.get("eArsivMukellef") or data.get("earsiv"))
-            sonuc["unvan"] = data.get("unvan", "") or data.get("title", "")
-            return sonuc
-    except Exception as e:
-        sonuc["kaynak"] = f"GİB API timeout/hata: {type(e).__name__}"
-        sonuc["hata"] = str(e)[:100]
+            try:
+                data = r.json()
+                sonuc["efatura"] = bool(data.get("efaturaMukellef") or data.get("efatura"))
+                sonuc["earsiv"] = bool(data.get("eArsivMukellef") or data.get("earsiv"))
+                sonuc["unvan"] = data.get("unvan", "") or data.get("title", "")
+                return sonuc
+            except ValueError:
+                gib_basarisiz = True
+        else:
+            gib_basarisiz = True
+    except Exception:
+        gib_basarisiz = True
 
-    sonuc["hata"] = sonuc["hata"] or "GİB API'den yanıt alınamadı. İnternet bağlantınızı kontrol edin."
+    # 2) Nilvera üzerinden dene
+    config = nilvera_config_yukle()
+    if config.get("api_key"):
+        try:
+            sonuc_nilvera = nilvera_sorgula(vkn_temiz, timeout=timeout)
+            if not sonuc_nilvera.get("hata"):
+                sonuc["efatura"] = sonuc_nilvera.get("efatura", False)
+                sonuc["earsiv"] = sonuc_nilvera.get("earsiv", False)
+                sonuc["unvan"] = sonuc_nilvera.get("unvan", "")
+                sonuc["kaynak"] = "Nilvera (GİB üzeri)"
+                sonuc["hata"] = None
+                return sonuc
+        except Exception:
+            pass
+
+    # 3) İkisi de başarısız
+    if gib_basarisiz:
+        sonuc["kaynak"] = "GİB API (erişilemedi)"
+        sonuc["hata"] = (
+            "GİB e-fatura mükellef sorgu API'si doğrudan erişilebilir değil. "
+            "Sorgu için 'Nilvera Ayarları' sekmesinden bir e-Fatura entegratörü "
+            "(Nilvera önerilir) ayarlayın."
+        )
+    else:
+        sonuc["hata"] = "Sorgu sonucu alınamadı. İnternet bağlantınızı kontrol edin."
     return sonuc
 
 

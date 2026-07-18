@@ -1818,6 +1818,12 @@ def _page_efatura_sorgu():
     st.header("E-Fatura Mükellef Sorgu")
     st.caption("GİB e-fatura mükellefiyet kontrolü + Nilvera API entegrasyonu")
 
+    nilvera_cfg = nilvera_config_yukle()
+    if not nilvera_cfg.get("api_key"):
+        st.info("ℹ️ GİB e-fatura public API'si artık doğrudan erişilebilir değil. "
+                "Sorgu için bir e-Fatura entegratörü (Nilvera önerilir) kullanın. "
+                "Aşağıdaki 'Nilvera Ayarları' sekmesinden API anahtarı girebilirsiniz.")
+
     tab_gib, tab_nilvera, tab_ayarlar = st.tabs(["🏛️ GİB Sorgu", "🔗 Nilvera API", "⚙️ Nilvera Ayarları"])
 
     # ── TAB 1: GİB Sorgu ──
@@ -1837,7 +1843,7 @@ def _page_efatura_sorgu():
             elif len(vkn_temiz) == 11 and not tckn_algo_dogrula(vkn_temiz):
                 st.error("TCKN algoritma doğrulaması başarısız. Numara yanlış olabilir.")
             else:
-                with st.spinner("GİB sorgulanıyor..."):
+                with st.spinner("Sorgulanıyor..."):
                     sonuc = gib_efatura_sorgula(vkn_temiz)
 
                 c1, c2, c3 = st.columns(3)

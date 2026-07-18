@@ -2,1014 +2,1384 @@
   "sozluk": {
     "ORTAKLIĞI": {
       "dogru": "MİKAIL EKIZ ORTAKLIĞI",
-      "sayac": 56,
+      "sayac": 93,
       "ilk": "2026-07-18T17:58:46.420034",
-      "son": "2026-07-18T20:42:21.196830",
+      "son": "2026-07-18T21:03:03.734248",
       "alanlar": {},
       "kaynaklar": {
-        "migration_eski": 55,
-        "migration_sozluk": 1
+        "migration_eski": 76,
+        "migration_sozluk": 17
       }
     },
     "ORTAKLIG": {
       "dogru": "MİKAIL EKIZ ORTAKLIĞI",
-      "sayac": 56,
+      "sayac": 94,
       "ilk": "2026-07-18T17:58:46.432707",
-      "son": "2026-07-18T20:42:21.187598",
+      "son": "2026-07-18T21:03:03.751169",
       "alanlar": {},
       "kaynaklar": {
-        "migration_eski": 55,
-        "migration_sozluk": 1
+        "migration_eski": 76,
+        "migration_sozluk": 18
       }
     },
     "30-06-2026": {
       "dogru": "30.06.2026",
-      "sayac": 55,
+      "sayac": 76,
       "ilk": "2026-07-18T17:58:46.445708",
-      "son": "2026-07-18T20:42:20.134930",
+      "son": "2026-07-18T21:03:03.770172",
       "alanlar": {},
       "kaynaklar": {
-        "migration_eski": 55
+        "migration_eski": 76
       }
     },
     "HALKBNK": {
       "dogru": "HALKBANK",
-      "sayac": 56,
+      "sayac": 93,
       "ilk": "2026-07-18T17:58:46.454707",
-      "son": "2026-07-18T20:42:21.206646",
+      "son": "2026-07-18T21:03:03.787184",
       "alanlar": {},
       "kaynaklar": {
-        "migration_eski": 55,
-        "migration_sozluk": 1
+        "migration_eski": 76,
+        "migration_sozluk": 17
       }
     },
     "BURUT": {
       "dogru": "BRÜT",
-      "sayac": 55,
+      "sayac": 75,
       "ilk": "2026-07-18T17:58:46.465708",
-      "son": "2026-07-18T20:42:20.157924",
+      "son": "2026-07-18T21:03:03.803708",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 75
       }
     },
     "NAK1T": {
       "dogru": "NAKIT",
-      "sayac": 55,
+      "sayac": 75,
       "ilk": "2026-07-18T17:58:46.478709",
-      "son": "2026-07-18T20:42:20.168377",
+      "son": "2026-07-18T21:03:03.821709",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 75
       }
     },
     "KRED1": {
       "dogru": "KREDİ",
-      "sayac": 55,
+      "sayac": 75,
       "ilk": "2026-07-18T17:58:46.489825",
-      "son": "2026-07-18T20:42:20.178621",
+      "son": "2026-07-18T21:03:03.844711",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 75
       }
     },
     "KRD1": {
       "dogru": "KREDİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.499707",
-      "son": "2026-07-18T20:42:20.189546",
+      "son": "2026-07-18T21:02:56.207647",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KRDİ": {
       "dogru": "KREDİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.507723",
-      "son": "2026-07-18T20:42:20.200016",
+      "son": "2026-07-18T21:02:56.225650",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KREĐI": {
       "dogru": "KREDİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.516727",
-      "son": "2026-07-18T20:42:20.208206",
+      "son": "2026-07-18T21:02:56.243646",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KREĐİ": {
       "dogru": "KREDİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.526722",
-      "son": "2026-07-18T20:42:20.218698",
+      "son": "2026-07-18T21:02:56.261646",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "F1S": {
       "dogru": "FİS",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.535722",
-      "son": "2026-07-18T20:42:20.229738",
+      "son": "2026-07-18T21:02:56.279647",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "FPTAL": {
       "dogru": "İPTAL",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.544727",
-      "son": "2026-07-18T20:42:20.240701",
+      "son": "2026-07-18T21:02:56.298645",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "FŞ": {
       "dogru": "FİŞ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.551711",
-      "son": "2026-07-18T20:42:20.251831",
+      "son": "2026-07-18T21:02:56.315694",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "Fİ$": {
       "dogru": "FİŞ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.560829",
-      "son": "2026-07-18T20:42:20.263413",
+      "son": "2026-07-18T21:02:56.332648",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "TOPKDV": {
       "dogru": "TOPLAM KDV",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.570814",
-      "son": "2026-07-18T20:42:20.273436",
+      "son": "2026-07-18T21:02:56.351649",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KDV MATRAH": {
       "dogru": "KDV MATRAHI",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.579711",
-      "son": "2026-07-18T20:42:20.282354",
+      "son": "2026-07-18T21:02:56.372164",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "MAL1YET": {
       "dogru": "MALİYET",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.586833",
-      "son": "2026-07-18T20:42:20.294069",
+      "son": "2026-07-18T21:02:56.389210",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "1ADELER": {
       "dogru": "İADELER",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.596835",
-      "son": "2026-07-18T20:42:20.305201",
+      "son": "2026-07-18T21:02:56.408185",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "ADELER": {
       "dogru": "İADELER",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.606898",
-      "son": "2026-07-18T20:42:20.316358",
+      "son": "2026-07-18T21:02:56.425171",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "IADELER": {
       "dogru": "İADELER",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.616882",
-      "son": "2026-07-18T20:42:20.327755",
+      "son": "2026-07-18T21:02:56.443175",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "NKT": {
       "dogru": "NAKİT",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.625489",
-      "son": "2026-07-18T20:42:20.338751",
+      "son": "2026-07-18T21:02:56.461174",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "YEMEKCES": {
       "dogru": "YEMEK ÇEKİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.635661",
-      "son": "2026-07-18T20:42:20.350111",
+      "son": "2026-07-18T21:02:56.479194",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "YEMEKCEK": {
       "dogru": "YEMEK ÇEKİ",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.642613",
-      "son": "2026-07-18T20:42:20.361249",
+      "son": "2026-07-18T21:02:56.497172",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "N K T": {
       "dogru": "NAKİT",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.651725",
-      "son": "2026-07-18T20:42:20.371589",
+      "son": "2026-07-18T21:02:56.514171",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KREDKARTI": {
       "dogru": "KREDİ KARTI",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.661640",
-      "son": "2026-07-18T20:42:20.382911",
+      "son": "2026-07-18T21:02:56.533175",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KRED_KART": {
       "dogru": "KREDİ KARTI",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.671612",
-      "son": "2026-07-18T20:42:20.395040",
+      "son": "2026-07-18T21:02:56.550174",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KREDİ KARTI ILE": {
       "dogru": "KREDİ KARTI İLE",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.679725",
-      "son": "2026-07-18T20:42:20.407267",
+      "son": "2026-07-18T21:02:56.564180",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "BANKA KARTI ILE": {
       "dogru": "BANKA KARTI İLE",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.689613",
-      "son": "2026-07-18T20:42:20.418585",
+      "son": "2026-07-18T21:02:56.581443",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "BANKA KARŞILAMALI": {
       "dogru": "BANKA KARTI İLE",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.698612",
-      "son": "2026-07-18T20:42:20.430619",
+      "son": "2026-07-18T21:02:56.597422",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "BANKA KARŞILAMALI ALACAK": {
       "dogru": "BANKA KARTI İLE",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.708734",
-      "son": "2026-07-18T20:42:20.442433",
+      "son": "2026-07-18T21:02:56.618420",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "TOPLAM ALACAK": {
       "dogru": "TOPLAM TAHSİLAT",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.718615",
-      "son": "2026-07-18T20:42:20.453183",
+      "son": "2026-07-18T21:02:56.634459",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "TAHSİLAT TOPLAMI": {
       "dogru": "TOPLAM TAHSİLAT",
-      "sayac": 55,
+      "sayac": 74,
       "ilk": "2026-07-18T17:58:46.727735",
-      "son": "2026-07-18T20:42:20.467825",
+      "son": "2026-07-18T21:02:56.651423",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 55
+        "migration_sozluk": 74
       }
     },
     "KUM TOPLAM": {
       "dogru": "KÜM TOPLAM",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.737727",
-      "son": "2026-07-18T20:42:20.482207",
+      "son": "2026-07-18T21:02:56.668420",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "KUMULATIF TOPLAM": {
       "dogru": "KÜMÜLATİF TOPLAM",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.747612",
-      "son": "2026-07-18T20:42:20.497239",
+      "son": "2026-07-18T21:02:56.683420",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "EKRAN ORTU": {
       "dogru": "EKRAN ÜSTÜ",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.755731",
-      "son": "2026-07-18T20:42:20.512309",
+      "son": "2026-07-18T21:02:56.699421",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "EKORAN ÜSTÜ": {
       "dogru": "EKRAN ÜSTÜ",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.764722",
-      "son": "2026-07-18T20:42:20.526939",
+      "son": "2026-07-18T21:02:56.715423",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "EKRAN ORTUS": {
       "dogru": "EKRAN ÜSTÜ",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.773958",
-      "son": "2026-07-18T20:42:20.542751",
+      "son": "2026-07-18T21:02:56.731420",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "BILGI FIRMA": {
       "dogru": "BİLGİ FİRMA",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.781098",
-      "son": "2026-07-18T20:42:20.554359",
+      "son": "2026-07-18T21:02:56.747441",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "ALICI FIRMA": {
       "dogru": "ALICI FİRMA",
-      "sayac": 54,
+      "sayac": 73,
       "ilk": "2026-07-18T17:58:46.789958",
-      "son": "2026-07-18T20:42:20.566214",
+      "son": "2026-07-18T21:02:56.763429",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 54
+        "migration_sozluk": 73
       }
     },
     "FIRMA ADI": {
       "dogru": "FİRMA ADI",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.799760",
-      "son": "2026-07-18T20:42:20.577572",
+      "son": "2026-07-18T21:02:56.778942",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "TARIH": {
       "dogru": "TARİH",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.809011",
-      "son": "2026-07-18T20:42:20.588481",
+      "son": "2026-07-18T21:02:56.795944",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "TARIHI": {
       "dogru": "TARİHİ",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.819013",
-      "son": "2026-07-18T20:42:20.599683",
+      "son": "2026-07-18T21:02:56.810963",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "TSA CURA": {
       "dogru": "İSA CURA",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.829244",
-      "son": "2026-07-18T20:42:20.609856",
+      "son": "2026-07-18T21:02:56.827990",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "TSA": {
       "dogru": "İSA",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.839364",
-      "son": "2026-07-18T20:42:20.620559",
+      "son": "2026-07-18T21:02:56.843943",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "IKSPI BILGISA": {
       "dogru": "GÖKKUŞAĞI",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.849381",
-      "son": "2026-07-18T20:42:20.631058",
+      "son": "2026-07-18T21:02:56.861944",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "GOKKUSAGI": {
       "dogru": "GÖKKUŞAĞI",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.860271",
-      "son": "2026-07-18T20:42:20.641757",
+      "son": "2026-07-18T21:02:56.879945",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "GOKKUSAG": {
       "dogru": "GÖKKUŞAĞI",
-      "sayac": 53,
+      "sayac": 72,
       "ilk": "2026-07-18T17:58:46.870250",
-      "son": "2026-07-18T20:42:20.652113",
+      "son": "2026-07-18T21:02:56.895945",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 53
+        "migration_sozluk": 72
       }
     },
     "GOKKUSAGI MARKET": {
       "dogru": "GÖKKUŞAĞI MARKET",
-      "sayac": 52,
+      "sayac": 71,
       "ilk": "2026-07-18T17:58:46.879358",
-      "son": "2026-07-18T20:42:20.662080",
+      "son": "2026-07-18T21:02:56.912943",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 52
+        "migration_sozluk": 71
       }
     },
     "GOKKUSAG MARKET": {
       "dogru": "GÖKKUŞAĞI MARKET",
-      "sayac": 52,
+      "sayac": 71,
       "ilk": "2026-07-18T17:58:46.889369",
-      "son": "2026-07-18T20:42:20.672171",
+      "son": "2026-07-18T21:02:56.927942",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 52
+        "migration_sozluk": 71
       }
     },
     "MIKAIL EKIZ ORTAKLIGI": {
       "dogru": "MİKAIL EKİZ ORTAKLIĞI",
-      "sayac": 52,
+      "sayac": 71,
       "ilk": "2026-07-18T17:58:46.899331",
-      "son": "2026-07-18T20:42:20.683051",
+      "son": "2026-07-18T21:02:56.943944",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 52
+        "migration_sozluk": 71
       }
     },
     "MIKAIL EKIZ": {
       "dogru": "MİKAIL EKİZ",
-      "sayac": 52,
+      "sayac": 71,
       "ilk": "2026-07-18T17:58:46.908372",
-      "son": "2026-07-18T20:42:20.693215",
+      "son": "2026-07-18T21:02:56.959973",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 52
+        "migration_sozluk": 71
       }
     },
     "IS BANKAS1": {
       "dogru": "İş Bankası",
-      "sayac": 52,
+      "sayac": 71,
       "ilk": "2026-07-18T17:58:46.917361",
-      "son": "2026-07-18T20:42:20.703107",
+      "son": "2026-07-18T21:02:56.975468",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 52
+        "migration_sozluk": 71
       }
     },
     "IS BANKASI": {
       "dogru": "İş Bankası",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.927369",
-      "son": "2026-07-18T20:42:20.714394",
+      "son": "2026-07-18T21:02:56.991470",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "TURKIYE FINANS": {
       "dogru": "Türkiye Finans",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.937360",
-      "son": "2026-07-18T20:42:20.724963",
+      "son": "2026-07-18T21:02:57.006469",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "IPTAL": {
       "dogru": "İPTAL",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.947359",
-      "son": "2026-07-18T20:42:20.735048",
+      "son": "2026-07-18T21:02:57.022467",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "FIIS": {
       "dogru": "FİŞ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.957250",
-      "son": "2026-07-18T20:42:20.744973",
+      "son": "2026-07-18T21:02:57.039467",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "KUMULATIF": {
       "dogru": "KÜMÜLATİF",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.967249",
-      "son": "2026-07-18T20:42:20.755180",
+      "son": "2026-07-18T21:02:57.055467",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "SATIS": {
       "dogru": "SATIŞ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.977338",
-      "son": "2026-07-18T20:42:20.765572",
+      "son": "2026-07-18T21:02:57.070468",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "MUSTERI": {
       "dogru": "MÜŞTERİ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.987250",
-      "son": "2026-07-18T20:42:20.775702",
+      "son": "2026-07-18T21:02:57.086469",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "VERGI": {
       "dogru": "VERGİ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:46.996266",
-      "son": "2026-07-18T20:42:20.785581",
+      "son": "2026-07-18T21:02:57.107468",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "MALI": {
       "dogru": "MALİ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:47.003253",
-      "son": "2026-07-18T20:42:20.796067",
+      "son": "2026-07-18T21:02:57.123467",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "CIRO": {
       "dogru": "CİRO",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:47.013255",
-      "son": "2026-07-18T20:42:20.806540",
+      "son": "2026-07-18T21:02:57.139467",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "ODEME": {
       "dogru": "ÖDEME",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:47.019368",
-      "son": "2026-07-18T20:42:20.817322",
+      "son": "2026-07-18T21:02:57.155468",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "GECERLI": {
       "dogru": "GEÇERLİ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:47.030729",
-      "son": "2026-07-18T20:42:20.828004",
+      "son": "2026-07-18T21:02:57.171478",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "KREDI": {
       "dogru": "KREDİ",
-      "sayac": 51,
+      "sayac": 70,
       "ilk": "2026-07-18T17:58:47.040789",
-      "son": "2026-07-18T20:42:20.839312",
+      "son": "2026-07-18T21:02:57.186989",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 51
+        "migration_sozluk": 70
       }
     },
     "SLIP": {
       "dogru": "SLİP",
-      "sayac": 50,
+      "sayac": 69,
       "ilk": "2026-07-18T17:58:47.051878",
-      "son": "2026-07-18T20:42:20.850331",
+      "son": "2026-07-18T21:02:57.202027",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 50
+        "migration_sozluk": 69
       }
     },
     "EKU": {
       "dogru": "EKÜ",
-      "sayac": 50,
+      "sayac": 69,
       "ilk": "2026-07-18T17:58:47.061944",
-      "son": "2026-07-18T20:42:20.860395",
+      "son": "2026-07-18T21:02:57.216991",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 50
+        "migration_sozluk": 69
       }
     },
     "TURLERI": {
       "dogru": "TÜRLERİ",
-      "sayac": 50,
+      "sayac": 69,
       "ilk": "2026-07-18T17:58:47.074055",
-      "son": "2026-07-18T20:42:20.870010",
+      "son": "2026-07-18T21:02:57.231990",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 50
+        "migration_sozluk": 69
       }
     },
     "4LACAK": {
       "dogru": "ALACAK",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.880579",
-      "son": "2026-07-18T20:42:20.880588",
+      "son": "2026-07-18T21:02:57.248001",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "4L4C4K": {
       "dogru": "ALACAK",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.892040",
-      "son": "2026-07-18T20:42:20.892049",
+      "son": "2026-07-18T21:02:57.263991",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "5ATIŞ": {
       "dogru": "SATIŞ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.902315",
-      "son": "2026-07-18T20:42:20.902323",
+      "son": "2026-07-18T21:02:57.278992",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "5ATIS": {
       "dogru": "SATIŞ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.911407",
-      "son": "2026-07-18T20:42:20.911416",
+      "son": "2026-07-18T21:02:57.295009",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "MU5TERI": {
       "dogru": "MÜŞTERİ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.921679",
-      "son": "2026-07-18T20:42:20.921688",
+      "son": "2026-07-18T21:02:57.310988",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "MU5TERİ": {
       "dogru": "MÜŞTERİ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.930999",
-      "son": "2026-07-18T20:42:20.931006",
+      "son": "2026-07-18T21:02:57.326991",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "6ARANTİ": {
       "dogru": "GARANTİ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.940405",
-      "son": "2026-07-18T20:42:20.940418",
+      "son": "2026-07-18T21:02:57.340987",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "6ARANTI": {
       "dogru": "GARANTİ",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.951107",
-      "son": "2026-07-18T20:42:20.951114",
+      "son": "2026-07-18T21:02:57.357989",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "TAH51LAT": {
       "dogru": "TAHSİLAT",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.960573",
-      "son": "2026-07-18T20:42:20.960581",
+      "son": "2026-07-18T21:02:57.373997",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "TAHS1LAT": {
       "dogru": "TAHSİLAT",
-      "sayac": 1,
+      "sayac": 20,
       "ilk": "2026-07-18T20:42:20.970266",
-      "son": "2026-07-18T20:42:20.970273",
+      "son": "2026-07-18T21:02:57.389516",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 20
       }
     },
     "0DEME": {
       "dogru": "ÖDEME",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:20.980518",
-      "son": "2026-07-18T20:42:20.980526",
+      "son": "2026-07-18T21:02:57.404511",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "KREDİKARTI": {
       "dogru": "KREDİ KARTI",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:20.990086",
-      "son": "2026-07-18T20:42:20.990094",
+      "son": "2026-07-18T21:02:57.420511",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "KREDİKART": {
       "dogru": "KREDİ KART",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:20.999552",
-      "son": "2026-07-18T20:42:20.999561",
+      "son": "2026-07-18T21:02:57.435510",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "NAKİTBEDELİ": {
       "dogru": "NAKİT BEDELİ",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.009374",
-      "son": "2026-07-18T20:42:21.009382",
+      "son": "2026-07-18T21:02:57.450513",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "NAKİTODEME": {
       "dogru": "NAKİT ÖDEME",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.018790",
-      "son": "2026-07-18T20:42:21.018798",
+      "son": "2026-07-18T21:02:57.465513",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "NAKİTÖDEME": {
       "dogru": "NAKİT ÖDEME",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.028375",
-      "son": "2026-07-18T20:42:21.028383",
+      "son": "2026-07-18T21:02:57.480516",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "YEMEKÇEKİ": {
       "dogru": "YEMEK ÇEKİ",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.037200",
-      "son": "2026-07-18T20:42:21.037208",
+      "son": "2026-07-18T21:02:57.495511",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "KREDİKARTİLE": {
       "dogru": "KREDİ KARTI İLE",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.047538",
-      "son": "2026-07-18T20:42:21.047546",
+      "son": "2026-07-18T21:02:57.511516",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "MUSTERİ": {
       "dogru": "MÜŞTERİ",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.058404",
-      "son": "2026-07-18T20:42:21.058412",
+      "son": "2026-07-18T21:02:57.526511",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "SATİS": {
       "dogru": "SATIŞ",
-      "sayac": 1,
+      "sayac": 19,
       "ilk": "2026-07-18T20:42:21.069027",
-      "son": "2026-07-18T20:42:21.069036",
+      "son": "2026-07-18T21:02:57.542533",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 19
       }
     },
     "SOK": {
       "dogru": "ŞOK",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.078668",
-      "son": "2026-07-18T20:42:21.078676",
+      "son": "2026-07-18T21:02:57.557516",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "BIM": {
       "dogru": "BİM",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.088459",
-      "son": "2026-07-18T20:42:21.088467",
+      "son": "2026-07-18T21:02:57.573527",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "CARREFOUR": {
       "dogru": "CARREFOURSA",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.098070",
-      "son": "2026-07-18T20:42:21.098079",
+      "son": "2026-07-18T21:02:57.589041",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "DIGER": {
       "dogru": "DİĞER",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.108183",
-      "son": "2026-07-18T20:42:21.108192",
+      "son": "2026-07-18T21:02:57.605042",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "DİGER": {
       "dogru": "DİĞER",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.118612",
-      "son": "2026-07-18T20:42:21.118619",
+      "son": "2026-07-18T21:02:57.622041",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "ISLEM": {
       "dogru": "İŞLEM",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.128759",
-      "son": "2026-07-18T20:42:21.128767",
+      "son": "2026-07-18T21:02:57.637041",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "ISYERI": {
       "dogru": "İŞYERİ",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.138736",
-      "son": "2026-07-18T20:42:21.138744",
+      "son": "2026-07-18T21:02:57.653044",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "ISYERİ": {
       "dogru": "İŞYERİ",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.148036",
-      "son": "2026-07-18T20:42:21.148044",
+      "son": "2026-07-18T21:02:57.668042",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "AKTİF BANK": {
       "dogru": "Aktif Bank",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.157787",
-      "son": "2026-07-18T20:42:21.157794",
+      "son": "2026-07-18T21:02:57.684042",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "ALTERNATİF BANK": {
       "dogru": "Alternatif Bank",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.169076",
-      "son": "2026-07-18T20:42:21.169084",
+      "son": "2026-07-18T21:02:57.699044",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
       }
     },
     "BRUT": {
       "dogru": "BRÜT",
-      "sayac": 1,
+      "sayac": 18,
       "ilk": "2026-07-18T20:42:21.178435",
-      "son": "2026-07-18T20:42:21.178442",
+      "son": "2026-07-18T21:02:57.715063",
       "alanlar": {},
       "kaynaklar": {
-        "migration_sozluk": 1
+        "migration_sozluk": 18
+      }
+    },
+    "T.İŞ BANKASI": {
+      "dogru": "T. İş Bankası",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.430921",
+      "son": "2026-07-18T21:02:57.774049",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "KREDI MEKTUP": {
+      "dogru": "KREDİ MEKTUP",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.443962",
+      "son": "2026-07-18T21:02:57.790604",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "FİS": {
+      "dogru": "FİŞ",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.456520",
+      "son": "2026-07-18T21:02:57.806605",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "TOPLAMTAHSİLAT": {
+      "dogru": "TOPLAM TAHSİLAT",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.469518",
+      "son": "2026-07-18T21:02:57.823602",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "TAHSILATTOPLAMI": {
+      "dogru": "TAHSİLAT TOPLAMI",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.482499",
+      "son": "2026-07-18T21:02:57.839602",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "NETTUTAR": {
+      "dogru": "NET TUTAR",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.492499",
+      "son": "2026-07-18T21:02:57.857605",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "ODENEN": {
+      "dogru": "ÖDENEN",
+      "sayac": 16,
+      "ilk": "2026-07-18T20:58:37.504499",
+      "son": "2026-07-18T21:02:57.874605",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 16
+      }
+    },
+    "IRSALIYE": {
+      "dogru": "İRSALİYE",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.517516",
+      "son": "2026-07-18T21:02:57.889603",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "IRSALIYENO": {
+      "dogru": "İRSALİYE NO",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.531503",
+      "son": "2026-07-18T21:02:57.905603",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "SIPARIS": {
+      "dogru": "SİPARİŞ",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.543517",
+      "son": "2026-07-18T21:02:57.921650",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "SIPARISNO": {
+      "dogru": "SİPARİŞ NO",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.555541",
+      "son": "2026-07-18T21:02:57.936620",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "TESLIM": {
+      "dogru": "TESLİM",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.570093",
+      "son": "2026-07-18T21:02:57.952619",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "FIYAT": {
+      "dogru": "FİYAT",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.583093",
+      "son": "2026-07-18T21:02:57.968651",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "HIZMET": {
+      "dogru": "HİZMET",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.597094",
+      "son": "2026-07-18T21:02:57.984849",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "KOLLEKTIF": {
+      "dogru": "KOLLEKTİF",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.610077",
+      "son": "2026-07-18T21:02:58.000850",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "TICARET": {
+      "dogru": "TİCARET",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.623095",
+      "son": "2026-07-18T21:02:58.016854",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "LİMITED": {
+      "dogru": "LİMİTED",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.636094",
+      "son": "2026-07-18T21:02:58.033849",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "LIMITED": {
+      "dogru": "LİMİTED",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.646098",
+      "son": "2026-07-18T21:02:58.050852",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "ANONIM": {
+      "dogru": "ANONİM",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.658669",
+      "son": "2026-07-18T21:02:58.066852",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "SANAYI": {
+      "dogru": "SANAYİ",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.671666",
+      "son": "2026-07-18T21:02:58.081851",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "RESTAURANT": {
+      "dogru": "RESTORAN",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.684667",
+      "son": "2026-07-18T21:02:58.098851",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "IS BANKASI KART": {
+      "dogru": "İş Bankası",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.696665",
+      "son": "2026-07-18T21:02:58.116850",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "YAPI KREDİ": {
+      "dogru": "Yapı Kredi",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.713665",
+      "son": "2026-07-18T21:02:58.132855",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "ISBANK": {
+      "dogru": "İş Bankası",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.725651",
+      "son": "2026-07-18T21:02:58.148849",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "HALK": {
+      "dogru": "Halkbank",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.743665",
+      "son": "2026-07-18T21:02:58.165850",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "VAKIF": {
+      "dogru": "Vakıfbank",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.759673",
+      "son": "2026-07-18T21:02:58.181363",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "FINANS BANK": {
+      "dogru": "Türkiye Finans",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.776243",
+      "son": "2026-07-18T21:02:58.198370",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "FİNANS BANK": {
+      "dogru": "Türkiye Finans",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.791243",
+      "son": "2026-07-18T21:02:58.215370",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "KUVEYT TURK": {
+      "dogru": "Kuveyt Türk",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.804226",
+      "son": "2026-07-18T21:02:58.232369",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "EFATURA": {
+      "dogru": "E-Fatura",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.821243",
+      "son": "2026-07-18T21:02:58.248369",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "E-ARSIV": {
+      "dogru": "E-Arşiv",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.836245",
+      "son": "2026-07-18T21:02:58.266370",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "EARSIV": {
+      "dogru": "E-Arşiv",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.853268",
+      "son": "2026-07-18T21:02:58.282370",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "EARŞİV": {
+      "dogru": "E-Arşiv",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.867800",
+      "son": "2026-07-18T21:02:58.298368",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "E ARSIV": {
+      "dogru": "E-Arşiv",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.884801",
+      "son": "2026-07-18T21:02:58.315370",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "MERNIS": {
+      "dogru": "MERNİS",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.901800",
+      "son": "2026-07-18T21:02:58.330388",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "DIGITAL": {
+      "dogru": "DİJİTAL",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.915800",
+      "son": "2026-07-18T21:02:58.347371",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
+      }
+    },
+    "SICILNO": {
+      "dogru": "SİCİL NO",
+      "sayac": 15,
+      "ilk": "2026-07-18T20:58:37.932784",
+      "son": "2026-07-18T21:02:58.364373",
+      "alanlar": {},
+      "kaynaklar": {
+        "migration_sozluk": 15
       }
     }
   },
   "alan_duzeltme": {},
   "istatistik": {
-    "toplam_duzeltme": 3724,
+    "toplam_duzeltme": 6214,
     "auto_uygulanan": 0,
     "reddedilen": 0,
     "migration_import": true
   },
-  "son_guncelleme": "2026-07-18T20:42:21.216158"
+  "son_guncelleme": "2026-07-18T21:03:03.844711"
 }
