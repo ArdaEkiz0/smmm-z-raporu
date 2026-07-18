@@ -93,18 +93,7 @@ def _login_ekrani_goster():
         with st.form("login_form", clear_on_submit=False):
             username = st.text_input("Kullanıcı Adı", placeholder="admin", key="login_username")
             password = st.text_input("Şifre", type="password", placeholder="••••••••", key="login_password")
-            col_a, col_b = st.columns(2)
-            with col_a:
-                submit = st.form_submit_button("🔓 Giriş Yap", type="primary", use_container_width=True)
-            with col_b:
-                if st.form_submit_button("Misafir", use_container_width=True):
-                    st.session_state.current_user = {
-                        "username": "misafir",
-                        "role": "user",
-                        "full_name": "Misafir Kullanıcı",
-                        "readonly": True,
-                    }
-                    st.rerun()
+            submit = st.form_submit_button("🔓 Giriş Yap", type="primary", use_container_width=True)
 
         if submit:
             if not username or not password:
