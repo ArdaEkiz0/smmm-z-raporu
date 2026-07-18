@@ -118,6 +118,15 @@ def _login_ekrani_goster():
         except Exception:
             pass
 
+        st.divider()
+        if st.button("🔑 Şifremi Unuttum — Admin Şifresini Sıfırla", type="secondary", use_container_width=True, key="sifre_sifirla"):
+            from user_manager import admin_sifirla
+            sonuc = admin_sifirla()
+            if sonuc["basarili"]:
+                st.success(f"✅ {sonuc['mesaj']}. Artık **admin** / **admin123** ile giriş yapabilirsiniz.")
+            else:
+                st.error(sonuc["mesaj"])
+
 
 if not auth_ok():
     _login_ekrani_goster()

@@ -218,6 +218,22 @@ def kullanici_admin_mi(username: str) -> bool:
     return bool(k and k.get("role") == "admin")
 
 
+def admin_sifirla() -> Dict:
+    """Default admin sifresini admin123 olarak sifirla."""
+    kullanicilar = kullanicilari_yukle()
+    admin_yok = True
+    for k in kullanicilar:
+        if k.get("username", "").lower() == DEFAULT_ADMIN_USERNAME.lower():
+            k["password_hash"] = _hash_sifre(DEFAULT_ADMIN_PASSWORD)
+            k["aktif"] = True
+            admin_yok = False
+            break
+    if admin_yok:
+        kullanicilar.insert(0, _kullanici_default_admin())
+    _kaydet(kullanicilar)
+    return {"basarili": True, "mesaj": f"Admin şifresi '{DEFAULT_ADMIN_PASSWORD}' olarak sıfırlandı"}
+
+
 def kullanici_listesi_safe() -> List[Dict]:
     """Sifre hash'leri olmadan kullanici listesi (UI icin)."""
     kullanicilar = kullanicilari_yukle()
