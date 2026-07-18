@@ -27,6 +27,7 @@ mukellefler.json
 *.jpeg
 *.jpg
 streamlit_test.log
+smmm.log
 _t3.py
 _*.py
 crash_log.txt
