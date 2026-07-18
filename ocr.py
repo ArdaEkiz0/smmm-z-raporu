@@ -750,7 +750,7 @@ def salon_bul(text):
         r'(?:K[İI]RAZ|[İI]ZM[İI]R|[İI]STANBUL|ANKARA)',
         r'(?:RAPOR|G[ÜU]N|G[ÜU]NL[ÜU]K|Z\s*G[ÜU]N|F[İI]Ş|TOPLAM|NAK[İI]T|KART|TUTAR|SAYI)',
         r'(?:VD|TC|VKN)',
-        r'(?:PINAR|CADDE|SOKAK|MEZBAH|ÇAY|KAHVE|TEMEL|GIDA|MESRUBAT|TOST|T\.GIDA|T\.EKMEK|SIGARA|YA[PĞ]|MEYVE|SEBZE|MEYVE&SEBZE|SEBZESMEYVE)',
+        r'(?:PINAR|CADDE|SOKAK|MEZBAH|ÇAY|KAHVE|TOST|MESRUBAT|T\.GIDA|T\.EKMEK|SIGARA|YA[PĞ]|MEYVE|SEBZE|MEYVE&SEBZE|SEBZESMEYVE)',
         r'.*[^\x20-\x7E\xc0-\xff].*',  # Garbled chars (binary noise)
     ]
 
@@ -865,12 +865,12 @@ def parse_z_raporu(text):
 
     # Tarih
     tarih_pat = [
-        (r'TAR[İI]H[İIİl1]?[:\-]?\s*([0-9IlKkSs]{1,2})[\s./\-]+([0-9OoQq]{1,2})[\s./\-]+(\d{2,4})', True),
+        (r'TAR[İI]H[İI1]?[:\-]?\s*([0-9Il]{1,2})[\s./\-]+([0-9IlOo]{1,2})[\s./\-]+([0-9BOIlOoQD]{2,4})', True),
         (r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{2,4})\s*(?:TAR[İI]H|SAAT)', True),
         (r'TAR[\.\s]*[:\-]?\s*(\d{1,2})[\s./\-]+(\d{1,2})[\s./\-]+(\d{2,4})', True),
         (r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{4})', True),
         (r'(\d{1,2})[./\-](\d{1,2})[./\-](\d{2})(?!\d)', True),
-        (r'([0-9IlKkSs]{1,2})[\./](\d{1,2})[\./](\d{4})', True),
+        (r'([0-9Il]{1,2})[\./]([0-9IlOo]{1,2})[\./]([0-9BOIlOoQD]{4})', True),
         (r'[\w\s]{0,5}(\d{1,2})[./](\d{1,2})[./](\d{4})', True),
         (r'\b(\d{1,2})[./](\d{4})\b', False),
     ]
@@ -887,9 +887,11 @@ def parse_z_raporu(text):
                 else:
                     ay_str, yil_str = m.group(1), m.group(2)
                     gun_str = "01"
-                gun_str = re.sub(r'[IlKkSs]', '1', gun_str)
-                ay_str = re.sub(r'[OoQq]', '0', ay_str)
-                yil_str = yil_str.replace('B', '6').replace('O', '0').replace('Q', '0').replace('D', '0')
+                gun_str = re.sub(r'[Il]', '1', gun_str)
+                gun_str = re.sub(r'[Oo]', '0', gun_str)
+                ay_str = re.sub(r'[Oo]', '0', ay_str)
+                ay_str = re.sub(r'[Il]', '1', ay_str)
+                yil_str = yil_str.replace('I', '1').replace('l', '1').replace('O', '0').replace('o', '0').replace('B', '6').replace('Q', '0').replace('D', '0')
                 gun = int(gun_str)
                 ay = int(ay_str)
                 yil = int(yil_str)
