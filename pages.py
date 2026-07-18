@@ -865,7 +865,7 @@ def _page_dashboard():
             musteri_ciro[m] = musteri_ciro.get(m, 0) + (f.get("net_toplam", 0) or 0)
         if musteri_ciro:
             df_m = pd.DataFrame([{"Mükellef": k, "Ciro": v} for k, v in sorted(musteri_ciro.items(), key=lambda x: -x[1])])
-            st.bar_chart(df_m.set_index("Mukellef"), use_container_width=True)
+            st.bar_chart(df_m.set_index("Mükellef"), use_container_width=True)
 
     st.divider()
     st.subheader("Karsilastirma")
