@@ -57,7 +57,7 @@ def kullanicilari_yukle() -> List[Dict]:
         return _ilk_kurulum_olustur()
 
     if "users" in data and isinstance(data["users"], list):
-        return data["users"]
+        return _admin_kontrol_et(data["users"])
 
     if "passwords" in data and isinstance(data["passwords"], list):
         return _eski_format_migrate(data["passwords"])
@@ -71,6 +71,17 @@ def _ilk_kurulum_olustur() -> List[Dict]:
     kullanicilar = [admin]
     _kaydet(kullanicilar)
     log.info(f"Ilk kurulum: default admin '{DEFAULT_ADMIN_USERNAME}' olusturuldu")
+    return kullanicilar
+
+
+def _admin_kontrol_et(kullanicilar: List[Dict]) -> List[Dict]:
+    """Admin kullanicinin her zaman mevcut oldugundan emin ol."""
+    admin_var = any(k.get("username", "").lower() == DEFAULT_ADMIN_USERNAME.lower() for k in kullanicilar)
+    if not admin_var:
+        admin = _kullanici_default_admin()
+        kullanicilar.insert(0, admin)
+        _kaydet(kullanicilar)
+        log.warning(f"Admin kullanici bulunamadi, yeniden olusturuldu")
     return kullanicilar
 
 
@@ -132,7 +143,18 @@ def kullanici_dogrula(username: str, sifre: str) -> Optional[Dict]:
     stored = k.get("password_hash", "")
     if not stored:
         return None
-    return k if _hash_sifre(sifre) == stored else None
+    dogru = _hash_sifre(sifre)
+    if dogru == stored:
+        return k
+    if sifre == stored:
+        k["password_hash"] = dogru
+        kullanicilar = kullanicilari_yukle()
+        for kk in kullanicilar:
+            if kk.get("username", "").lower() == username.lower():
+                kk["password_hash"] = dogru
+        _kaydet(kullanicilar)
+        return k
+    return None
 
 
 def kullanici_ekle(username: str, sifre: str, role: str = "user", full_name: str = "",
