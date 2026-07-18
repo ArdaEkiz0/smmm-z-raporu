@@ -63,28 +63,14 @@ try:
 except Exception:
     pass
 
-st.components.v1.html("""
-<script>
-if (localStorage.getItem("smmm_auth") === "1" && window.location.search !== "?smmm_auth=1") {
-    window.location.search = "?smmm_auth=1";
-}
-</script>
-""", height=0)
-
 def _mevcut_kullanici():
     """Session state'den aktif kullaniciyi al."""
     return st.session_state.get("current_user")
 
 
 def auth_ok():
-    """Session state veya query param'da oturum bilgisi var mi?"""
     cu = _mevcut_kullanici()
-    if cu and cu.get("username"):
-        return True
-    if st.query_params.get("smmm_auth") == "1":
-        st.session_state["auth_legacy"] = True
-        return True
-    return False
+    return bool(cu and cu.get("username"))
 
 
 def _login_ekrani_goster():
@@ -198,10 +184,9 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
         if st.button("🚪 Çıkış Yap", key="logout_btn", use_container_width=True):
-            for k in ["current_user", "auth_ok", "auth_legacy", "_fis_ver_version",
-                      "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
+            for k in ["current_user", "auth_ok", "_fis_ver_version",
+                       "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
                 st.session_state.pop(k, None)
-            st.query_params.clear()
             st.rerun()
 
     tema_degistirici()
