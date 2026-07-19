@@ -1,13 +1,76 @@
+# Python
 __pycache__/
 *.pyc
 *.pyo
-.git
+*.pyd
+
+# IDE / config
+.git/
 .gitignore
+.gitattributes
 .opencode/
 .playwright-mcp/
-streamlit_app/
-sample_*.jpeg
-*.png
+.idea/
+.vscode/
+
+# Log ve geçici dosyalar
+*.log
+*.txt
+!requirements.txt
+!packages.txt
 crash_log.txt
 cf_*.txt
 ngrok_*.txt
+_ocr_test.txt
+streamlit_test.log
+smmm.log
+
+# Görsel / test dosyaları
+*.png
+*.jpg
+*.jpeg
+sample_*.jpeg
+*.jpeg.txt
+zraporu_*.png
+ayarlar_*.png
+dark-*.png
+cache-test.png
+ocr_WhatsAppImage*.jpeg.txt
+colab_api.ipynb
+.playwright-mcp/
+
+# Çalıştırma scriptleri (sadece Docker içinde çalışır)
+Baslat.bat
+baslat_tunnel.ps1
+Z_Raporu_Uygulamasi.bat
+cloudflared.exe
+
+# Veri ve yedekler
+gecmis/
+fisler/
+yedekler/
+earsiv_faturalar/
+secrets.json
+auth_config.json
+email_config.json
+mukellefler.json
+urun_kodlari.json
+hesap_kodlari.json
+nilvera_config.json
+
+# Testler (production'da gerekmez)
+test_*.py
+debug_*.py
+_*.py
+_t3.py
+check_live.py
+
+# Streamlit (yok say, container içinde yaratılacak)
+.streamlit/secrets.toml
+.streamlit/
+
+# Çıktılar
+zraporu_v2.png
+zraporu_new_ui.png
+zraporu_logged.png
+zraporu_loaded.png

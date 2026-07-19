@@ -11,15 +11,21 @@ headless = true
 runOnSave = false
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 25
+fileWatcherType = "none"
 
 [browser]
 gatherUsageStats = false
 
 [client]
-caching = false
-showErrorDetails = true
+caching = true
+showErrorDetails = false
 toolbarMode = "minimal"
 
 [global]
 developmentMode = false
 logLevel = "info"
+
+[runner]
+# Fast reruns: widget state korunur, script tekrar çalıştırılır
+fastReruns = true

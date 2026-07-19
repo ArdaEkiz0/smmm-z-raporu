@@ -22,12 +22,26 @@ from veritabani import (
 from luca import (
     urun_kodlari_yukle, urun_kodlari_kaydet, varsayilan_kodlar
 )
-from pages import (
-    _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
-    _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar,
-    _page_beyanname_takvimi, _page_efatura_sorgu
-)
 from tema import tema_uygula, tema_degistirici
+
+# Pages modulunu lazy import et - sadece aktif sayfa fonksiyonu yüklensin
+def _get_page(name):
+    """Sayfa fonksiyonunu lazy olarak pages modülünden al."""
+    from pages import (
+        _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
+        _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar,
+        _page_beyanname_takvimi, _page_efatura_sorgu
+    )
+    return {
+        "Dashboard": _page_dashboard,
+        "Z Raporu Yükle": _page_z_raporu_yukle,
+        "Fiş Geçmişi": _page_fis_gecmisi,
+        "Mükellef Yönetimi": _page_mukellef_yonetimi,
+        "KDV Özeti": _page_kdv_ozeti,
+        "Ayarlar": _page_ayarlar,
+        "Beyanname Takvimi": _page_beyanname_takvimi,
+        "E-Fatura Sorgu": _page_efatura_sorgu,
+    }[name]
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -64,6 +78,24 @@ st.markdown("""
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 """, unsafe_allow_html=True)
+
+# EasyOCR warm-up: ilk istek oncesinde modeli bellege yukle (10-20s kazandirir).
+# @st.cache_resource ile her session paylasir.
+@st.cache_resource(show_spinner="EasyOCR modeli yükleniyor...")
+def _warmup_easyocr():
+    """EasyOCR reader'i yukle. Streamlit session'lari arasinda paylasilir."""
+    try:
+        from ocr import _get_easyocr
+        reader = _get_easyocr()
+        return reader is not None
+    except Exception:
+        return False
+
+# Warm-up'i arka planda calistir (UI'i bloklamaz)
+try:
+    _warmup_easyocr()
+except Exception:
+    log.warning("EasyOCR warm-up basarisiz", exc_info=True)
 
 # Eski ogrenme verilerini istatistiksel motora tasi
 try:
@@ -335,26 +367,20 @@ with st.sidebar:
 
 sayfa_key = sayfa
 
+# Aktif sayfa fonksiyonunu lazy olarak yükle
 if sayfa_key == "Dashboard":
-    _page_dashboard()
-
+    _get_page("Dashboard")()
 elif sayfa_key == "Z Raporu Yükle":
-    _page_z_raporu_yukle(hesap_kodlari)
-
+    _get_page("Z Raporu Yükle")(hesap_kodlari)
 elif sayfa_key == "Fiş Geçmişi":
-    _page_fis_gecmisi(hesap_kodlari)
-
+    _get_page("Fiş Geçmişi")(hesap_kodlari)
 elif sayfa_key == "Mükellef Yönetimi":
-    _page_mukellef_yonetimi()
-
+    _get_page("Mükellef Yönetimi")()
 elif sayfa_key == "KDV Özeti":
-    _page_kdv_ozeti(hesap_kodlari)
-
+    _get_page("KDV Özeti")(hesap_kodlari)
 elif sayfa_key == "Beyanname Takvimi":
-    _page_beyanname_takvimi()
-
+    _get_page("Beyanname Takvimi")()
 elif sayfa_key == "E-Fatura Sorgu":
-    _page_efatura_sorgu()
-
+    _get_page("E-Fatura Sorgu")()
 elif sayfa_key == "Ayarlar":
-    _page_ayarlar()
+    _get_page("Ayarlar")()

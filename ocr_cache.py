@@ -3,7 +3,7 @@ import hashlib
 import threading
 
 _ocr_cache = {}
-OCR_CACHE_MAX = 50
+OCR_CACHE_MAX = 100
 _cache_hits = 0
 _cache_misses = 0
 _cache_lock = threading.Lock()
@@ -20,8 +20,10 @@ def ocr_cache_oku(key):
 def ocr_cache_kaydet(key, sonuc):
     with _cache_lock:
         if len(_ocr_cache) >= OCR_CACHE_MAX:
-            eski = list(_ocr_cache.keys())[0]
-            del _ocr_cache[eski]
+            # Eski %20 kayitlari temizle (LRU benzeri)
+            silinecek = max(1, OCR_CACHE_MAX // 5)
+            for eski in list(_ocr_cache.keys())[:silinecek]:
+                del _ocr_cache[eski]
         _ocr_cache[key] = sonuc
 
 
@@ -47,7 +49,7 @@ def ocr_gorsel_isle_cached(img):
     import io as _io
     global _cache_hits, _cache_misses
     buf = _io.BytesIO()
-    img.save(buf, format='JPEG', quality=90)
+    img.save(buf, format='JPEG', quality=85)
     img_bytes = buf.getvalue()
     key = ocr_cache_key(img_bytes)
     cached = ocr_cache_oku(key)

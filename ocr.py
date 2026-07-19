@@ -522,12 +522,33 @@ def ocr_gorsel_isle(img):
     return ocr_image(img)
 
 
-# EasyOCR lazy loader - ilk kullanimda yuklenir
+# EasyOCR lazy loader - ilk kullanimda yuklenir.
+# Streamlit uzerinde calistiginda @st.cache_resource ile paylasilir;
+# yoksa process-local global kullanilir.
 _easyocr_reader = None
 _easyocr_available = None
 
+
 def _get_easyocr():
     """EasyOCR reader'i lazy-load et, hata olursa None don."""
+    try:
+        import streamlit as st
+    except ImportError:
+        st = None
+
+    # Streamlit icinde calisiyorsa cache_resource kullan (cross-session paylasim)
+    if st is not None:
+        @st.cache_resource(show_spinner=False)
+        def _streamlit_easyocr():
+            try:
+                import easyocr
+                return easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
+            except Exception as e:
+                log.warning(f"EasyOCR yuklenemedi: {e}")
+                return None
+        return _streamlit_easyocr()
+
+    # Streamlit yoksa (CLI/test) process-local global kullan
     global _easyocr_reader, _easyocr_available
     if _easyocr_available is False:
         return None
