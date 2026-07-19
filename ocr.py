@@ -295,13 +295,15 @@ def gorsel_hazirla(img, mode="default", min_w=None):
     if min_w is None:
         min_w = 1200 if mode != "sayisal" else 1500
 
+    _resize_kernel = Image.BICUBIC
+
     if mode == "sayisal":
         img = _bilateral_denoise(img)
         img = _clahe(img)
         if w < 1500 or h < 800:
-            faktor = max(min_w / max(w, 1), 2.5)
+            faktor = max(min_w / max(w, 1), 2.0)
             w2, h2 = int(w * faktor), int(h * faktor)
-            img = img.resize((w2, h2), Image.LANCZOS)
+            img = img.resize((w2, h2), _resize_kernel)
         img = img.filter(ImageFilter.MedianFilter(3))
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200, threshold=3))
         return img
@@ -310,7 +312,7 @@ def gorsel_hazirla(img, mode="default", min_w=None):
         if w < min_w or h < 600:
             faktor = max(min_w / max(w, 1), 2.0)
             w2, h2 = int(w * faktor), int(h * faktor)
-            img = img.resize((w2, h2), Image.LANCZOS)
+            img = img.resize((w2, h2), _resize_kernel)
         img = _clahe(img)
         img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=200, threshold=3))
         return img
@@ -324,7 +326,7 @@ def gorsel_hazirla(img, mode="default", min_w=None):
     if w < min_w or h < 600:
         faktor = max(min_w / max(w, 1), 2.0)
         w2, h2 = int(w * faktor), int(h * faktor)
-        img = img.resize((w2, h2), Image.LANCZOS)
+        img = img.resize((w2, h2), _resize_kernel)
 
     img = img.filter(ImageFilter.MedianFilter(3))
     img = img.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
@@ -542,7 +544,7 @@ def _get_easyocr():
         def _streamlit_easyocr():
             try:
                 import easyocr
-                return easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
+                return easyocr.Reader(['tr'], gpu=False, verbose=False)
             except Exception as e:
                 log.warning(f"EasyOCR yuklenemedi: {e}")
                 return None
@@ -556,7 +558,7 @@ def _get_easyocr():
         return _easyocr_reader
     try:
         import easyocr
-        _easyocr_reader = easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)
+        _easyocr_reader = easyocr.Reader(['tr'], gpu=False, verbose=False)
         _easyocr_available = True
         return _easyocr_reader
     except Exception as e:
@@ -610,13 +612,15 @@ def ocr_gorsel_isle_hibrit(img):
     tess_text = ocr_image(img)
     tess_score = ocr_skorla(tess_text)
     tess_parsed = parse_z_raporu(tess_text)
+
     tess_kk = tess_parsed.get("kredi_karti", 0)
     tess_brut = tess_parsed.get("brut", 0)
 
-    HIGH_CONF = 150
-    if tess_score >= HIGH_CONF:
-        if tess_kk > 0 or tess_brut <= 0:
-            return tess_text
+    if tess_score >= 100 and tess_brut > 0:
+        return tess_text
+
+    if tess_score >= 120:
+        return tess_text
 
     easy_text = easyocr_gorsel_isle(img)
     if not easy_text:
