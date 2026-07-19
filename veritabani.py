@@ -1,27 +1,35 @@
 import os
 import glob
 import shutil
+import logging
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 from config import (
     DATA_DIR, HESAP_FILE, GECMIS_KLASORU, MUKELLEF_FILE,
     FISLER_KLASORU, YEDEK_KLASORU, URUN_KODLARI_FILE, EMAIL_FILE
 )
-from utils import dosya_oku, dosya_yaz, parse_tutar, log
+from utils import dosya_oku, dosya_yaz, parse_tutar
+
+log = logging.getLogger("smmm.db")
 
 
 def otomatik_yedekle():
+    log.info("Otomatik yedekleme baslatiliyor")
     yedekler = sorted(glob.glob(os.path.join(YEDEK_KLASORU, "yedek_*")), reverse=True)
     while len(yedekler) > 10:
         shutil.rmtree(yedekler.pop(), ignore_errors=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     yedek_dizini = os.path.join(YEDEK_KLASORU, f"yedek_{timestamp}")
     os.makedirs(yedek_dizini, exist_ok=True)
+    kopyalanan = 0
     for fp in [HESAP_FILE, MUKELLEF_FILE, URUN_KODLARI_FILE]:
         if os.path.exists(fp):
             shutil.copy2(fp, yedek_dizini)
+            kopyalanan += 1
     if os.path.exists(GECMIS_KLASORU):
         shutil.copytree(GECMIS_KLASORU, os.path.join(yedek_dizini, "gecmis"), dirs_exist_ok=True)
+    log.info("Yedekleme tamamlandi: %s (%d dosya)", yedek_dizini, kopyalanan)
 
 
 def mukellefler():
@@ -80,9 +88,9 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
         dosya_yaz(dosya_yolu, kayit)
         sonuc["dosya_kayit"] = True
         sonuc["dosya_yolu"] = dosya_yolu
-        log.info(f"Fiş kaydedildi: {dosya_yolu} ({len(results)} kayıt)")
+        log.info("Fis kaydedildi: %s (%d fis)", dosya_yolu, len(results))
     except Exception as e:
-        log.error(f"Dosya yazma basarisiz: {dosya_yolu}: {e}")
+        log.error("Dosya yazma basarisiz: %s - %s", dosya_yolu, str(e))
         raise
 
     # Aşama 2: Cache invalidate (dosya yazildi, simdi cache temizle)
@@ -91,7 +99,7 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
         for k in ["_fis_ver_version", "_fis_kayitlar", "_fis_tumu"]:
             st.session_state.pop(k, None)
     except Exception as e:
-        log.warning(f"Cache invalidate basarisiz: {e}")
+        log.warning("Cache invalidate basarisiz: %s", str(e))
 
     # Aşama 3: Ogrenme (istatistiksel ogrenme motoru ile)
     ogrenme_hatasi = None
@@ -123,10 +131,10 @@ def gecmis_kaydet(results, hesap_kodlari, mukellef_adi=""):
                                             alan_adi=alan, kaynak="manuel")
                             alan_duzeltme_kaydet(alan, str(eski).strip(), str(dogru).strip())
                     except Exception as e:
-                        log.warning(f"Ogrenme hatasi ({alan}): {e}")
+                        log.warning("Ogrenme hatasi (%s): %s", alan, str(e))
     except Exception as e:
         ogrenme_hatasi = str(e)
-        log.error(f"Toplu ogrenme hatasi: {e}")
+        log.error("Toplu ogrenme hatasi: %s", str(e))
 
     sonuc["ogrenme_hatasi"] = ogrenme_hatasi
     return sonuc
@@ -255,6 +263,7 @@ def email_gonder(konu, icerik):
     from email.mime.text import MIMEText
     email_config = dosya_oku(EMAIL_FILE, {})
     if not email_config.get("gonderen") or not email_config.get("sifre"):
+        log.warning("Email gonderilemedi: yapılandırma eksik")
         return False
     try:
         msg = MIMEText(icerik, "plain", "utf-8")
@@ -266,7 +275,52 @@ def email_gonder(konu, icerik):
             server.starttls()
             server.login(email_config["gonderen"], email_config["sifre"])
             server.send_message(msg)
+        log.info("Email gonderildi: %s", konu)
         return True
     except Exception as e:
-        log.error(f"Email hatası: {e}")
+        log.error("Email hatasi: %s", str(e))
         return False
+
+
+# ── Saglik Kontrolu ──
+
+def saglik_kontrolu():
+    """Sistem saglik durumunu kontrol et."""
+    durum = {
+        "disk_ok": True,
+        "dosyalar_ok": True,
+        "yedek_sayisi": 0,
+        "gecmis_sayisi": 0,
+        "hatalar": [],
+    }
+
+    # Disk kontrolu
+    try:
+        import shutil as _shutil
+        toplam, kullanilmis, bos = _shutil.disk_usage(DATA_DIR)
+        bos_orani = bos / toplam
+        if bos_orani < 0.1:
+            durum["hatalar"].append(f"Disk doluluk orani yuksek: %{bos_orani*100:.1f}")
+            durum["disk_ok"] = False
+    except Exception as e:
+        durum["hatalar"].append(f"Disk kontrolu hatasi: {str(e)}")
+
+    # Dosya kontrolu
+    for fp in [HESAP_FILE, MUKELLEF_FILE]:
+        if not os.path.exists(fp):
+            durum["hatalar"].append(f"Eksik dosya: {os.path.basename(fp)}")
+
+    # Yedek sayisi
+    try:
+        durum["yedek_sayisi"] = len(glob.glob(os.path.join(YEDEK_KLASORU, "yedek_*")))
+    except Exception:
+        pass
+
+    # Gecmis sayisi
+    try:
+        durum["gecmis_sayisi"] = len(glob.glob(os.path.join(GECMIS_KLASORU, "kayit_*.json")))
+    except Exception:
+        pass
+
+    durum["saglikli"] = len(durum["hatalar"]) == 0
+    return durum

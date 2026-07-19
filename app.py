@@ -2,10 +2,20 @@ import streamlit as st
 import re
 import os
 import json
-import logging
 import sys
 from datetime import datetime, timedelta
 import requests
+
+from logging_config import setup_logging, get_logger, perf_log, error_boundary
+
+# Loglama kurulumu
+is_prod = os.getenv("RENDER") or os.getenv("DYNO")
+setup_logging(
+    level="INFO" if is_prod else "DEBUG",
+    json_format=bool(is_prod),
+    log_file=os.path.join(os.path.dirname(os.path.abspath(__file__)), "smmm.log") if is_prod else None,
+)
+log = get_logger("smmm.app")
 
 from config import (
     AUTH_FILE, HESAP_FILE, GECMIS_KLASORU, MUKELLEF_FILE, SABLON_FILE,
@@ -13,7 +23,7 @@ from config import (
     FISLER_KLASORU, GOT_OCR_API, EMAIL_FILE,
     URUN_KODLARI_FILE
 )
-from utils import dosya_oku, dosya_yaz, log
+from utils import dosya_oku, dosya_yaz
 from ocr import ocr_engine, got_ocr_api_saglik
 from veritabani import (
     mukellefler, gecmis_listele, tum_fisleri_yukle,
@@ -24,9 +34,9 @@ from luca import (
 )
 from tema import tema_uygula, tema_degistirici
 
-# Pages modulunu lazy import et - sadece aktif sayfa fonksiyonu yüklensin
+# Pages modulunu lazy import et - sadece aktif sayfa fonksiyonu yuklensin
 def _get_page(name):
-    """Sayfa fonksiyonunu lazy olarak pages modülünden al."""
+    """Sayfa fonksiyonunu lazy olarak pages modulunden al."""
     from pages import (
         _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
         _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar,
@@ -44,26 +54,16 @@ def _get_page(name):
     }[name]
 
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-log = logging.getLogger("smmm")
-
-try:
-    from logging.handlers import RotatingFileHandler
-    _log_yolu = os.path.join(os.path.dirname(os.path.abspath(__file__)), "smmm.log")
-    _rfh = RotatingFileHandler(_log_yolu, maxBytes=5*1024*1024, backupCount=3, encoding="utf-8")
-    _rfh.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    log.addHandler(_rfh)
-except Exception:
-    pass
-
 import traceback as _tb
 def _global_excepthook(exc_type, exc_value, exc_tb):
     _msg = "".join(_tb.format_exception(exc_type, exc_value, exc_tb))
+    log.critical("Yakalanmamis hata: %s", str(exc_value), exc_info=(exc_type, exc_value, exc_tb))
     try:
-        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "crash_log.txt"), "a", encoding="utf-8") as _f:
+        crash_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "crash_log.txt")
+        with open(crash_path, "a", encoding="utf-8") as _f:
             _f.write(f"\n=== {datetime.now().isoformat()} ===\n{_msg}\n")
     except Exception:
-        log.warning("Crash log dosyası yazılamadı", exc_info=True)
+        pass
     sys.stderr.write(_msg)
 sys.excepthook = _global_excepthook
 

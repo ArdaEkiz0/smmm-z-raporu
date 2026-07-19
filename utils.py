@@ -3,7 +3,7 @@ import os
 import re
 import logging
 
-log = logging.getLogger("smmm")
+log = logging.getLogger("smmm.utils")
 
 
 def dosya_oku(path, default=None):
