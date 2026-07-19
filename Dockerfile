@@ -20,7 +20,7 @@ COPY . .
 
 # EasyOCR modelini build sırasında indir (~100MB) - cold start'ı hızlandırır.
 # Model indirilemezse build yine de başarılı olsun.
-RUN python -c "import easyocr; easyocr.Reader(['tr', 'en'], gpu=False, verbose=False)" || true
+RUN python -c "import easyocr; easyocr.Reader(['tr'], gpu=False, verbose=False)" || true
 
 # Streamlit config
 RUN mkdir -p /app/.streamlit && \
@@ -41,8 +41,5 @@ RUN mkdir -p /app/.streamlit && \
 
 EXPOSE 8080
 
-# Container başlangıcında:
-#  1) Cloudflare cache purge (yeni deploy için)
-#  2) EasyOCR/Tesseract warm-up - ilk istek gelmeden modeli belleğe yükle
-#  3) Streamlit'i başlat
-CMD ["sh", "-c", "python cache_purge.py 2>/dev/null; python -c 'from ocr import _get_easyocr; _ = _get_easyocr()' 2>/dev/null; streamlit run app.py --server.port=8080 --server.headless=true --server.address=0.0.0.0 --server.maxUploadSize=25 --browser.gatherUsageStats=false"]
+# Streamlit'i başlat (warm-up app.py icinde @st.cache_resource ile yapilir)
+CMD ["streamlit", "run", "app.py", "--server.port=8080", "--server.headless=true", "--server.address=0.0.0.0", "--server.maxUploadSize=25", "--browser.gatherUsageStats=false"]

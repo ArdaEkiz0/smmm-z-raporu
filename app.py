@@ -81,7 +81,7 @@ st.markdown("""
 
 # EasyOCR warm-up: ilk istek oncesinde modeli bellege yukle (10-20s kazandirir).
 # @st.cache_resource ile her session paylasir.
-@st.cache_resource(show_spinner="EasyOCR modeli yükleniyor...")
+@st.cache_resource(show_spinner=False)
 def _warmup_easyocr():
     """EasyOCR reader'i yukle. Streamlit session'lari arasinda paylasilir."""
     try:
