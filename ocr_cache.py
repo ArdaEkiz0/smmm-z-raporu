@@ -49,7 +49,7 @@ def ocr_gorsel_isle_cached(img):
     import io as _io
     global _cache_hits, _cache_misses
     buf = _io.BytesIO()
-    img.save(buf, format='JPEG', quality=85)
+    img.save(buf, format='JPEG', quality=90)
     img_bytes = buf.getvalue()
     key = ocr_cache_key(img_bytes)
     cached = ocr_cache_oku(key)
