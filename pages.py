@@ -99,6 +99,9 @@ def _page_z_raporu_yukle(hesap_kodlari):
         eski_dosya_sayisi = st.session_state.get("son_yuklenen_sayisi", 0)
         if yeni_dosya_sayisi != eski_dosya_sayisi:
             st.session_state.son_yuklenen_sayisi = yeni_dosya_sayisi
+            st.session_state["_yuklenen_dosyalar"] = [
+                (uf.name, uf.read()) for uf in uploaded_files
+            ]
         pdf_count = sum(1 for f in uploaded_files if f.name.lower().endswith(".pdf"))
         img_count = len(uploaded_files) - pdf_count
         st.success(f"📁 {img_count} görsel, {pdf_count} PDF yüklendi")
@@ -492,7 +495,64 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         st.code(r.get("ocr_text", ""), language=None)
                 with qcol2:
                     if st.button("🔄 Bu Fişi Yeniden Oku", key=f"yeniden_{tab_idx}", use_container_width=True):
-                        st.toast("Yeniden okuma için lütfen dosyayı tekrar yükleyin", icon="ℹ️")
+                        _dosyalar = st.session_state.get("_yuklenen_dosyalar", [])
+                        _hedef = r.get("filename", "")
+                        _eslesen = None
+                        for _ad, _data in _dosyalar:
+                            if _ad == _hedef or _hedef.startswith(_ad):
+                                _eslesen = (_ad, _data)
+                                break
+                        if _eslesen is None and _dosyalar:
+                            _eslesen = _dosyalar[0]
+                        if _eslesen is None:
+                            st.toast("Dosya bulunamadı, lütfen tekrar yükleyin", icon="⚠️")
+                        else:
+                            import time as _time2
+                            from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
+                            _ad2, _data2 = _eslesen
+                            try:
+                                with st.spinner(f"🔄 {_ad2} yeniden okunuyor..."):
+                                    if _ad2.lower().endswith(".pdf"):
+                                        try:
+                                            from pdf2image import convert_from_bytes
+                                            _pages = convert_from_bytes(_data2, dpi=300)
+                                            if _pages:
+                                                _img = _pages[0].convert("RGB")
+                                                _ocr_text = ocr_gorsel_isle_cached(_img)
+                                            else:
+                                                _ocr_text = ""
+                                        except Exception:
+                                            _ocr_text = ""
+                                    else:
+                                        _img2 = Image.open(io.BytesIO(_data2))
+                                        _ocr_text = ocr_gorsel_isle_cached(_img2)
+                                if not _ocr_text:
+                                    st.toast("OCR boş sonuç döndü", icon="⚠️")
+                                else:
+                                    _duzeltilmis, _ = auto_duzeltme_uygula(_ocr_text)
+                                    _parsed = parse_z_raporu(_duzeltilmis)
+                                    _parsed, _ = alan_duzeltme_uygula(_parsed)
+                                    ogr_alanlari_uygula(_parsed)
+                                    if not _parsed.get("ham_text"):
+                                        _parsed["ham_text"] = _ocr_text
+                                    _parsed["ocr_text"] = _ocr_text
+                                    _parsed["filename"] = r.get("filename", _ad2)
+                                    _parsed["mukellef_adi"] = r.get("mukellef_adi", "")
+                                    if r.get("z_no"):
+                                        _parsed["z_no"] = r["z_no"]
+                                    _parsed["_yeniden_okundu"] = True
+                                    _mevcut = st.session_state.get("results", [])
+                                    if tab_idx < len(_mevcut):
+                                        _mevcut[tab_idx] = _parsed
+                                    else:
+                                        _mevcut.append(_parsed)
+                                    st.session_state.results = _mevcut
+                                    st.session_state.processed = True
+                                    st.success(f"✅ {_ad2} yeniden okundu")
+                                    st.rerun()
+                            except Exception as _e:
+                                log.error(f"Yeniden okuma hatası: {_e}")
+                                st.toast(f"Hata: {_e}", icon="❌")
                 with qcol3:
                     if st.button("📊 LUCA Satırlarını Göster", key=f"luca_{tab_idx}", use_container_width=True):
                         from luca import data_to_luca_rows
