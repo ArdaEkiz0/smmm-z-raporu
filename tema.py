@@ -259,6 +259,122 @@ LIGHT_CSS = """
         border-color: #0F766E !important;
         border-right-color: transparent !important;
     }
+
+    /* ── Section headers (h2 with icon) ── */
+    h2:not([style*="border"]) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+    }
+
+    /* ── Form containers ── */
+    [data-testid="stForm"] {
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 10px !important;
+        padding: 1.2rem !important;
+        background: rgba(255, 255, 255, 0.7) !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+    }
+
+    /* ── Selectbox / Dropdown ── */
+    div[data-baseweb="select"] > div {
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+    }
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #0F766E !important;
+        box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12) !important;
+    }
+
+    /* ── Checkbox ── */
+    .stCheckbox label span {
+        font-size: 0.88rem !important;
+    }
+
+    /* ── Radio buttons ── */
+    .stRadio label {
+        padding: 0.3rem 0 !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* ── Toast / Success messages ── */
+    .stToast {
+        border-radius: 8px !important;
+        font-size: 0.85rem !important;
+    }
+
+    /* ── Download button highlight ── */
+    .stDownloadButton > button {
+        border-radius: 8px !important;
+        font-weight: 600 !important;
+    }
+    .stDownloadButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #0F766E 0%, #14B8A6 100%) !important;
+        color: white !important;
+        border: none !important;
+    }
+
+    /* ── Date input ── */
+    .stDateInput input {
+        border-radius: 8px !important;
+    }
+
+    /* ── Better container borders ── */
+    [data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] {
+        border-radius: 10px !important;
+    }
+
+    /* ── Column gap reduction for tighter layouts ── */
+    [data-testid="stHorizontalBlock"] {
+        gap: 0.8rem !important;
+    }
+
+    /* ── Expander content padding ── */
+    .streamlit-expanderContent {
+        padding: 0.5rem 0.8rem !important;
+    }
+
+    /* ── Scrollbar styling ── */
+    ::-webkit-scrollbar {
+        width: 6px !important;
+        height: 6px !important;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #cbd5e1 !important;
+        border-radius: 3px !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8 !important;
+    }
+
+    /* ── Info/Warning/Error containers with left accent ── */
+    [data-testid="stAlert"] > div {
+        font-size: 0.85rem !important;
+    }
+
+    /* ── Sidebar section headers ── */
+    [data-testid="stSidebar"] h3 {
+        font-size: 0.8rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.06em !important;
+        color: #64748b !important;
+        margin-top: 0.8rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    /* ── Sidebar form spacing ── */
+    [data-testid="stSidebar"] [data-testid="stForm"] {
+        padding: 0.8rem !important;
+    }
+
+    /* ── Better tab content area ── */
+    .stTabs [data-baseweb="tab-panel"] {
+        padding: 1rem 0.2rem !important;
+    }
 </style>
 """
 
@@ -421,6 +537,96 @@ DARK_CSS = """
 
     /* ── Status ── */
     .stStatus { border-color: #334155 !important; }
+
+    /* ── Form containers ── */
+    [data-testid="stForm"] {
+        border: 1px solid #334155 !important;
+        border-radius: 10px !important;
+        padding: 1.2rem !important;
+        background: rgba(30, 41, 59, 0.5) !important;
+    }
+
+    /* ── Selectbox / Dropdown ── */
+    div[data-baseweb="select"] > div {
+        background: #1E293B !important;
+        border: 1px solid #334155 !important;
+        border-radius: 8px !important;
+    }
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #2DD4BF !important;
+        box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.15) !important;
+    }
+
+    /* ── Checkbox / Radio ── */
+    .stCheckbox label span, .stRadio label {
+        color: #cbd5e1 !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* ── Toast ── */
+    .stToast {
+        border-radius: 8px !important;
+        background: #1E293B !important;
+        color: #e2e8f0 !important;
+    }
+
+    /* ── Download button ── */
+    .stDownloadButton > button[kind="primary"] {
+        background: linear-gradient(135deg, #14B8A6 0%, #2DD4BF 100%) !important;
+        color: #0F172A !important;
+        border: none !important;
+    }
+
+    /* ── Date input ── */
+    .stDateInput input {
+        border-radius: 8px !important;
+    }
+
+    /* ── Column gap ── */
+    [data-testid="stHorizontalBlock"] {
+        gap: 0.8rem !important;
+    }
+
+    /* ── Expander content ── */
+    .streamlit-expanderContent {
+        padding: 0.5rem 0.8rem !important;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar {
+        width: 6px !important;
+        height: 6px !important;
+    }
+    ::-webkit-scrollbar-track {
+        background: transparent !important;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #475569 !important;
+        border-radius: 3px !important;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #64748b !important;
+    }
+
+    /* ── Alert text size ── */
+    [data-testid="stAlert"] > div {
+        font-size: 0.85rem !important;
+    }
+
+    /* ── Sidebar section headers ── */
+    [data-testid="stSidebar"] h3 {
+        color: #64748b !important;
+    }
+
+    /* ── Tab content ── */
+    .stTabs [data-baseweb="tab-panel"] {
+        padding: 1rem 0.2rem !important;
+    }
+
+    /* ── Form label color fix ── */
+    [data-testid="stForm"] label {
+        color: #cbd5e1 !important;
+    }
 </style>
 """
 

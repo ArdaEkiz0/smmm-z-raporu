@@ -108,13 +108,34 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     musteri = data.get("firma_adi", "") or data.get("mukellef_adi", "") or "Müşteri"
     brut = data.get("brut", 0) or 0
 
-    # Z raporundan KDV hesapla: Brüt (KDV dahil) - Net (KDV hariç) = KDV
-    z_toplam_kdv = round(brut - net_toplam, 2) if brut > 0 and net_toplam > 0 else 0
+    # Z raporundan KDV: once kdv_kalemleri'nden topla, yoksa brut-net hesapla
+    kdv_kalemleri = data.get("kdv_kalemleri", [])
+    if kdv_kalemleri:
+        z_toplam_kdv = sum(k.get("kdv_tutari", 0) or 0 for k in kdv_kalemleri)
+        if z_toplam_kdv <= 0:
+            # kdv_tutari yoksa matrah ve orandan hesapla
+            for k in kdv_kalemleri:
+                matrah = k.get("matrah", 0) or 0
+                oran = k.get("oran", 0) or 0
+                if matrah > 0 and oran > 0:
+                    z_toplam_kdv += round(matrah * oran / (100 + oran), 2)
+    elif brut > 0 and net_toplam > 0 and net_toplam < brut:
+        z_toplam_kdv = round(brut - net_toplam, 2)
+    else:
+        z_toplam_kdv = 0
 
     # İade zaten brut'a dahil mi kontrol et
     # brut = nakit + kk + yemek ise iade zaten dahil, ayrıca ekleme
     tahsilat_toplam = nakit + kk + yemek
-    iade_ayri = abs(brut - tahsilat_toplam) > 0.01 and iade > 0
+
+    # Ürünler varsa: iade zaten urun toplamina dahil mi kontrol et
+    urunler = data.get("urunler", [])
+    toplam_urun_tutari = sum(u.get("tutar", 0) or 0 for u in urunler)
+    if toplam_urun_tutari > 0:
+        # Urunler brut'a esitse (iade ayri), degilse iade zaten dahil
+        iade_ayri = iade > 0 and abs(toplam_urun_tutari - brut) < 0.01
+    else:
+        iade_ayri = abs(brut - tahsilat_toplam) > 0.01 and iade > 0
 
     def _tahsilat_ekle(rows):
         if iade_ayri and iade > 0:
@@ -126,59 +147,88 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
         if yemek > 0:
             rows.append(satir(hesap_kodlari.get("yemek_ceki", "108.03"), f"Yemek Çeki - {musteri}", yemek, 0))
 
-    # Ürün bazlı satışlar - Z raporu degerlerine gore orantili dagilim
-    urunler = data.get("urunler", [])
+    # Ürün bazlı satışlar - Z raporu tutarlarini dogrudan kullan
     if urunler:
-        toplam_urun_tutari = sum(u.get("tutar", 0) or 0 for u in urunler)
-
-        # Urunlerin toplam tutarini net_toplam'a esle (orantili dagilim)
-        if toplam_urun_tutari > 0 and net_toplam > 0:
-            oran = net_toplam / toplam_urun_tutari
+        # Tum urunlerin oran=0 ama Z raporunda KDV varsa, KDV'yi orantili olarak matrahlardan cikar
+        tum_oran_sifir = all((u.get("oran", 0) or 0) == 0 for u in urunler)
+        if tum_oran_sifir and z_toplam_kdv > 0 and toplam_urun_tutari > 0:
+            toplam_matrah = round(toplam_urun_tutari - z_toplam_kdv, 2)
+            for u in urunler:
+                urun_adi = u.get("urun", "Ürün")
+                tutar = u.get("tutar", 0) or 0
+                oran_pay = tutar / toplam_urun_tutari if toplam_urun_tutari > 0 else 0
+                matrah = round(toplam_matrah * oran_pay, 2)
+                satis_kod = "satis_0"
+                hesap_kodu = hesap_kodlari.get(satis_kod, hesap_kodlari.get("satis_20", "600.04"))
+                satis_idx = len(rows)
+                rows.append(satir(hesap_kodu, f"{urun_adi} - {musteri}", 0, matrah))
+                if urun_kodlari:
+                    eslesme = urun_kodu_bul(urun_kodlari, urun_adi)
+                    if eslesme:
+                        rows[satis_idx]["Hesap Kodu"] = eslesme.get("hesap_kodu", "")
+            # Z raporundaki KDV'leri ekle
+            for kv in data.get("kdv_kalemleri", []):
+                kv_oran = kv.get("oran", 0) or 0
+                kv_tutar = kv.get("kdv_tutari", 0) or 0
+                if kv_tutar > 0:
+                    kdv_kod = "kdv_" + str(kv_oran)
+                    kdv_hk = hesap_kodlari.get(kdv_kod, hesap_kodlari.get("kdv_1", "391.01"))
+                    rows.append(satir(kdv_hk, f"KDV %{kv_oran} - {musteri}", 0, kv_tutar))
         else:
-            oran = 1.0
+            for u in urunler:
+                urun_adi = u.get("urun", "Ürün")
+                tutar = u.get("tutar", 0) or 0
+                kdv_orani = u.get("oran", 0) or 0
+                # Z raporundaki tutar KDV DAHIL (brut) degerdir, icinden KDV'yi cikar
+                if kdv_orani > 0:
+                    matrah = round(tutar / (1 + kdv_orani / 100), 2)
+                    kdv = round(tutar - matrah, 2)
+                else:
+                    matrah = tutar
+                    kdv = 0
+                satis_kod = "satis_" + str(kdv_orani)
+                hesap_kodu = hesap_kodlari.get(satis_kod, hesap_kodlari.get("satis_20", "600.04"))
+                satis_idx = len(rows)
+                rows.append(satir(hesap_kodu, f"{urun_adi} - {musteri}", 0, matrah))
+                if kdv > 0:
+                    kdv_kod = "kdv_" + str(kdv_orani)
+                    kdv_hk = hesap_kodlari.get(kdv_kod, hesap_kodlari.get("kdv_20", "391.04"))
+                    rows.append(satir(kdv_hk, f"KDV %{kdv_orani} - {urun_adi} - {musteri}", 0, kdv))
 
-        for u in urunler:
-            urun_adi = u.get("urun", "Ürün")
-            tutar = u.get("tutar", 0) or 0
-            kdv_orani = u.get("oran", 0) or 0
-            # Z raporundaki tutar KDV DAHIL (brut) degerdir, icinden KDV'yi cikar
-            brüt_tutar = round(tutar * oran, 2)
-            if kdv_orani > 0:
-                matrah = round(brüt_tutar / (1 + kdv_orani / 100), 2)
-                kdv = round(brüt_tutar - matrah, 2)
-            else:
-                matrah = brüt_tutar
-                kdv = 0
-            satis_kod = "satis_" + str(kdv_orani)
-            hesap_kodu = hesap_kodlari.get(satis_kod, hesap_kodlari.get("satis_20", "600.04"))
-            satis_idx = len(rows)
-            rows.append(satir(hesap_kodu, f"{urun_adi} - {musteri}", 0, matrah))
-            if kdv > 0:
-                kdv_kod = "kdv_" + str(kdv_orani)
-                kdv_hk = hesap_kodlari.get(kdv_kod, hesap_kodlari.get("kdv_20", "391.04"))
-                rows.append(satir(kdv_hk, f"KDV %{kdv_orani} - {urun_adi} - {musteri}", 0, kdv))
-
-            if urun_kodlari:
-                eslesme = urun_kodu_bul(urun_kodlari, urun_adi)
-                if eslesme:
-                    urun_kodu = eslesme.get("hesap_kodu", "")
-                    rows[satis_idx]["Hesap Kodu"] = urun_kodu
+                if urun_kodlari:
+                    eslesme = urun_kodu_bul(urun_kodlari, urun_adi)
+                    if eslesme:
+                        urun_kodu = eslesme.get("hesap_kodu", "")
+                        rows[satis_idx]["Hesap Kodu"] = urun_kodu
 
         # Urunlerden hesaplanan toplam KDV ile Z raporu KDV'sini karsilastir
         urun_toplam_kdv = sum((r.get("Alacak", 0) or 0) for r in rows if "KDV" in r.get("AÇIKLAMA", ""))
         urun_toplam_matrah = sum((r.get("Alacak", 0) or 0) for r in rows if "KDV" not in r.get("AÇIKLAMA", ""))
 
         # KDV farki varsa duzelt (son KDV satirini ayarla)
-        # Z raporundan okunan KDV (z_toplam_kdv) gecerlise urun KDV'sini ona esle
-        # Z raporu KDV'si 0 ise (net okunamadi = net=brut), urun KDV'sini koru
         if z_toplam_kdv > 0:
             kdv_farki = round(z_toplam_kdv - urun_toplam_kdv, 2)
             if abs(kdv_farki) > 0.01 and rows:
+                kdv_satiri_bulundu = False
                 for r in reversed(rows):
                     if "KDV" in r.get("AÇIKLAMA", ""):
                         eski_kdv = r.get("Alacak", 0) or 0
                         r["Alacak"] = round(eski_kdv + kdv_farki, 2)
+                        kdv_satiri_bulundu = True
                         break
+                # KDV satiri hic yoksa, Z raporundaki KDV'yi tek satir olarak ekle
+                if not kdv_satiri_bulundu:
+                    kdv_kalemleri_z = data.get("kdv_kalemleri", [])
+                    if kdv_kalemleri_z:
+                        for kv in kdv_kalemleri_z:
+                            kv_oran = kv.get("oran", 0) or 0
+                            kv_tutar = kv.get("kdv_tutari", 0) or 0
+                            if kv_tutar > 0:
+                                kdv_kod = "kdv_" + str(kv_oran)
+                                kdv_hk = hesap_kodlari.get(kdv_kod, hesap_kodlari.get("kdv_20", "391.04"))
+                                rows.append(satir(kdv_hk, f"KDV %{kv_oran} - {musteri}", 0, kv_tutar))
+                    elif kdv_farki > 0:
+                        rows.append(satir(hesap_kodlari.get("kdv_1", "391.01"), f"KDV - {musteri}", 0, kdv_farki))
 
         _tahsilat_ekle(rows)
         return rows

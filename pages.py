@@ -50,7 +50,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
     import pandas as pd
     import zipfile
     import io
-    st.header("Z Raporu Fotoğraf Yükleme ve OCR")
+    st.header("📷 Z Raporu Fotoğraf Yükleme ve OCR")
 
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
@@ -70,7 +70,13 @@ def _page_z_raporu_yukle(hesap_kodlari):
     uploaded_files = []
 
     if yukleme_modu == "📷 Dosya Seç":
-        uploaded_files = st.file_uploader("Z raporu/fiş seç (JPG/PNG/PDF)", type=["jpg", "jpeg", "png", "pdf"], accept_multiple_files=True, key="dosya_yukle")
+        uploaded_files = st.file_uploader(
+            "Z raporu/fiş seç (JPG/PNG/PDF)",
+            type=["jpg", "jpeg", "png", "pdf"],
+            accept_multiple_files=True,
+            key="dosya_yukle",
+            help="Tek veya birden fazla dosya yükleyebilirsiniz"
+        )
     else:
         zip_dosya = st.file_uploader("ZIP dosyası yükle (içinde JPG/PNG/PDF)", type=["zip"], key="zip_yukle")
         if zip_dosya:
@@ -95,7 +101,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
             st.session_state.son_yuklenen_sayisi = yeni_dosya_sayisi
         pdf_count = sum(1 for f in uploaded_files if f.name.lower().endswith(".pdf"))
         img_count = len(uploaded_files) - pdf_count
-        st.success(f"{img_count} görsel, {pdf_count} PDF yüklendi")
+        st.success(f"📁 {img_count} görsel, {pdf_count} PDF yüklendi")
         cols = st.columns(5)
         for i, f in enumerate(uploaded_files):
             with cols[i % 5]:
@@ -261,7 +267,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
         toplam_sure = _time.time() - baslama
         sure_metni = f"{int(toplam_sure//60)}dk {int(toplam_sure%60)}sn" if toplam_sure >= 60 else f"{toplam_sure:.1f}sn"
-        status.update(label=f"OCR tamamlandi! Toplam: {sure_metni} ({toplam} dosya, {max_workers} paralel)", state="complete")
+        status.update(
+            label=f"✅ OCR tamamlandi! Toplam: {sure_metni} ({toplam} dosya, {max_workers} paralel)",
+            state="complete"
+        )
 
         cache_stats = ocr_cache_istatistik()
         cache_ratio = (cache_stats["hits"] * 100 // max(cache_stats["hits"] + cache_stats["misses"], 1))
@@ -287,15 +296,15 @@ def _page_z_raporu_yukle(hesap_kodlari):
         basarili = sum(1 for r in all_results if "error" not in r)
         hatali = len(all_results) - basarili
         if hatali > 0:
-            st.warning(f"{basarili} başarılı, {hatali} hatalı")
+            st.warning(f"⚠️ {basarili} başarılı, {hatali} hatalı")
         else:
-            st.success(f"{len(all_results)} Z raporu okundu. Düzenlemelerinizi yapıp 'Geçmişe Kaydet' butonuna basın.")
+            st.success(f"✅ {len(all_results)} Z raporu okundu. Düzenlemelerinizi yapıp 'Geçmişe Kaydet' butonuna basın.")
         st.rerun()
 
     if st.session_state.get("processed") and st.session_state.results:
         results = st.session_state.results
         st.divider()
-        st.subheader(f"Sonuçlar ({len(results)} Z Raporu)")
+        st.subheader(f"📋 Sonuçlar ({len(results)} Z Raporu)")
 
         try:
             from ocr_dogrulama import ocr_sonuc_dogrula
@@ -334,16 +343,38 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
         if duzeltilebilir and len(results) > 1:
             with tabs[-1]:
-                st.markdown("**Toplam Özet**")
+                st.markdown("**📊 Toplam Özet**")
                 toplam_brut = sum(r.get("brut", 0) for _, r in duzeltilebilir)
                 toplam_nakit = sum(r.get("nakit", 0) for _, r in duzeltilebilir)
                 toplam_kk = sum(r.get("kredi_karti", 0) for _, r in duzeltilebilir)
                 toplam_iade = sum(r.get("iadeler", 0) for _, r in duzeltilebilir)
-                c1, c2, c3, c4 = st.columns(4)
-                c1.metric("Toplam Brüt", f"{toplam_brut:,.2f} TL")
-                c2.metric("Toplam Nakit", f"{toplam_nakit:,.2f} TL")
-                c3.metric("Toplam K.Kartı", f"{toplam_kk:,.2f} TL")
-                c4.metric("Toplam İade", f"{toplam_iade:,.2f} TL")
+                toplam_net = sum(r.get("net_toplam", 0) for _, r in duzeltilebilir)
+
+                # Summary metrics with icons
+                c1, c2, c3, c4, c5 = st.columns(5)
+                c1.metric("💰 Brüt", f"{toplam_brut:,.0f} TL")
+                c2.metric("💵 Nakit", f"{toplam_nakit:,.0f} TL")
+                c3.metric("💳 K.Kartı", f"{toplam_kk:,.0f} TL")
+                c4.metric("↩️ İade", f"{toplam_iade:,.0f} TL")
+                c5.metric("📊 Net", f"{toplam_net:,.0f} TL")
+
+                # Balance check
+                odeme_toplam = toplam_nakit + toplam_kk
+                if abs(odeme_toplam - toplam_net) < 0.01:
+                    st.markdown("""
+                    <div style="padding:0.6rem 1rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);
+                                border-radius:8px;font-size:0.85rem;margin-top:0.5rem;">
+                        ✅ <b>Ödeme Dengesi:</b> Nakit + K.Kartı = Net Satis
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    fark = abs(odeme_toplam - toplam_net)
+                    st.markdown(f"""
+                    <div style="padding:0.6rem 1rem;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);
+                                border-radius:8px;font-size:0.85rem;margin-top:0.5rem;">
+                        ⚠️ <b>Ödeme Farkı:</b> {fark:,.2f} TL
+                    </div>
+                    """, unsafe_allow_html=True)
 
         for tab_idx, tab in enumerate(tabs[:-1] if len(results) > 1 else tabs):
             r = results[tab_idx]
@@ -351,20 +382,54 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 if "error" in r:
                     st.error(f"❌ {r.get('filename','')}: {r.get('error','')}")
                     continue
-                st.markdown(f"**{r.get('filename','')}**")
+
+                # Header card with status
                 try:
                     from ocr_dogrulama import ocr_sonuc_dogrula
                     _dog = ocr_sonuc_dogrula(r, ham_text=r.get("ocr_text", ""))
                     _skor = _dog["genel_skor"]
                     _sorun = _dog["sorunlu_alan_sayisi"]
                     if _skor >= 80:
-                        st.success(f"✅ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🟢")
+                        _status_color = "#22c55e"
+                        _status_bg = "rgba(34,197,94,0.08)"
+                        _status_border = "rgba(34,197,94,0.3)"
+                        _status_icon = "✅"
+                        _status_text = f"Doğruluk: %{_skor:.0f}"
                     elif _skor >= 50:
-                        st.warning(f"⚠️ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🟡")
+                        _status_color = "#eab308"
+                        _status_bg = "rgba(234,179,8,0.08)"
+                        _status_border = "rgba(234,179,8,0.3)"
+                        _status_icon = "⚠️"
+                        _status_text = f"Doğruluk: %{_skor:.0f}"
                     else:
-                        st.error(f"❌ Doğruluk: %{_skor:.0f} ({_sorun} sorun)", icon="🔴")
+                        _status_color = "#ef4444"
+                        _status_bg = "rgba(239,68,68,0.08)"
+                        _status_border = "rgba(239,68,68,0.3)"
+                        _status_icon = "❌"
+                        _status_text = f"Doğruluk: %{_skor:.0f}"
                 except Exception:
-                    pass
+                    _status_color = "#64748b"
+                    _status_bg = "rgba(100,116,139,0.08)"
+                    _status_border = "rgba(100,116,139,0.3)"
+                    _status_icon = "📄"
+                    _status_text = ""
+
+                st.markdown(f"""
+                <div style="padding:0.8rem 1rem;background:{_status_bg};border:1px solid {_status_border};
+                            border-radius:8px;margin-bottom:1rem;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <span style="font-size:1.05rem;font-weight:600;color:#1e293b;">
+                                {_status_icon} {r.get('filename','')}
+                            </span>
+                        </div>
+                        <div style="font-size:0.85rem;color:{_status_color};font-weight:500;">
+                            {_status_text}
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
                 c1, c2, c3 = st.columns(3)
                 with c1:
                     _init_text(f"ed_tarih_{tab_idx}", r.get("tarih") or "")
@@ -389,6 +454,54 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     st.number_input("Yemek Çeki (TL)", min_value=0.0, step=100.0, key=f"ed_yemek_{tab_idx}")
                     _init_num(f"ed_iade_{tab_idx}", float(r.get("iadeler", 0) or 0))
                     st.number_input("İade (TL)", min_value=0.0, step=100.0, key=f"ed_iade_{tab_idx}")
+
+                # KDV Dökümü
+                kdv_kalemleri = r.get("kdv_kalemleri", [])
+                if kdv_kalemleri:
+                    st.markdown("**🧾 KDV Dökümü**")
+                    kdv_data = []
+                    for kv in kdv_kalemleri:
+                        kdv_data.append({
+                            "Oran": f"%{kv.get('oran', 0)}",
+                            "Matrah": f"{kv.get('matrah', 0):,.2f}",
+                            "KDV": f"{kv.get('kdv_tutari', 0):,.2f}",
+                        })
+                    import pandas as pd
+                    st.dataframe(pd.DataFrame(kdv_data), hide_index=True, use_container_width=True)
+
+                # Ürün Listesi
+                urunler = r.get("urunler", [])
+                if urunler:
+                    st.markdown("**🛒 Ürün Listesi**")
+                    urun_data = []
+                    for u in urunler:
+                        urun_data.append({
+                            "Ürün": u.get("urun", ""),
+                            "Miktar": u.get("miktar", 0),
+                            "KDV %": u.get("oran", 0),
+                            "Tutar": f"{u.get('tutar', 0):,.2f}",
+                        })
+                    import pandas as pd
+                    st.dataframe(pd.DataFrame(urun_data), hide_index=True, use_container_width=True)
+
+                # Hızlı İşlem Butonları
+                st.markdown("---")
+                qcol1, qcol2, qcol3 = st.columns(3)
+                with qcol1:
+                    if st.button("📋 Ham Metni Göster", key=f"ham_{tab_idx}", use_container_width=True):
+                        st.code(r.get("ocr_text", ""), language=None)
+                with qcol2:
+                    if st.button("🔄 Bu Fişi Yeniden Oku", key=f"yeniden_{tab_idx}", use_container_width=True):
+                        st.toast("Yeniden okuma için lütfen dosyayı tekrar yükleyin", icon="ℹ️")
+                with qcol3:
+                    if st.button("📊 LUCA Satırlarını Göster", key=f"luca_{tab_idx}", use_container_width=True):
+                        from luca import data_to_luca_rows
+                        _hk = st.session_state.get("hesap_kodlari", {})
+                        _uk = st.session_state.get("urun_kodlari", [])
+                        _luca_rows = data_to_luca_rows(r, _hk, 1, _uk)
+                        if _luca_rows:
+                            import pandas as pd
+                            st.dataframe(pd.DataFrame(_luca_rows), hide_index=True, use_container_width=True)
 
         if duzeltilebilir:
             with st.expander("📝 Tüm Alanlar — Düzenle & Öğret", expanded=False):
@@ -584,10 +697,10 @@ def _page_z_raporu_yukle(hesap_kodlari):
         ozet_data = []
         for i, r in enumerate(results):
             if "error" in r:
-                ozet_data.append({"#": i+1, "Dosya": r["filename"], "Durum": "HATA", "Tarih": "", "Z No": "", "Firma": "", "Banka": "", "Brüt": 0, "Net": 0, "KK": 0, "Nakit": 0, "İptal": 0})
+                ozet_data.append({"#": i+1, "Dosya": r["filename"], "Durum": "❌ HATA", "Tarih": "", "Z No": "", "Firma": "", "Banka": "", "Brüt": 0, "Net": 0, "KK": 0, "Nakit": 0, "İptal": 0})
                 continue
             ozet_data.append({
-                "#": i+1, "Dosya": r.get("filename", "")[:25], "Durum": "OK",
+                "#": i+1, "Dosya": r.get("filename", "")[:25], "Durum": "✅ OK",
                 "Tarih": r.get("tarih", "?"), "Z No": r.get("z_no", "?"),
                 "Firma": r.get("firma_adi", "") or "-",
                 "Banka": r.get("banka_adi", "") or "-",
@@ -596,6 +709,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 "İptal": r.get("iadeler", 0),
             })
 
+        st.markdown("**📋 Tüm Fişlerin Özeti**")
         st.dataframe(pd.DataFrame(ozet_data), width="stretch", hide_index=True)
 
         iade_eksik = [(i, r) for i, r in enumerate(results) if "error" not in r]
@@ -662,9 +776,19 @@ def _page_z_raporu_yukle(hesap_kodlari):
         c4.metric("Toplam Alacak", f"{toplam_alacak:,.2f}")
 
         if abs(toplam_borc - toplam_alacak) < 0.01:
-            st.success("Borç = Alacak. DENGELİ.")
+            st.markdown("""
+            <div style="padding:0.8rem 1rem;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);
+                        border-radius:8px;font-size:0.9rem;">
+                ✅ <b>Dengeli</b> — Borç = Alacak
+            </div>
+            """, unsafe_allow_html=True)
         else:
-            st.warning(f"Fark: {abs(toplam_borc - toplam_alacak):,.2f} TL")
+            st.markdown(f"""
+            <div style="padding:0.8rem 1rem;background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.3);
+                        border-radius:8px;font-size:0.9rem;">
+                ⚠️ <b>Fark:</b> {abs(toplam_borc - toplam_alacak):,.2f} TL
+            </div>
+            """, unsafe_allow_html=True)
 
         st.divider()
 
@@ -755,7 +879,7 @@ def _page_z_raporu_yukle(hesap_kodlari):
                 type="primary", width="stretch")
 
         st.divider()
-        if st.button("Geçmişe Kaydet", type="primary", use_container_width=True, key="gecmis_kaydet_btn"):
+        if st.button("💾 Geçmişe Kaydet", type="primary", use_container_width=True, key="gecmis_kaydet_btn"):
             kayit_basarili = True
             try:
                 gecmis_kaydet(results, hesap_kodlari, st.session_state.get("secili_mukellef", ""))
@@ -828,7 +952,7 @@ def _page_dashboard():
     import pandas as pd
     from beyanname_takvimi import yaklasan_beyannameler
 
-    st.header("Genel Bakis")
+    st.header("📊 Genel Bakış")
 
     tum_fisler = tum_fisleri_yukle()
     kayitlar = gecmis_listele()
@@ -879,14 +1003,21 @@ def _page_dashboard():
             tum_fisler = _filtrele_tarih(tum_fisler, filtre_bas_dt, filtre_son_dt)
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Toplam Kayit", f"{len(kayitlar)}")
-    c2.metric("Toplam Fis", f"{len(tum_fisler)}")
-    c3.metric("Aktif Mükellef", f"{len(ml)}")
+    c1.metric("📁 Toplam Kayıt", f"{len(kayitlar)}")
+    c2.metric("📄 Toplam Fiş", f"{len(tum_fisler)}")
+    c3.metric("👤 Aktif Mükellef", f"{len(ml)}")
     toplam_ciro = sum(f.get("net_toplam", 0) or 0 for f in tum_fisler)
-    c4.metric("Toplam Ciro", f"{toplam_ciro:,.0f} TL")
+    c4.metric("💰 Toplam Ciro", f"{toplam_ciro:,.0f} TL")
 
     if not tum_fisler:
-        st.info("Henuz fis yok. Z Raporu yukleyin.")
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 2rem;background:rgba(15,118,110,0.04);
+                    border-radius:12px;border:2px dashed #cbd5e1;margin:1rem 0;">
+            <div style="font-size:3rem;margin-bottom:1rem;">📄</div>
+            <div style="font-size:1.1rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Henüz fiş yok</div>
+            <div style="font-size:0.85rem;color:#64748b;">Z Raporu Yükle sayfasından fotoğraf yükleyerek başlayın</div>
+        </div>
+        """, unsafe_allow_html=True)
         return
 
     st.divider()
@@ -908,18 +1039,18 @@ def _page_dashboard():
             continue
 
     if ay_ciro:
-        st.subheader("Aylik Ciro Trendi")
+        st.subheader("📈 Aylık Ciro Trendi")
         sorted_aylar = sorted(ay_ciro.keys())
         df_ay = pd.DataFrame({
             "Ay": [f"{ay_isimleri[int(a.split('-')[1])-1]} {a.split('-')[0]}" for a in sorted_aylar],
             "Ciro (TL)": [ay_ciro[a] for a in sorted_aylar],
-            "Fis Sayisi": [ay_fis_sayisi.get(a, 0) for a in sorted_aylar],
+            "Fiş Sayısı": [ay_fis_sayisi.get(a, 0) for a in sorted_aylar],
         })
         st.bar_chart(df_ay.set_index("Ay")[["Ciro (TL)"]], use_container_width=True)
 
     col_banka, col_mukellef = st.columns(2)
     with col_banka:
-        st.subheader("Banka Bazli Ciro")
+        st.subheader("🏦 Banka Bazlı Ciro")
         banka_ciro = {}
         for f in tum_fisler:
             b = f.get("banka_adi", "") or "Belirsiz/Nakit"
@@ -929,7 +1060,7 @@ def _page_dashboard():
             st.bar_chart(df_b.set_index("Banka"), use_container_width=True)
 
     with col_mukellef:
-        st.subheader("Mükellef Bazlı Ciro")
+        st.subheader("👤 Mükellef Bazlı Ciro")
         musteri_ciro = {}
         for f in tum_fisler:
             m = f.get("mukellef", "") or f.get("mukellef_adi", "") or "Bilinmeyen"
@@ -939,7 +1070,7 @@ def _page_dashboard():
             st.bar_chart(df_m.set_index("Mükellef"), use_container_width=True)
 
     st.divider()
-    st.subheader("Karsilastirma")
+    st.subheader("📊 Karşılaştırma")
     bu_yil = now.year
     gecen_ay = now.month - 1 if now.month > 1 else 12
     gecen_ay_yil = bu_yil if now.month > 1 else bu_yil - 1
@@ -967,12 +1098,27 @@ def _page_dashboard():
     ay_yuzde = (ay_fark / gecen_ay_ciro * 100) if gecen_ay_ciro > 0 else 0
     yil_yuzde = (yil_fark / gecen_yil_ciro * 100) if gecen_yil_ciro > 0 else 0
     comp1, comp2 = st.columns(2)
-    comp1.metric(f"Bu Ay ({ay_isimleri[now.month-1]})", f"{bu_ay_ciro:,.0f} TL", f"{ay_fark:+,.0f} TL ({ay_yuzde:+.1f}%)")
-    comp2.metric(f"Bu Yil ({bu_yil})", f"{bu_yil_ciro:,.0f} TL", f"{yil_fark:+,.0f} TL ({yil_yuzde:+.1f}%)")
+    with comp1:
+        delta_color = "normal" if ay_fark >= 0 else "inverse"
+        comp1.metric(
+            f"📅 Bu Ay ({ay_isimleri[now.month-1]})",
+            f"{bu_ay_ciro:,.0f} TL",
+            f"{ay_fark:+,.0f} TL ({ay_yuzde:+.1f}%)",
+            delta_color=delta_color
+        )
+    with comp2:
+        delta_color = "normal" if yil_fark >= 0 else "inverse"
+        comp2.metric(
+            f"📆 Bu Yıl ({bu_yil})",
+            f"{bu_yil_ciro:,.0f} TL",
+            f"{yil_fark:+,.0f} TL ({yil_yuzde:+.1f}%)",
+            delta_color=delta_color
+        )
 
     fis_sayisi_ay = len([f for f in tum_fisler if _tarih_esles(f, bu_yil, now.month)])
     fis_sayisi_gecen = len([f for f in tum_fisler if _tarih_esles(f, gecen_ay_yil, gecen_ay)])
-    st.caption(f"Bu ay {fis_sayisi_ay} fis, gecen ay {fis_sayisi_gecen} fis")
+    fis_fark = fis_sayisi_ay - fis_sayisi_gecen
+    st.caption(f"📊 Bu ay {fis_sayisi_ay} fiş, geçen ay {fis_sayisi_gecen} fiş ({fis_fark:+d} fiş)")
 
     st.divider()
     st.subheader("OCR Öğrenme Sistemi")
@@ -1005,13 +1151,20 @@ def _page_dashboard():
 
 def _page_fis_gecmisi(hesap_kodlari):
     import pandas as pd
-    st.header("Fiş Geçmişi")
+    st.header("📋 Fiş Geçmişi")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
     tum_fisler = tum_fisleri_yukle()
 
     if not tum_fisler:
-        st.info("Henüz fiş yok. Z Raporu Yükle sayfasından fiş ekleyin.")
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 2rem;background:rgba(15,118,110,0.04);
+                    border-radius:12px;border:2px dashed #cbd5e1;margin:1rem 0;">
+            <div style="font-size:3rem;margin-bottom:1rem;">📋</div>
+            <div style="font-size:1.1rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Henüz fiş yok</div>
+            <div style="font-size:0.85rem;color:#64748b;">Z Raporu Yükle sayfasından fiş ekleyin</div>
+        </div>
+        """, unsafe_allow_html=True)
     else:
         col_f1, col_f2, col_f3, col_f4 = st.columns(4)
         with col_f1:
@@ -1045,10 +1198,24 @@ def _page_fis_gecmisi(hesap_kodlari):
                     continue
             filtered.append(f)
 
-        st.info(f"{len(filtered)} fiş bulundu")
+        st.info(f"🔍 {len(filtered)} fiş bulundu")
 
         if filtered:
-            with st.expander("Toplu İşlem", expanded=False):
+            # Summary stats
+            toplam_net = sum(f.get("net_toplam", 0) or 0 for f in filtered)
+            toplam_brut = sum(f.get("brut", 0) or 0 for f in filtered)
+            toplam_kk = sum(f.get("kredi_karti", 0) or 0 for f in filtered)
+            toplam_nakit = sum(f.get("nakit", 0) or 0 for f in filtered)
+
+            scol1, scol2, scol3, scol4 = st.columns(4)
+            scol1.metric("💰 Toplam Net", f"{toplam_net:,.0f} TL")
+            scol2.metric("📊 Toplam Brüt", f"{toplam_brut:,.0f} TL")
+            scol3.metric("💳 K.Kartı", f"{toplam_kk:,.0f} TL")
+            scol4.metric("💵 Nakit", f"{toplam_nakit:,.0f} TL")
+
+            st.divider()
+
+            with st.expander("🗑️ Toplu İşlem", expanded=False):
                 col_del1, col_del2 = st.columns([3, 1])
                 with col_del1:
                     secim = st.multiselect("Silmek istediklerinizi seçin",
@@ -1065,7 +1232,7 @@ def _page_fis_gecmisi(hesap_kodlari):
                         else:
                             st.error("Hiçbir fiş silinemedi.")
 
-            with st.expander("Fiş Düzenle", expanded=False):
+            with st.expander("✏️ Fiş Düzenle", expanded=False):
                 secim_duzelt = st.selectbox("Düzenlenecek fişi seçin", filtered,
                     format_func=lambda x: f"{x.get('tarih','')} | {x.get('z_no','')} | {x.get('firma_adi', x.get('mukellef',''))} | ₺{x.get('net_toplam', 0):,.2f}",
                     key="duzelt_secim")
@@ -1154,11 +1321,11 @@ def _page_fis_gecmisi(hesap_kodlari):
 
 
 def _page_mukellef_yonetimi():
-    st.header("Mükellef Yönetimi")
+    st.header("👤 Mükellef Yönetimi")
 
     ml = mukellefler()
 
-    with st.expander("Yeni Mükellef Ekle", expanded=not ml):
+    with st.expander("➕ Yeni Mükellef Ekle", expanded=not ml):
         with st.form("mukellef_form"):
             col_a, col_b = st.columns(2)
             with col_a:
@@ -1186,34 +1353,42 @@ def _page_mukellef_yonetimi():
         st.divider()
         bilanco = [m for m in ml if m.get("mod", "Bilanço") == "Bilanço"]
         sm = [m for m in ml if m.get("mod", "Serbest Meslek") == "Serbest Meslek"]
-        st.subheader(f"Kayıtlı Mükellefler ({len(ml)}) — {len(bilanco)} Bilanço, {len(sm)} Serbest Meslek")
+        st.subheader(f"📋 Kayıtlı Mükellefler ({len(ml)}) — {len(bilanco)} Bilanço, {len(sm)} Serbest Meslek")
 
-        filtre_mod = st.selectbox("Göster", ["Tümü", "Bilanço", "Serbest Meslek"], key="muk_filtre")
+        filtre_mod = st.selectbox("🔍 Göster", ["Tümü", "Bilanço", "Serbest Meslek"], key="muk_filtre")
         gosterim = ml if filtre_mod == "Tümü" else [m for m in ml if m.get("mod", "Serbest Meslek") == filtre_mod]
 
         for i, m in enumerate(gosterim):
             mod_etiket = m.get("mod", "?")
-            with st.expander(f"{m['adi']} — {m.get('vergi_no', '?')} [{mod_etiket}]"):
+            mod_renk = "🟢" if mod_etiket == "Bilanço" else "🔵"
+            with st.expander(f"{mod_renk} {m['adi']} — {m.get('vergi_no', '?')} [{mod_etiket}]"):
                 c1, c2, c3 = st.columns(3)
-                c1.write(f"**Vergi Dairesi:** {m.get('vd', '?')}")
-                c2.write(f"**Telefon:** {m.get('telefon', '?')}")
-                c3.write(f"**Kayıt:** {m.get('olusturma', '?')}")
+                c1.write(f"**🏛️ Vergi Dairesi:** {m.get('vd', '?')}")
+                c2.write(f"**📞 Telefon:** {m.get('telefon', '?')}")
+                c3.write(f"**📅 Kayıt:** {m.get('olusturma', '?')}")
                 if m.get("kisa_adi"):
-                    st.write(f"**Kısa Ad:** {m['kisa_adi']}")
+                    st.write(f"**🏷️ Kısa Ad:** {m['kisa_adi']}")
                 if m.get("notlar"):
-                    st.write(f"Not: {m['notlar']}")
+                    st.write(f"📝 Not: {m['notlar']}")
 
                 orijinal_idx = ml.index(m)
-                if st.button("Sil", key=f"sil_{orijinal_idx}", width="stretch"):
+                if st.button("🗑️ Sil", key=f"sil_{orijinal_idx}", width="stretch"):
                     ml.pop(orijinal_idx)
                     dosya_yaz(MUKELLEF_FILE, ml)
                     st.rerun()
     else:
-        st.info("Henüz mükellef eklenmemiş.")
+        st.markdown("""
+        <div style="text-align:center;padding:3rem 2rem;background:rgba(15,118,110,0.04);
+                    border-radius:12px;border:2px dashed #cbd5e1;margin:1rem 0;">
+            <div style="font-size:3rem;margin-bottom:1rem;">👤</div>
+            <div style="font-size:1.1rem;font-weight:600;color:#1e293b;margin-bottom:0.5rem;">Henüz mükellef eklenmemiş</div>
+            <div style="font-size:0.85rem;color:#64748b;">Yukarıdaki formu kullanarak ilk mükellefinizi ekleyin</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def _page_kdv_ozeti(hesap_kodlari):
-    st.header("Dönemsel KDV Özeti")
+    st.header("🧾 Dönemsel KDV Özeti")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
     tum_fisler = tum_fisleri_yukle()
@@ -1243,7 +1418,15 @@ def _page_kdv_ozeti(hesap_kodlari):
                 pass
 
         if not ay_fisler:
-            st.warning(f"{ay:02d}/{yil} döneminde fiş bulunamadı.")
+            st.markdown(f"""
+            <div style="text-align:center;padding:2rem;background:rgba(234,179,8,0.06);
+                        border-radius:12px;border:1px solid rgba(234,179,8,0.2);margin:1rem 0;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">🔍</div>
+                <div style="font-size:0.95rem;color:#1e293b;">
+                    <b>{ay:02d}/{yil}</b> döneminde fiş bulunamadı
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.success(f"{len(ay_fisler)} fiş bulundu ({ay:02d}/{yil})")
 
@@ -1445,16 +1628,17 @@ th {{ background: #1a5276; color: white; }}
 
 
 def _page_ayarlar():
-    st.header("Ayarlar")
+    st.header("⚙️ Ayarlar")
 
     _cu = st.session_state.get("current_user", {})
     if _cu.get("role") == "admin":
         _kullanici_yonetimi_paneli()
 
-    st.subheader("Yedekleme")
+    st.divider()
+    st.subheader("💾 Yedekleme")
     col_y1, col_y2 = st.columns(2)
     with col_y1:
-        if st.button("Yedek Oluştur", width="stretch", type="primary", key="yedek_olustur"):
+        if st.button("📦 Yedek Oluştur", width="stretch", type="primary", key="yedek_olustur"):
             try:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 yedek_klasor = os.path.join(YEDEK_KLASORU, f"yedek_{timestamp}")
@@ -1472,8 +1656,8 @@ def _page_ayarlar():
     with col_y2:
         yedekler = sorted(glob.glob(os.path.join(YEDEK_KLASORU, "yedek_*")), reverse=True)
         if yedekler:
-            secilen_yedek = st.selectbox("Yedek Seç", yedekler)
-            if st.button("Geri Yükle", width="stretch", key="geri_yukle"):
+            secilen_yedek = st.selectbox("📁 Yedek Seç", yedekler)
+            if st.button("🔄 Geri Yükle", width="stretch", key="geri_yukle"):
                 try:
                     for fp in glob.glob(os.path.join(secilen_yedek, "*.json")):
                         shutil.copy2(fp, DATA_DIR)
@@ -1488,9 +1672,9 @@ def _page_ayarlar():
             st.info("Henüz yedek yok")
 
     st.divider()
-    st.subheader("Bulut Yedekleme (ZIP İndir)")
+    st.subheader("☁️ Bulut Yedekleme (ZIP İndir)")
     st.caption("Tüm verilerinizi ZIP olarak indirip Google Drive, OneDrive veya Dropbox'a yükleyebilirsiniz.")
-    if st.button("ZIP Yedek Oluştur ve İndir", type="primary", key="zip_yedek"):
+    if st.button("📦 ZIP Yedek Oluştur ve İndir", type="primary", key="zip_yedek"):
         import zipfile
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -1507,7 +1691,7 @@ def _page_ayarlar():
             "application/zip", type="primary", key="zip_indir")
 
     st.divider()
-    st.subheader("E-posta Bildirimi")
+    st.subheader("📧 E-posta Bildirimi")
     email_config = dosya_oku(EMAIL_FILE, {})
     with st.form("email_form"):
         col_e1, col_e2 = st.columns(2)
@@ -1530,7 +1714,7 @@ def _page_ayarlar():
                 st.error("E-posta gönderilemedi. Ayarları kontrol edin.")
 
     st.divider()
-    st.subheader("Hesap Planı Seçimi")
+    st.subheader("📊 Hesap Planı Seçimi")
     mevcut_plan = st.session_state.get("hesap_plan_secenek", "LUCA")
     yeni_plan = st.selectbox("Muhasebe Programı", ["LUCA", "Logo", "Netsis"],
         index=["LUCA", "Logo", "Netsis"].index(mevcut_plan))
@@ -1545,7 +1729,7 @@ def _page_ayarlar():
     st.json(st.session_state.get("hesap_kodlari", {}))
 
     st.divider()
-    st.subheader("OCR Düzeltme Sözlüğü")
+    st.subheader("📝 OCR Düzeltme Sözlüğü")
     st.caption("OCR'ın yanlış okuduğu kelimeleri buradan yönetebilirsiniz. Sistem kullanıcı düzeltmelerinden otomatik öğrenir.")
     col_s1, col_s2 = st.columns(2)
     with col_s1:
@@ -1576,7 +1760,7 @@ def _page_ayarlar():
         st.caption("Henüz öğrenilmiş düzeltme yok. Fiş düzelttikçe otomatik öğrenilir.")
 
     st.divider()
-    st.subheader("İstatistiksel Öğrenme Motoru")
+    st.subheader("🧠 İstatistiksel Öğrenme Motoru")
     st.caption("Yeni nesil öğrenme sistemi - her düzeltme sayılır, güven puanı hesaplanır.")
     try:
         from ogrenme_cekirdigi import istatistik_raporu, gecmis_temizle, ogrenme_db_yukle
@@ -1605,7 +1789,8 @@ def _page_ayarlar():
         st.caption("İstatistiksel öğrenme motoru yüklenemedi.")
 
     st.divider()
-    st.subheader("Tehlikeli İşlemler")
+    st.subheader("⚠️ Tehlikeli İşlemler")
+    st.caption("Bu işlemler geri alınamaz. Dikkatli kullanın!")
     if "sil_onay" not in st.session_state:
         st.session_state.sil_onay = False
     if "fis_sil_onay" not in st.session_state:
@@ -1666,14 +1851,14 @@ def _page_ayarlar():
                 st.rerun()
 
     st.divider()
-    st.subheader("Sistem Durumu")
+    st.subheader("ℹ️ Sistem Durumu")
     c1, c2 = st.columns(2)
     with c1:
-        st.write(f"Veri klasörü: `{DATA_DIR}`")
-        st.write(f"Geçmiş sayısı: `{len(gecmis_listele())}`")
+        st.write(f"📁 Veri klasörü: `{DATA_DIR}`")
+        st.write(f"📋 Geçmiş sayısı: `{len(gecmis_listele())}`")
     with c2:
-        st.write(f"Mükellef sayısı: `{len(mukellefler())}`")
-        st.write(f"Toplam fiş: `{len(tum_fisleri_yukle())}`")
+        st.write(f"👤 Mükellef sayısı: `{len(mukellefler())}`")
+        st.write(f"📄 Toplam fiş: `{len(tum_fisleri_yukle())}`")
 
 
 def _page_beyanname_takvimi():
@@ -1681,7 +1866,7 @@ def _page_beyanname_takvimi():
     import pandas as pd
     from beyanname_takvimi import yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER, email_icerik_olustur
 
-    st.header("Beyanname Takvimi")
+    st.header("📅 Beyanname Takvimi")
     st.caption("KDV, Muhtasar, BA-BS, Geçici Vergi, Gelir/Kurumlar Vergisi tarihleri")
 
     col_f1, col_f2 = st.columns(2)
@@ -1811,7 +1996,7 @@ def _page_efatura_sorgu():
         vergi_no_dogrula, vkn_algo_dogrula, tckn_algo_dogrula,
     )
 
-    st.header("E-Fatura Mükellef Sorgu")
+    st.header("🧾 E-Fatura Mükellef Sorgu")
     st.caption("GİB e-fatura mükellefiyet kontrolü")
     st.info("ℹ️ GİB e-fatura public API'si artık doğrudan erişilebilir değil "
             "(CAPTCHA + e-Devlet doğrulaması gerektirir). Bu sorgu yalnızca format/algoritma "

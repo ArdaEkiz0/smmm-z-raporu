@@ -776,7 +776,7 @@ def salon_bul(text):
         r'(?:RAPOR|G[ÜU]N|G[ÜU]NL[ÜU]K|Z\s*G[ÜU]N|F[İI]Ş|TOPLAM|NAK[İI]T|KART|TUTAR|SAYI)',
         r'(?:VD|TC|VKN)',
         r'(?:PINAR|CADDE|SOKAK|MEZBAH|ÇAY|KAHVE|TOST|MESRUBAT|T\.GIDA|T\.EKMEK|SIGARA|YA[PĞ]|MEYVE|SEBZE|MEYVE&SEBZE|SEBZESMEYVE)',
-        r'.*[^\x20-\x7E\xc0-\xff].*',  # Garbled chars (binary noise)
+        r'.*[^\x20-\x7E\xc0-\xff\u0100-\u017f].*',  # Garbled chars (binary noise)
     ]
 
     firma_adaylari = []
@@ -790,7 +790,7 @@ def salon_bul(text):
         if harf_sayisi < 4:
             continue
         # Skip if has too many garbled chars
-        garbled_sayisi = len(re.findall(r'[^\x20-\x7E\xc0-\xff]', s))
+        garbled_sayisi = len(re.findall(r'[^\x20-\x7E\xc0-\xff\u0100-\u017f]', s))
         if garbled_sayisi > 2:
             continue
         if s.isupper() or s.istitle():
@@ -1158,6 +1158,22 @@ def parse_z_raporu(text):
         except (ValueError, IndexError):
             log.warning("TOPLAM X-kdv parse hatasi", exc_info=True)
 
+    # TOPLAM %1, %10 format (Z raporunda "%1" KDV orani olarak kullanilir)
+    kdv_yuzde_pat = r'TOPLAM\s*%(\d{1,2})\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(kdv_yuzde_pat, t_duz, re.IGNORECASE):
+        try:
+            oran = int(m.group(1))
+            if 0 < oran <= 90:
+                tutar = parse_tutar(m.group(2).replace(" ", ""))
+                if tutar > 0:
+                    mevcut = next((k for k in sonuc["kdv_kalemleri"] if k.get("oran") == oran), None)
+                    if mevcut:
+                        mevcut["matrah"] = tutar
+                    else:
+                        sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": tutar, "kdv_tutari": 0})
+        except (ValueError, IndexError):
+            pass
+
     # TOPKDV X1, X10, X20 (KDV tutarlari)
     topkdv_x_pat = r'TOPKDV\s*[XZ]\s*([Il1iO0]{1,2})\s*\*?\s*([\d][\d.,\s]*[\d.,])'
     for m in re.finditer(topkdv_x_pat, t_duz, re.IGNORECASE):
@@ -1175,6 +1191,76 @@ def parse_z_raporu(text):
         except (ValueError, IndexError):
             log.warning("TOPKDV X-kdv parse hatasi", exc_info=True)
 
+    # TOPKDV %1, %10 format (KDV tutarlari)
+    # hem "TOPKDV %1" hem "TOPLAM KDV %1" (duzeltme sonrasi) formati
+    topkdv_yuzde_pat = r'(?:TOPKDV|TOPLAM\s*KDV)\s*%(\d{1,2})\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(topkdv_yuzde_pat, t_duz, re.IGNORECASE):
+        try:
+            oran = int(m.group(1))
+            if 0 < oran <= 90:
+                tutar = parse_tutar(m.group(2).replace(" ", ""))
+                if tutar > 0:
+                    mevcut = next((k for k in sonuc["kdv_kalemleri"] if k.get("oran") == oran), None)
+                    if mevcut:
+                        mevcut["kdv_tutari"] = tutar
+                    else:
+                        sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": 0, "kdv_tutari": tutar})
+        except (ValueError, IndexError):
+            pass
+
+    # %1 TOPLAM / TOPKDV format (İSA CUNA gibi Z raporlari)
+    # once %N TOPLAM → matrah, sonra TOPKDV → kdv_tutari
+    kdv_yuzde_toplam_pat = r'%(\d{1,2})\s+TOPLAM\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(kdv_yuzde_toplam_pat, t_duz, re.IGNORECASE):
+        try:
+            oran = int(m.group(1))
+            if 0 < oran <= 90:
+                tutar = parse_tutar(m.group(2).replace(" ", ""))
+                if tutar > 0:
+                    mevcut = next((k for k in sonuc["kdv_kalemleri"] if k.get("oran") == oran), None)
+                    if mevcut:
+                        mevcut["matrah"] = tutar
+                    else:
+                        sonuc["kdv_kalemleri"].append({"oran": oran, "matrah": tutar, "kdv_tutari": 0})
+        except (ValueError, IndexError):
+            pass
+
+    # TOPKDV alone (oran onceki satirda, tutar bu satirda) — also matches "TOPLAM KDV" after ocr_duzelt
+    topkdv_yalniz_pat = r'(?<!\w)(?:TOPKDV|TOPLAM\s+KDV)\s+(?!\d)\s*\*?\s*([\d][\d.,\s]*[\d.,])'
+    for m in re.finditer(topkdv_yalniz_pat, t_duz, re.IGNORECASE):
+        try:
+            tutar = parse_tutar(m.group(1).replace(" ", ""))
+            if tutar <= 0:
+                continue
+            # KUM. TOPLAM / KUM. TOPKDV ozet satirlarini atla
+            satir_basi = t_duz[max(0, m.start()-30):m.start()].rstrip()
+            if re.search(r'K[ÜU]M\b', satir_basi, re.IGNORECASE):
+                continue
+            # TOPLAM satir ozeti (onceki satirda %N TOPLAM yoksa ozet say)
+            onceki = t_duz[max(0, m.start()-100):m.start()].rstrip()
+            ozet_satir = re.search(r'(?:^|\s)TOPLAM\s*$', onceki, re.IGNORECASE)
+            ozet_satir_tutar = re.search(r'(?:^|\s)TOPLAM\s+\*[\d][\d.,\s]*[\d.,]\s*$', onceki, re.IGNORECASE)
+            if ozet_satir or ozet_satir_tutar:
+                continue
+            # Ayni tutar zaten varsa atla (ozet satiri tekrari)
+            zaten_var = any(abs(k.get("kdv_tutari", 0) - tutar) < 0.02 for k in sonuc["kdv_kalemleri"])
+            if zaten_var:
+                continue
+            mevcutsuz = [k for k in sonuc["kdv_kalemleri"] if k.get("kdv_tutari", 0) == 0]
+            if mevcutsuz:
+                # Ilk eslesmeyi al (sirayla: ilk TOPLAM KDV → ilk oran)
+                en_ilk = mevcutsuz[0]
+                en_ilk["kdv_tutari"] = tutar
+            else:
+                sonuc["kdv_kalemleri"].append({"oran": 0, "matrah": 0, "kdv_tutari": tutar})
+        except (ValueError, IndexError):
+            pass
+
+    # Eksik kdv_tutari'yi matrah × orandan hesapla (format farklari icin)
+    for kdv in sonuc["kdv_kalemleri"]:
+        if kdv.get("kdv_tutari", 0) == 0 and kdv.get("matrah", 0) > 0 and kdv.get("oran", 0) > 0:
+            kdv["kdv_tutari"] = round(kdv["matrah"] * kdv["oran"] / (100 + kdv["oran"]), 2)
+
     # Ürün satırları (hem satir satir hem tek satirdan parse)
     satir_liste = t_duz.replace('\r', '\n').split("\n")
     skip_urunler = re.compile(
@@ -1191,10 +1277,11 @@ def parse_z_raporu(text):
             if len(ad) < 2 or ad.isdigit():
                 continue
             kdv_orani = 0
-            try:
-                kdv_orani = int(m.group(2)) if m.group(2) else 0
-            except (ValueError, TypeError):
-                pass
+            if '%' in m.group(0)[:len(ad)+20]:
+                try:
+                    kdv_orani = int(m.group(2)) if m.group(2) else 0
+                except (ValueError, TypeError):
+                    pass
             miktar = parse_tutar(m.group(3))
             tutar = parse_tutar(m.group(4).replace(" ", ""))
             if tutar > 0 and len(ad) > 1 and not ad.isdigit() and tutar < 10000000:
@@ -1214,7 +1301,12 @@ def parse_z_raporu(text):
             m = re.match(urun_pat, satir)
             if m:
                 ad = m.group(1).strip()
-                kdv_orani = int(m.group(2)) if m.group(2) else 0
+                kdv_orani = 0
+                if '%' in satir[:len(ad)+20]:
+                    try:
+                        kdv_orani = int(m.group(2)) if m.group(2) else 0
+                    except (ValueError, TypeError):
+                        pass
                 miktar = parse_tutar(m.group(3))
                 tutar = parse_tutar(m.group(4).replace(" ", ""))
                 if tutar > 0 and len(ad) > 1 and not ad.isdigit() and tutar < 10000000:
@@ -1501,13 +1593,26 @@ def parse_z_raporu(text):
             if beklenen_iade > 100 and beklenen_iade < sonuc["brut"]:
                 sonuc["iadeler"] = beklenen_iade
 
+    # KRITIK: TOPLAM bazen net (iadeler dusulmus) olarak basiliyor.
+    # Eger brut = nakit + kk + yemek ve iadeler > 0 ise, brut aslinda NET'tir.
+    # Brut = Nakit + KK + Yemek + Iadeler (bruk) olarak duzeltilmeli.
+    if sonuc["brut"] > 0 and sonuc["iadeler"] > 0:
+        toplam_odeme = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
+        if toplam_odeme > 0:
+            fark = abs(sonuc["brut"] - toplam_odeme)
+            if fark < 1.0:
+                # brut ≈ nakit + kk → brut aslinda NET, iadeler dusulmus
+                sonuc["brut"] = toplam_odeme + sonuc["iadeler"]
+            elif abs(sonuc["brut"] - toplam_odeme - sonuc["iadeler"]) < 1.0:
+                # brut ≈ nakit + kk + iadeler → zaten BRÜT, net hesapla
+                sonuc["net_toplam"] = toplam_odeme
+
     # Net toplam duzeltme: brut ve urunlerden net hesapla
     if sonuc["brut"] > 0 and sonuc["net_toplam"] >= sonuc["brut"] and sonuc.get("urunler"):
         urun_toplam = sum((u.get("tutar", 0) or 0) for u in sonuc["urunler"])
         if urun_toplam > 0 and urun_toplam < sonuc["brut"]:
             sonuc["net_toplam"] = urun_toplam
         elif urun_toplam > 0:
-            # Urunlerin KDV oranlarindan net toplami hesapla
             hesaplanan_net = 0.0
             for u in sonuc["urunler"]:
                 tutar = u.get("tutar", 0) or 0
@@ -1522,5 +1627,14 @@ def parse_z_raporu(text):
                 sonuc["net_toplam"] = sonuc["brut"] * 0.83
         elif urun_toplam == 0:
             sonuc["net_toplam"] = sonuc["brut"] * 0.83
+
+    # Net toplam hala 0 veya brut'tan buyukse duzelt
+    if sonuc["brut"] > 0:
+        if sonuc["net_toplam"] <= 0 or sonuc["net_toplam"] > sonuc["brut"]:
+            toplam_odeme = sonuc["nakit"] + sonuc["kredi_karti"] + sonuc["yemek_ceki"]
+            if toplam_odeme > 0 and toplam_odeme <= sonuc["brut"]:
+                sonuc["net_toplam"] = toplam_odeme
+            else:
+                sonuc["net_toplam"] = sonuc["brut"]
 
     return sonuc

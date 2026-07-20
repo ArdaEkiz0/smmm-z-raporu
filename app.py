@@ -185,7 +185,7 @@ for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
     os.makedirs(klasor, exist_ok=True)
 
 st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
-st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek")
+st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek · v3.1")
 
 with st.sidebar:
     if not st.session_state.get("_sidebar_brand_done"):
@@ -200,6 +200,26 @@ with st.sidebar:
         </div>""", unsafe_allow_html=True)
         st.session_state["_sidebar_brand_done"] = True
     st.divider()
+
+    _cu = _mevcut_kullanici()
+    if _cu:
+        rol_ikon = "👑" if _cu.get("role") == "admin" else "👤"
+        st.markdown(
+            f"<div style='padding:0.5rem;background:rgba(15,118,110,0.08);"
+            f"border-radius:8px;font-size:0.85rem;'>"
+            f"{rol_ikon} <b>{_cu.get('full_name', _cu.get('username'))}</b><br>"
+            f"<span style='color:#64748b;font-size:0.75rem;'>@{_cu.get('username')}</span>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("🚪 Çıkış Yap", key="logout_btn", use_container_width=True):
+            for k in ["current_user", "auth_ok", "_fis_ver_version",
+                       "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
+                st.session_state.pop(k, None)
+            st.rerun()
+
+    st.divider()
+    st.markdown("**📂 Sayfalar**")
     _sayfa_ikon = {"Dashboard": "📊", "Z Raporu Yükle": "📄", "Fiş Geçmişi": "📋",
                    "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️",
                    "Beyanname Takvimi": "📅", "E-Fatura Sorgu": "🧾"}
@@ -231,7 +251,7 @@ with st.sidebar:
     tema_degistirici()
 
     st.divider()
-    st.header("OCR Motoru")
+    st.markdown("**🔍 OCR Motoru**")
     ocr_modu = st.session_state.get("ocr_modu", "Tesseract")
     ocr_secenek = st.radio("OCR Motoru Seç", ["Tesseract", "GOT-OCR API"], index=0 if ocr_modu == "Tesseract" else 1, label_visibility="collapsed")
     st.session_state.ocr_modu = ocr_secenek
@@ -259,7 +279,7 @@ with st.sidebar:
                 st.warning("GOT-OCR API baglanamiyor! Kaggle/Colab notebook'unu calistirin.", icon="🟡")
 
     st.divider()
-    st.header("Mükellef")
+    st.markdown("**👤 Mükellef**")
     ml = mukellefler()
     mevcut_mod = st.session_state.get("mod", "Bilanço")
     secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed", key="mod_radio")
@@ -313,7 +333,7 @@ with st.sidebar:
                 st.success("✅ Şablon yüklü")
 
     st.divider()
-    st.header("Hesap Kodları")
+    st.markdown("**📝 Hesap Kodları**")
     if "hesap_kodlari" not in st.session_state:
         st.session_state.hesap_kodlari = dosya_oku(HESAP_FILE, varsayilan_kodlar())
 
@@ -343,7 +363,7 @@ with st.sidebar:
                 st.rerun()
 
     st.divider()
-    st.header("Ürün Kodları")
+    st.markdown("**🏷️ Ürün Kodları**")
     if "urun_kodlari" not in st.session_state:
         st.session_state.urun_kodlari = urun_kodlari_yukle()
 
