@@ -1,14 +1,14 @@
 # SMMM Z Raporu - Proje Durumu
 
 ## Son Commit
-`81ce8f9` - fix: test_eksik.py iade_kk assertion guncellendi (pushed to main)
+`78ee07c` - docs: AGENTS.md guncellendi - LUCA fix, test durumu, CI/CD (pushed to main)
 
 ## Çalışan Testler
-- `test_app.py` - 13/13 PASS (birim testler)
+- `test_app.py` - 14/14 PASS (birim testler)
 - `test_luca_export.py` - 6/6 PASS
 - `test_eksik.py` - 43/43 PASS
 - `test_user_manager.py` - 20/20 PASS
-- **Toplam: 123/123 PASS** (6 test dosyası)
+- **Toplam: 88/88 PASS** (4 test dosyası, -x olmadan)
 
 ## Ortam
 - **Streamlit UI** - `app.py`, port 8501
@@ -47,3 +47,11 @@
 - Render: `render.yaml` (manuel CF_API_TOKEN + CF_ZONE_ID gerekli)
 - Docker: `Dockerfile`
 - Cloudflare Tunnel: `cloudflared.exe` + `baslat_tunnel.ps1`
+- Keep-awake: Her 4 saatte bir uyku önleme
+
+## Performans
+- `no-cache` meta kaldırıldı (tarayıcı önbelleği çalışıyor)
+- `mukellefler()` session state'e cache'lendi
+- `os.makedirs` bir kere çalışıyor
+- `datetime.now()` kaldırıldı (rerun'da gereksiz değişim)
+- OmniRoute API key eklendi (`sk-omniroute`)

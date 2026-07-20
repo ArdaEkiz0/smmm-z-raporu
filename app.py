@@ -68,21 +68,11 @@ sys.excepthook = _global_excepthook
 
 st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon="📒")
 
-_zaman = datetime.now().strftime("%Y-%m-%d %H:%M")
-st.caption(f"<span style='font-size:0.7rem;color:#94a3b8;'>v3.1 | {_zaman}</span>", unsafe_allow_html=True)
+st.caption(f"<span style='font-size:0.7rem;color:#94a3b8;'>v3.1</span>", unsafe_allow_html=True)
 
-# Tarayici cache bypass
-st.markdown("""
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-""", unsafe_allow_html=True)
-
-# EasyOCR warm-up: ilk istek oncesinde modeli bellege yukle (10-20s kazandirir).
-# @st.cache_resource ile her session paylasir.
+# EasyOCR warm-up: @st.cache_resource ile her session paylasir
 @st.cache_resource(show_spinner=False)
 def _warmup_easyocr():
-    """EasyOCR reader'i yukle. Streamlit session'lari arasinda paylasilir."""
     try:
         from ocr import _get_easyocr
         reader = _get_easyocr()
@@ -90,13 +80,13 @@ def _warmup_easyocr():
     except Exception:
         return False
 
-# Warm-up'i arka planda calistir (UI'i bloklamaz)
-try:
-    _warmup_easyocr()
-except Exception:
-    log.warning("EasyOCR warm-up basarisiz", exc_info=True)
+if "_easyocr_warmed" not in st.session_state:
+    try:
+        _warmup_easyocr()
+        st.session_state["_easyocr_warmed"] = True
+    except Exception:
+        log.warning("EasyOCR warm-up basarisiz", exc_info=True)
 
-# Eski ogrenme verilerini istatistiksel motora tasi
 try:
     from ogrenme_cekirdigi import mevcut_sozlukleri_birlestir
     mevcut_sozlukleri_birlestir()
@@ -180,8 +170,10 @@ if "tema" not in st.session_state:
 
 tema_uygula()
 
-for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
-    os.makedirs(klasor, exist_ok=True)
+if not st.session_state.get("_klasorler_hazir"):
+    for klasor in [GECMIS_KLASORU, FISLER_KLASORU, YEDEK_KLASORU]:
+        os.makedirs(klasor, exist_ok=True)
+    st.session_state["_klasorler_hazir"] = True
 
 st.title("📊 SMMM Z Raporu ve Fiş Yönetim Sistemi")
 st.caption("Akıllı OCR · LUCA/Logo/Netsis Export · Bilanço & Serbest Meslek · v3.1")
@@ -212,9 +204,9 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
         if st.button("🚪 Çıkış Yap", key="logout_btn", use_container_width=True):
-            for k in ["current_user", "auth_ok", "_fis_ver_version",
-                       "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
-                st.session_state.pop(k, None)
+            for k in list(st.session_state.keys()):
+                if k.startswith("_"):
+                    st.session_state.pop(k, None)
             st.rerun()
 
     st.divider()
@@ -261,7 +253,9 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**👤 Mükellef**")
-    ml = mukellefler()
+    if "_mukellefler_cache" not in st.session_state:
+        st.session_state["_mukellefler_cache"] = mukellefler()
+    ml = st.session_state["_mukellefler_cache"]
     mevcut_mod = st.session_state.get("mod", "Bilanço")
     secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed", key="mod_radio")
     st.session_state.mod = secili_mod
