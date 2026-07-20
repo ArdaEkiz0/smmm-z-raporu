@@ -1388,6 +1388,7 @@ def _page_mukellef_yonetimi():
 
 
 def _page_kdv_ozeti(hesap_kodlari):
+    import pandas as pd
     st.header("🧾 Dönemsel KDV Özeti")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
