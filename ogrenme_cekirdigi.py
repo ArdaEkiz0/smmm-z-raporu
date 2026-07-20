@@ -34,7 +34,7 @@ ALAN_KATEGORI = {
 }
 
 # Minimum confidence to auto-apply
-AUTO_APPLY_ESIK = 0.75
+AUTO_APPLY_ESIK = 0.60
 # Minimum correction count before trusting
 MIN_ORNEK_ESIK = 2
 # Decay: how many days until a correction loses half its weight
