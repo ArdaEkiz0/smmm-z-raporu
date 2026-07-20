@@ -472,21 +472,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                     import pandas as pd
                     st.dataframe(pd.DataFrame(kdv_data), hide_index=True, use_container_width=True)
 
-                # Ürün Listesi
-                urunler = r.get("urunler", [])
-                if urunler:
-                    st.markdown("**🛒 Ürün Listesi**")
-                    urun_data = []
-                    for u in urunler:
-                        urun_data.append({
-                            "Ürün": u.get("urun", ""),
-                            "Miktar": u.get("miktar", 0),
-                            "KDV %": u.get("oran", 0),
-                            "Tutar": f"{u.get('tutar', 0):,.2f}",
-                        })
-                    import pandas as pd
-                    st.dataframe(pd.DataFrame(urun_data), hide_index=True, use_container_width=True)
-
                 # Hızlı İşlem Butonları
                 st.markdown("---")
                 qcol1, qcol2, qcol3 = st.columns(3)
