@@ -230,24 +230,6 @@ with st.sidebar:
         label_visibility="collapsed",
     )
 
-    _cu = _mevcut_kullanici()
-    if _cu:
-        st.divider()
-        rol_ikon = "👑" if _cu.get("role") == "admin" else "👤"
-        st.markdown(
-            f"<div style='padding:0.5rem;background:rgba(15,118,110,0.08);"
-            f"border-radius:8px;font-size:0.85rem;'>"
-            f"{rol_ikon} <b>{_cu.get('full_name', _cu.get('username'))}</b><br>"
-            f"<span style='color:#64748b;font-size:0.75rem;'>@{_cu.get('username')}</span>"
-            f"</div>",
-            unsafe_allow_html=True,
-        )
-        if st.button("🚪 Çıkış Yap", key="logout_btn", use_container_width=True):
-            for k in ["current_user", "auth_ok", "_fis_ver_version",
-                       "_fis_kayitlar", "_fis_tumu", "_sidebar_brand_done", "_tema_uygulandi"]:
-                st.session_state.pop(k, None)
-            st.rerun()
-
     tema_degistirici()
 
     st.divider()
