@@ -108,37 +108,38 @@ def data_to_luca_rows(data, hesap_kodlari, fis_no=1, urun_kodlari=None):
     musteri = data.get("firma_adi", "") or data.get("mukellef_adi", "") or "Müşteri"
     brut = data.get("brut", 0) or 0
 
-    # Z raporundan KDV: once kdv_kalemleri'nden topla, yoksa brut-net hesapla
+    # Z raporundan KDV
     kdv_kalemleri = data.get("kdv_kalemleri", [])
+    urunler = data.get("urunler", [])
     if kdv_kalemleri:
         z_toplam_kdv = sum(k.get("kdv_tutari", 0) or 0 for k in kdv_kalemleri)
         if z_toplam_kdv <= 0:
-            # kdv_tutari yoksa matrah ve orandan hesapla
             for k in kdv_kalemleri:
                 matrah = k.get("matrah", 0) or 0
                 oran = k.get("oran", 0) or 0
                 if matrah > 0 and oran > 0:
                     z_toplam_kdv += round(matrah * oran / (100 + oran), 2)
+    elif urunler:
+        z_toplam_kdv = 0
+        for u in urunler:
+            oran = u.get("oran", 0) or 0
+            tutar = u.get("tutar", 0) or 0
+            if oran > 0:
+                z_toplam_kdv += round(tutar - tutar / (1 + oran / 100), 2)
     elif brut > 0 and net_toplam > 0 and net_toplam < brut:
         z_toplam_kdv = round(brut - net_toplam, 2)
     else:
         z_toplam_kdv = 0
 
-    # İade zaten brut'a dahil mi kontrol et
-    # brut = nakit + kk + yemek ise iade zaten dahil, ayrıca ekleme
     tahsilat_toplam = nakit + kk + yemek
 
-    # Ürünler varsa: iade zaten urun toplamina dahil mi kontrol et
-    urunler = data.get("urunler", [])
-    toplam_urun_tutari = sum(u.get("tutar", 0) or 0 for u in urunler)
-    if toplam_urun_tutari > 0:
-        # Urunler brut'a esitse (iade ayri), degilse iade zaten dahil
-        iade_ayri = iade > 0 and abs(toplam_urun_tutari - brut) < 0.01
-    else:
-        iade_ayri = abs(brut - tahsilat_toplam) > 0.01 and iade > 0
+    # İade varsa, tahsilat kaynaklarına dağıt (önce KK, sonra nakit, sonra yemek)
+    # ve 610.01'de ayrı bir borç satırı olarak göster
+    if iade > 0:
+        iade_nkt_k, iade_kk_k, iade_yem_k, nakit, kk, yemek = _iade_dagit(iade, nakit, kk, yemek)
 
     def _tahsilat_ekle(rows):
-        if iade_ayri and iade > 0:
+        if iade > 0:
             rows.append(satir(hesap_kodlari.get("iadeler", "610.01"), f"İade - {musteri}", iade, 0))
         if nakit > 0:
             rows.append(satir(hesap_kodlari.get("nakit", "100.01"), f"Nakit Tahsilat - {musteri}", nakit, 0))
