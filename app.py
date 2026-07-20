@@ -40,7 +40,7 @@ def _get_page(name):
     from pages import (
         _page_dashboard, _page_z_raporu_yukle, _page_fis_gecmisi,
         _page_mukellef_yonetimi, _page_kdv_ozeti, _page_ayarlar,
-        _page_beyanname_takvimi, _page_efatura_sorgu
+        _page_beyanname_takvimi,
     )
     return {
         "Dashboard": _page_dashboard,
@@ -50,7 +50,6 @@ def _get_page(name):
         "KDV Özeti": _page_kdv_ozeti,
         "Ayarlar": _page_ayarlar,
         "Beyanname Takvimi": _page_beyanname_takvimi,
-        "E-Fatura Sorgu": _page_efatura_sorgu,
     }[name]
 
 
@@ -222,7 +221,7 @@ with st.sidebar:
     st.markdown("**📂 Sayfalar**")
     _sayfa_ikon = {"Dashboard": "📊", "Z Raporu Yükle": "📄", "Fiş Geçmişi": "📋",
                    "Mükellef Yönetimi": "👤", "KDV Özeti": "🧾", "Ayarlar": "⚙️",
-                   "Beyanname Takvimi": "📅", "E-Fatura Sorgu": "🧾"}
+                   "Beyanname Takvimi": "📅"}
     sayfa = st.radio(
         "Sayfa Seç",
         list(_sayfa_ikon.keys()),
@@ -382,7 +381,5 @@ elif sayfa_key == "KDV Özeti":
     _get_page("KDV Özeti")(hesap_kodlari)
 elif sayfa_key == "Beyanname Takvimi":
     _get_page("Beyanname Takvimi")()
-elif sayfa_key == "E-Fatura Sorgu":
-    _get_page("E-Fatura Sorgu")()
 elif sayfa_key == "Ayarlar":
     _get_page("Ayarlar")()
