@@ -1473,13 +1473,16 @@ def _page_kdv_ozeti(hesap_kodlari):
                 genel_kdv = 0
                 for oran in sorted(kdv_toplamlari.keys()):
                     k = kdv_toplamlari[oran]
+                    kdv_val = k.get("kdv", 0) or 0
+                    matrah_val = k.get("matrah", 0) or 0
+                    brut_val = k.get("brut", 0) or 0
                     kdv_rows.append({
                         "KDV Oranı": f"%{oran}",
-                        "Brüt Tutar": f"{k['brut']:,.2f}",
-                        "Matrah": f"{k['matrah']:,.2f}",
-                        "KDV Tutarı": f"{k['kdv']:,.2f}",
+                        "Brüt Tutar": f"{brut_val:,.2f}",
+                        "Matrah": f"{matrah_val:,.2f}",
+                        "KDV Tutarı": f"{kdv_val:,.2f}",
                     })
-                    genel_kdv += k['kdv']
+                    genel_kdv += kdv_val
                 st.dataframe(pd.DataFrame(kdv_rows), width="stretch", hide_index=True)
                 st.metric("Toplam Hesaplanan KDV", f"{genel_kdv:,.2f} TL")
 
@@ -1514,12 +1517,15 @@ def _page_kdv_ozeti(hesap_kodlari):
                 toplam_kdv_tutari = 0
                 for oran in sorted(kdv_toplamlari.keys()):
                     k = kdv_toplamlari[oran]
-                    toplam_matrah += k['matrah']
-                    toplam_kdv_tutari += k['kdv']
+                    kdv_val = k.get("kdv", 0) or 0
+                    matrah_val = k.get("matrah", 0) or 0
+                    brut_val = k.get("brut", 0) or 0
+                    toplam_matrah += matrah_val
+                    toplam_kdv_tutari += kdv_val
                     kdv_satirlar += (
                         f"<tr><td>%{oran}</td>"
-                        f"<td style='text-align:right'>{k['brut']:,.2f}</td>"
-                        f"<td style='text-align:right'>{k['matrah']:,.2f}</td>"
+                        f"<td style='text-align:right'>{brut_val:,.2f}</td>"
+                        f"<td style='text-align:right'>{matrah_val:,.2f}</td>"
                         f"<td style='text-align:right'>{k['kdv']:,.2f}</td></tr>"
                     )
                 muk_baslik = filtre_muk if filtre_muk != "Tümü" else "Tüm Mükellefler"
@@ -1587,12 +1593,15 @@ th {{ background: #1a5276; color: white; }}
                     genel_kdv_pdf = 0
                     for oran in sorted(kdv_toplamlari.keys()):
                         k = kdv_toplamlari[oran]
+                        kdv_val = k.get("kdv", 0) or 0
+                        matrah_val = k.get("matrah", 0) or 0
+                        brut_val = k.get("brut", 0) or 0
                         pdf.cell(40, 6, f'%{oran}', border=1, align='C')
-                        pdf.cell(45, 6, f'{k["brut"]:,.2f}', border=1, align='R')
-                        pdf.cell(45, 6, f'{k["matrah"]:,.2f}', border=1, align='R')
-                        pdf.cell(45, 6, f'{k["kdv"]:,.2f}', border=1, align='R')
+                        pdf.cell(45, 6, f'{brut_val:,.2f}', border=1, align='R')
+                        pdf.cell(45, 6, f'{matrah_val:,.2f}', border=1, align='R')
+                        pdf.cell(45, 6, f'{kdv_val:,.2f}', border=1, align='R')
                         pdf.ln()
-                        genel_kdv_pdf += k['kdv']
+                        genel_kdv_pdf += kdv_val
                     pdf.set_font('Helvetica', 'B', 9)
                     pdf.set_fill_color(232, 246, 243)
                     pdf.cell(40, 7, 'TOPLAM', border=1, fill=True, align='C')
