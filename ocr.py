@@ -1054,6 +1054,31 @@ def ocr_gorsel_isle_hibrit(img):
 ocr_engine = load_ocr()
 
 
+_OCR_RESULT_CACHE = {}
+_OCR_CACHE_MAX = 32  # Son 32 gorsel cache'le
+
+
+def _img_to_hash(img) -> str:
+    """PIL Image -> kisa hash (cache key icin)."""
+    try:
+        import hashlib
+        from io import BytesIO
+        buf = BytesIO()
+        img_rgb = img.convert("RGB") if img.mode != "RGB" else img
+        img_rgb.thumbnail((256, 256))
+        buf = BytesIO()
+        if hasattr(img_rgb, 'tobytes'):
+            img_rgb.save(buf, format="PNG")
+        else:
+            img_rgb.save(buf, format="PNG")
+        return hashlib.md5(buf.getvalue()).hexdigest()[:16]
+    except Exception:
+        try:
+            return f"size_{img.size}_{img.mode}"
+        except Exception:
+            return "unknown"
+
+
 def ocr_oku_ve_duzelt(img, dogrulama_yap: bool = True,
                        mukellef_listesi: list = None,
                        urun_kodlari: list = None) -> dict:
@@ -1072,6 +1097,12 @@ def ocr_oku_ve_duzelt(img, dogrulama_yap: bool = True,
     """
     from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
     from ocr_dogrulama import ocr_sonuc_dogrula
+
+    # Cache kontrolu
+    img_hash = _img_to_hash(img) if img is not None else "no_img"
+    cache_key = (img_hash, bool(dogrulama_yap))
+    if cache_key in _OCR_RESULT_CACHE:
+        return _OCR_RESULT_CACHE[cache_key]
 
     # 1. OCR
     ham_text = ocr_gorsel_isle_hibrit(img)
@@ -1106,7 +1137,7 @@ def ocr_oku_ve_duzelt(img, dogrulama_yap: bool = True,
                     alan_adi="", kaynak="otomatik"
                 )
 
-    return {
+    result = {
         "ham_text": ham_text,
         "duzeltilmis_text": duzeltilmis_text,
         "parsed": parsed,
@@ -1114,6 +1145,32 @@ def ocr_oku_ve_duzelt(img, dogrulama_yap: bool = True,
         "alan_duzeltmeleri": alan_duzeltmeleri,
         "dogrulama": dogrulama,
         "skor": skor,
+    }
+
+    # Cache'e ekle (max 32)
+    if len(_OCR_RESULT_CACHE) >= _OCR_CACHE_MAX:
+        # En eskiyi cikar
+        try:
+            ilk_key = next(iter(_OCR_RESULT_CACHE))
+            del _OCR_RESULT_CACHE[ilk_key]
+        except (StopIteration, KeyError):
+            pass
+    _OCR_RESULT_CACHE[cache_key] = result
+
+    return result
+
+
+def clear_ocr_cache():
+    """OCR sonuc cache'ini temizle."""
+    global _OCR_RESULT_CACHE
+    _OCR_RESULT_CACHE.clear()
+
+
+def ocr_cache_stats() -> dict:
+    """OCR cache istatistikleri."""
+    return {
+        "size": len(_OCR_RESULT_CACHE),
+        "max": _OCR_CACHE_MAX,
     }
 
 

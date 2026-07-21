@@ -14,10 +14,37 @@ def dosya_oku(path, default=None):
         return default
 
 
+def dosya_oku_cached(path, default=None, ttl: int = 60):
+    """Memory cache'li dosya okuma. Ayni dosya tekrar okunmaz.
+
+    Disk'teki dosya degistiyse cache otomatik invalidate olur (mtime kontrolu).
+    """
+    try:
+        from cache_manager import cached_dosya_oku
+        return cached_dosya_oku(path, default, ttl)
+    except ImportError:
+        return dosya_oku(path, default)
+
+
+def dosya_yaz_ve_cache_invalidate(path, data):
+    """Dosya yaz ve cache'i invalidate et."""
+    dosya_yaz(path, data)
+    try:
+        from cache_manager import invalidate_cache
+        invalidate_cache(path)
+    except ImportError:
+        pass
+
+
 def dosya_yaz(path, data):
     import tempfile
     dir_name = os.path.dirname(path) or "."
     tmp_path = None
+    try:
+        from cache_manager import invalidate_cache
+        invalidate_cache(path)
+    except ImportError:
+        pass
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=dir_name, delete=False) as tmp:
             json.dump(data, tmp, indent=2, ensure_ascii=False)

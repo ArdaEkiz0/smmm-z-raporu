@@ -253,9 +253,10 @@ with st.sidebar:
 
     st.divider()
     st.markdown("**👤 Mükellef**")
-    if "_mukellefler_cache" not in st.session_state:
-        st.session_state["_mukellefler_cache"] = mukellefler()
-    ml = st.session_state["_mukellefler_cache"]
+    @st.cache_data(ttl=30, show_spinner=False)
+    def _mukellefler_cached():
+        return mukellefler()
+    ml = _mukellefler_cached()
     mevcut_mod = st.session_state.get("mod", "Bilanço")
     secili_mod = st.radio("Muhasebe Türü", ["Bilanço", "Serbest Meslek"], index=0 if mevcut_mod == "Bilanço" else 1, label_visibility="collapsed", key="mod_radio")
     st.session_state.mod = secili_mod
