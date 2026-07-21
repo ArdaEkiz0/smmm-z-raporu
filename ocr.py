@@ -25,7 +25,7 @@ except ImportError:
 
 def duzeltme_sozlugu():
     varsayilan = {
-        "BURUT": "BRÜT", "NET": "NET", "NAK1T": "NAKIT",
+        "BURUT": "BRÜT", "NET": "NET", "NAK1T": "NAKİT",
         "KRED1": "KREDİ", "KRD1": "KREDİ", "KRDİ": "KREDİ",
         "KREĐI": "KREDİ", "KREĐİ": "KREDİ",
         "KAREKOD": "KAREKOD", "F1S": "FİS",
@@ -262,7 +262,343 @@ def duzeltme_uygula(text):
     text = text.replace("BURUT", "BRÜT")
     text = text.replace("BRUТ", "BRÜT")
     text = text.replace("BRUT", "BRÜT")
+
+    text = _bitisik_kelime_ayir(text)
+    text = _fuzzy_kelime_duzelt(text, sozluk)
+    text = _sayi_context_duzelt(text)
+
     return text
+
+
+TURKCE_KARAKTER_HARITASI = {
+    "0": "O", "1": "I", "5": "S", "6": "G", "8": "B",
+    "3": "E", "4": "A", "7": "T", "2": "Z", "9": "g",
+}
+
+BILINEN_KISA_KELIMELER = {
+    "BRUT", "NAKIT", "KREDI", "KDV", "TOPLAM", "TARIH", "SAAT",
+    "FIS", "FISE", "FISI", "BELGE", "NO", "EVET", "HAYIR",
+    "VE", "ILE", "ICIN", "BU", "SU", "O", "BEN", "SEN",
+    "BIZ", "SIZ", "ONLAR", "HEPSI", "BIR", "IKI", "UC",
+    "DORT", "BES", "ALTI", "YEDI", "SEKIZ", "DOKUZ", "ON",
+    "TL", "TRY", "USD", "EUR", "GBP", "KDV", "OZEL", "GENEL",
+    "ODEME", "TAHSILAT", "IADE", "KASA", "KART", "CIRO",
+    "SIRA", "NO", "X", "Y", "Z", "W", "Q", "OK", "IPTAL",
+}
+
+
+def _sayi_context_duzelt(text: str) -> str:
+    """Sayi baglaminda harf-rakam donusumu yapar.
+    Ornek: '1OO,OO TL' -> '100,00 TL'
+    'TAR1H: O1.O6.2O26' -> 'TAR1H: 01.06.2026' (sayi olan yerlerde)
+    """
+    def _fix_sayi(s):
+        result = []
+        for c in s:
+            upper = c.upper()
+            if upper == 'O':
+                result.append('0')
+            elif upper in 'IL':
+                result.append('1')
+            elif upper == 'S':
+                result.append('5')
+            elif upper == 'B':
+                result.append('8')
+            elif upper == 'G':
+                result.append('6')
+            elif upper == 'Q':
+                result.append('0')
+            elif upper == 'D':
+                result.append('0')
+            else:
+                result.append(c)
+        return ''.join(result)
+
+    sayi_pattern_pb = re.compile(
+        r'('
+        r'[OIlBSGo0-9]'  # ilk karakter
+        r'(?:[\d.,\sOIlBSGo0-9]*[\d.,])?'  # geri kalan
+        r')'
+        r'(?=\s*(?:TL|TRY|USD|EUR|GBP|₺|\$|€|£))',
+        re.IGNORECASE
+    )
+
+    def _sub_pb(m):
+        s = m.group(1)
+        return _fix_sayi(s)
+
+    text = sayi_pattern_pb.sub(_sub_pb, text)
+
+    sayi_pattern_genel = re.compile(
+        r'((?<![\w:])(?:[OIlBSGo0-9]+(?:[.,\s][\dOIlBSGo0-9]+)*[.,\dOIlBSGo0-9]+))(?=\s|$|\.|,|;|\)|:)'
+    )
+
+    def _sub_genel(m):
+        s = m.group(1)
+        bosluksuz = s.replace(' ', '')
+        if len(bosluksuz) < 2:
+            return s
+        rakam_orani = sum(1 for c in bosluksuz if c.isdigit()) / len(bosluksuz)
+        ocr_orani = sum(1 for c in bosluksuz if c.upper() in 'OILBSGQD') / len(bosluksuz)
+        if rakam_orani < 0.3 and ocr_orani < 0.3:
+            return s
+        return _fix_sayi(s)
+
+    text = sayi_pattern_genel.sub(_sub_genel, text)
+
+    return text
+
+
+def _bitisik_kelime_ayir(text: str) -> str:
+    """Bitisik yazilmis kelimeleri ayirir.
+    'MUSTERITARIH' -> 'MUSTERI TARIH'
+    'TARIHMUSTERINO' -> 'TARIH MUSTERI NO'
+    'MUSTERITARIH 01.06.2026' -> 'MUSTERI TARIH 01.06.2026'
+    """
+    if not text:
+        return text
+
+    bilinen_kelimeler = {
+        "TARIH", "TARIHI", "TARIHIN", "TARIHINE", "TARIHINDE",
+        "SAAT", "SAATI", "SAATIN", "SAATINE", "SAATINDE",
+        "FIS", "FISE", "FISI", "FISIN", "FISINE", "FISLER",
+        "FISNO", "FISLERE",
+        "BELGE", "BELGENO", "BELGENIN", "BELGESI", "BELGELER",
+        "MUSTERI", "MUSTERINO", "MUSTERISI", "MUSTERISININ", "MUSTERININ",
+        "MUSTERININ", "MUSTERILERI", "MUSTERILERIN",
+        "ISLEM", "ISLEMI", "ISLEMNO", "ISLEMLER", "ISLEMLERI",
+        "ISYERI", "ISYERII", "ISYERINE", "ISYERINDE",
+        "URUN", "URUNLER", "URUNLERI", "URUNLERIN", "URUNLERINE",
+        "URUNADI", "URUNLERINI",
+        "FIYAT", "FIYATI", "FIYATLAR", "FIYATLARI",
+        "TUTAR", "TUTARI", "TUTARLAR", "TUTARLARI", "TUTARIN",
+        "ADET", "ADEDI", "ADETLER", "ADETLERI",
+        "MIKTAR", "MIKTARI", "MIKTARLAR", "MIKTARLARI",
+        "BIRIM", "BIRIMI", "BIRIMLER", "BIRIMLERI",
+        "BARKOD", "BARKODU", "BARKODLAR", "BARKODLARI",
+        "KOD", "KODU", "KODLAR", "KODLARI",
+        "PLU", "PLUNO", "KASA", "KASANO", "KASACI", "KASASININ",
+        "KDV", "KDVLI", "KDVSIZ", "KDVORANI", "KDVTUTARI",
+        "TOPLAM", "TOPLAMI", "TOPLAMINDA", "TOPLAMLAR", "TOPLAMLARI",
+        "GENEL", "GENELI", "GENELINDE",
+        "ARA", "ARASI", "ARASINDA", "ARASINDAKI", "ARASINDAN",
+        "NET", "NETI", "NETIN", "NETLER", "NETLERI",
+        "BRUT", "BRUTU", "BRUTUN", "BRUTLER", "BRUTLERI",
+        "NAKIT", "NAKITI", "NAKITIN", "NAKITLI", "NAKITLE",
+        "KREDI", "KREDITUTAR", "KREDININ", "KREDILI",
+        "KARTI", "KARTININ", "KARTLAR", "KARTLARI", "KARTIN",
+        "YEMEK", "YEMEKCEKI", "YEMEKKARTI", "YEMEKCEKINI", "YEMEKKARTINDA",
+        "IADE", "IADELER", "IADESI", "IADELERIN", "IADELERI",
+        "TAHSILAT", "TAHSILATI", "TAHSILATIN", "TAHSILATLAR",
+        "ODEME", "ODEMESI", "ODEMELER", "ODEMELERI", "ODEMENIN",
+        "INDIRIM", "INDIRIMI", "INDIRIMLER", "INDIRIMLERI",
+        "ISKONTO", "ISKONTOLU", "ISKONTOSU", "ISKONTOLAR",
+        "PROMOSYON", "PROMOSYONLU", "PROMOSYONUN", "PROMOSYONLAR",
+        "UCRET", "UCRETI", "UCRETLER", "UCRETLERI",
+        "PARAUSTU", "PARAUSTUODEMESI", "AVANS", "AVANSI",
+        "MAKBUZ", "MAKBUZU", "MAKBUZLAR", "MAKBUZLARI",
+        "FATURA", "FATURANO", "FATURATARIH", "FATURASAATI",
+        "GIRIS", "GIRISIMCI", "CIKIS",
+    }
+
+    def _ayir_tek(kelime, derinlik=0):
+        if derinlik > 3:
+            return kelime
+        if len(kelime) < 6:
+            return kelime
+        if kelime in bilinen_kelimeler:
+            return kelime
+
+        for i in range(3, len(kelime) - 2):
+            on = kelime[:i]
+            arka = kelime[i:]
+            if on in bilinen_kelimeler:
+                if not arka:
+                    return on
+                if arka and arka[0].isalpha() and arka[0].isupper():
+                    if arka in bilinen_kelimeler:
+                        return f"{on} {arka}"
+                    ic = _ayir_tek(arka, derinlik + 1)
+                    if ic != arka:
+                        return f"{on} {ic}"
+
+        return kelime
+
+    kelimeler = re.split(r'(\s+)', text)
+    yeni = []
+    for k in kelimeler:
+        if k.isspace() or not k:
+            yeni.append(k)
+            continue
+        if k.isalpha() and k.isupper() and len(k) >= 8:
+            ayrilmis = _ayir_tek(k)
+            yeni.append(ayrilmis)
+            continue
+        if k.isalnum() and any(c.isalpha() for c in k):
+            harf_kismi = ''.join(c for c in k if c.isalpha())
+            if harf_kismi.isupper() and len(harf_kismi) >= 8:
+                ayrilmis = _ayir_tek(harf_kismi)
+                if ayrilmis != harf_kismi:
+                    yeni.append(ayrilmis)
+                    continue
+        yeni.append(k)
+
+    return "".join(yeni)
+
+
+TURKCE_KELIME_LISTESI = None
+
+
+def _turkce_kelime_listesi_al() -> set:
+    """Bilinen Turkce kelimelerin listesini yukler (cache'li)."""
+    global TURKCE_KELIME_LISTESI
+    if TURKCE_KELIME_LISTESI is not None:
+        return TURKCE_KELIME_LISTESI
+
+    liste = set()
+    liste.update(BILINEN_KISA_KELIMELER)
+    liste.update({
+        "MUSTERI", "MUSTERISI", "MUSTERILER", "MUSTERIMIZ", "MUSTERINIZ",
+        "ISLEM", "ISLEMI", "ISLEMLER", "ISLEMNO", "ISYERI", "ISYERII",
+        "URUN", "URUNLER", "URUNLERI", "URUNLERIN", "URUNLERINE",
+        "TARIH", "TARIHI", "TARIHINDE", "TARIHLERI", "TARIHLERIN",
+        "SAAT", "SAATI", "SAATINDE", "SAATLER", "SAATLERI",
+        "FIS", "FISI", "FISNO", "FISLER", "FISLERI",
+        "BELGE", "BELGENO", "BELGENIN", "BELGELER", "BELGELERI",
+        "FIYAT", "FIYATI", "FIYATLAR", "FIYATLARI",
+        "TUTAR", "TUTARI", "TUTARLAR", "TUTARLARI", "TUTARIN",
+        "ADET", "ADEDI", "ADETLER", "ADETLERI",
+        "MIKTAR", "MIKTARI", "MIKTARLAR", "MIKTARLARI",
+        "BIRIM", "BIRIMI", "BIRIMLER", "BIRIMLERI",
+        "BARKOD", "BARKODU", "BARKODLAR", "BARKODLARI",
+        "KOD", "KODU", "KODLAR", "KODLARI",
+        "KASA", "KASANO", "KASANIN", "KASALAR", "KASALARI",
+        "KDV", "KDVLI", "KDVSIZ", "KDVSI", "KDVORANI", "KDVTUTARI",
+        "TOPLAM", "TOPLAMI", "TOPLAMINDA", "TOPLAMLAR", "TOPLAMLARI",
+        "GENEL", "GENELI", "GENELINDE", "GENELLIKLE",
+        "ARA", "ARASI", "ARASINDA", "ARASINDAKI", "ARASINDAN",
+        "NET", "NETI", "NETIN", "NETLER", "NETLERI",
+        "BRUT", "BRUTU", "BRUTUN", "BRUTLER", "BRUTLERI",
+        "NAKIT", "NAKITI", "NAKITIN", "NAKITLI", "NAKITLE",
+        "KREDI", "KREDITUTAR", "KREDININ", "KREDILI",
+        "KARTI", "KARTININ", "KARTLAR", "KARTLARI",
+        "YEMEK", "YEMEKCEKI", "YEMEKKARTI", "YEMEKCEKINI", "YEMEKKARTINDA",
+        "IADE", "IADELER", "IADESI", "IADELERIN", "IADELERI",
+        "TAHSILAT", "TAHSILATI", "TAHSILATIN", "TAHSILATLAR",
+        "ODEME", "ODEMESI", "ODEMELER", "ODEMELERI",
+        "INDIRIM", "INDIRIMI", "INDIRIMLER", "INDIRIMLERI",
+        "ISKONTO", "ISKONTOLU", "ISKONTOSU", "ISKONTOLAR",
+        "PROMOSYON", "PROMOSYONLU", "PROMOSYONUN", "PROMOSYONLAR",
+        "UCRET", "UCRETI", "UCRETLER", "UCRETLERI",
+        "PARAUSTU", "PARAUSTUODEMESI", "AVANS", "AVANSI",
+        "MAKBUZ", "MAKBUZU", "MAKBUZLAR", "MAKBUZLARI",
+        "FATURA", "FaturaNo", "FaturaTarih", "FaturaSaati",
+    })
+    TURKCE_KELIME_LISTESI = liste
+    return liste
+
+
+def _fuzzy_kelime_duzelt(text: str, sozluk: dict) -> str:
+    """Levenshtein mesafesine gore sozlukten en yakin kelimeyi bulur ve degistirir.
+    Ornek: 'MUSFERI' -> 'MUSTERI' (1 harf farki)
+    'ODEME TURU' -> 'ODEME TURU' (zaten dogruysa dokunmaz)
+
+    Not: Sadece sozlukte KEY olarak bulunan kelimelere fuzzy uygular.
+    Bir kelime zaten sozlukte value olarak varsa bile degisiklik yapmaz
+    (boylelikle KARTI -> KATI gibi yanlis eslesmeler engellenir).
+    """
+    if not text or not sozluk:
+        return text
+
+    def _normalize_harf(c):
+        if c.upper() in 'O0':
+            return 'O'
+        if c.upper() in 'I1l':
+            return 'I'
+        if c.upper() in 'S5':
+            return 'S'
+        if c.upper() in 'B8':
+            return 'B'
+        if c.upper() in 'G6':
+            return 'G'
+        return c.upper()
+
+    def _en_yakin(kelime, adaylar, max_dist=1):
+        if not kelime or len(kelime) < 5:
+            return None
+        if kelime.upper() in adaylar:
+            return None
+        norm_kelime = ''.join(_normalize_harf(c) for c in kelime)
+        en_iyi = None
+        en_iyi_dist = max_dist + 1
+        for aday in adaylar:
+            if abs(len(aday) - len(kelime)) > max_dist:
+                continue
+            norm_aday = ''.join(_normalize_harf(c) for c in aday)
+            if norm_kelime == norm_aday and aday.upper() != kelime.upper():
+                return aday
+            dist = _hizli_levenshtein(kelime.upper(), aday.upper(), max_dist)
+            if dist is not None and dist < en_iyi_dist:
+                en_iyi_dist = dist
+                en_iyi = aday
+        return en_iyi if en_iyi_dist <= max_dist else None
+
+    aday_set = set(sozluk.keys())
+
+    kelimeler = re.findall(r'\b[A-ZÇĞİÖŞÜa-zçğıöşü]{5,}\b', text)
+    if not kelimeler:
+        return text
+
+    degisiklikler = {}
+    for k in set(kelimeler):
+        k_upper = k.upper()
+        if k_upper in sozluk:
+            continue
+        en_yakin = _en_yakin(k, aday_set, max_dist=1)
+        if en_yakin and en_yakin.upper() != k_upper:
+            if en_yakin in sozluk:
+                hedef = sozluk[en_yakin]
+                if hedef.upper() != k_upper:
+                    degisiklikler[k] = hedef
+
+    if not degisiklikler:
+        return text
+
+    sonuc = text
+    for yanlis, dogru in degisiklikler.items():
+        sonuc = re.sub(
+            r'\b' + re.escape(yanlis) + r'\b',
+            dogru,
+            sonuc
+        )
+
+    return sonuc
+
+
+def _hizli_levenshtein(s1: str, s2: str, max_dist: int) -> int:
+    """Hizli Levenshtein mesafesi (max_dist asimptotik cutoff ile)."""
+    if s1 == s2:
+        return 0
+    if abs(len(s1) - len(s2)) > max_dist:
+        return None
+    if len(s1) < len(s2):
+        s1, s2 = s2, s1
+    onceki = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        simdiki = [i + 1]
+        siradaki_min = simdiki[0]
+        for j, c2 in enumerate(s2):
+            ekle = onceki[j + 1] + 1
+            sil = simdiki[j] + 1
+            degistir = onceki[j] + (0 if c1 == c2 else 1)
+            en_kucuk = min(ekle, sil, degistir)
+            simdiki.append(en_kucuk)
+            if en_kucuk < siradaki_min:
+                siradaki_min = en_kucuk
+        onceki = simdiki
+        if siradaki_min > max_dist:
+            return None
+    return onceki[-1]
 
 
 def _deskew(img):
