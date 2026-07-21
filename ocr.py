@@ -51,7 +51,7 @@ def duzeltme_sozlugu():
         "BILGI FIRMA": "BİLGİ FİRMA",
         "ALICI FIRMA": "ALICI FİRMA",
         "FIRMA ADI": "FİRMA ADI",
-        "Tarih": "Tarih", "TARIH": "TARİH",
+        "TARIH": "TARİH",
         "TARIHI": "TARİHİ", "TARİHİ": "TARİHİ",
         "SAAT": "SAAT", "BELGE NO": "BELGE NO",
     }
