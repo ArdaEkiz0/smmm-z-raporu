@@ -3,9 +3,14 @@ import io
 import re
 import glob
 import shutil
+import time
+import zipfile
+import pandas as pd
 from datetime import datetime, timedelta
 import streamlit as st
-from utils import log
+from PIL import Image
+
+from utils import log, dosya_oku, dosya_yaz
 
 from config import (
     HESAP_FILE, GECMIS_KLASORU, MUKELLEF_FILE, SABLON_FILE,
@@ -14,7 +19,6 @@ from config import (
     URUN_KODLARI_FILE
 )
 from luca import HESAP_PLANLARI
-from utils import dosya_oku, dosya_yaz, log
 from ocr import (
     ocr_gorsel_isle, parse_z_raporu, ocr_engine, BARCODE_MEVCUT,
     barkod_oku, ogr_alanlari_uygula, duzeltme_ogren, ogrenci_alan_bul,
@@ -33,6 +37,11 @@ from luca import (
     urun_kodlari_varsayilan, urun_kodlari_yukle, urun_kodlari_kaydet,
     varsayilan_kodlar
 )
+from ogrenme_cekirdigi import (
+    auto_duzeltme_uygula, alan_duzeltme_uygula, duzeltme_kaydet,
+    istatistik_raporu, duzeltme_listesi, duzeltme_reddet,
+    alan_duzeltme_kaydet, gecmis_temizle, ogrenme_db_yukle
+)
 
 
 def _init_text(key, value):
@@ -46,10 +55,6 @@ def _init_num(key, value):
 
 
 def _page_z_raporu_yukle(hesap_kodlari):
-    from PIL import Image
-    import pandas as pd
-    import zipfile
-    import io
     st.header("📷 Z Raporu Fotoğraf Yükleme ve OCR")
 
     urun_kodlari = st.session_state.get("urun_kodlari", [])
@@ -181,13 +186,11 @@ def _page_z_raporu_yukle(hesap_kodlari):
 
             def _ocr_duzelt_ve_ogren(ocr_text):
                 """Gen 2 ogrenme pipeline: auto-duzeltme + alan duzeltme + geri besleme."""
-                from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
                 duzeltilmis, duzeltmeler = auto_duzeltme_uygula(ocr_text)
                 parsed = parse_z_raporu(duzeltilmis)
                 parsed, _alan_duzeltmeleri = alan_duzeltme_uygula(parsed)
                 for d in duzeltmeler:
                     if d.get("uygulandi"):
-                        from ogrenme_cekirdigi import duzeltme_kaydet
                         duzeltme_kaydet(d["yanlis"], d["dogru"], alan_adi="", kaynak="otomatik")
                 ogr_alanlari_uygula(parsed)
                 if not parsed.get("ham_text"):
@@ -469,7 +472,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             "Matrah": f"{kv.get('matrah', 0):,.2f}",
                             "KDV": f"{kv.get('kdv_tutari', 0):,.2f}",
                         })
-                    import pandas as pd
                     st.dataframe(pd.DataFrame(kdv_data), hide_index=True, use_container_width=True)
 
                 # Hızlı İşlem Butonları
@@ -493,7 +495,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                             st.toast("Dosya bulunamadı, lütfen tekrar yükleyin", icon="⚠️")
                         else:
                             import time as _time2
-                            from ogrenme_cekirdigi import auto_duzeltme_uygula, alan_duzeltme_uygula
                             _ad2, _data2 = _eslesen
                             try:
                                 with st.spinner(f"🔄 {_ad2} yeniden okunuyor..."):
@@ -545,7 +546,6 @@ def _page_z_raporu_yukle(hesap_kodlari):
                         _uk = st.session_state.get("urun_kodlari", [])
                         _luca_rows = data_to_luca_rows(r, _hk, 1, _uk)
                         if _luca_rows:
-                            import pandas as pd
                             st.dataframe(pd.DataFrame(_luca_rows), hide_index=True, use_container_width=True)
 
         if duzeltilebilir:
@@ -994,7 +994,7 @@ def _filtrele_tarih(fisler, bas, son):
 
 
 def _page_dashboard():
-    import pandas as pd
+    # pandas zaten üstte import edildi
     from beyanname_takvimi import yaklasan_beyannameler
 
     st.header("📊 Genel Bakış")
@@ -1168,7 +1168,7 @@ def _page_dashboard():
     st.divider()
     st.subheader("OCR Öğrenme Sistemi")
     try:
-        from ogrenme_cekirdigi import istatistik_raporu, duzeltme_listesi, duzeltme_reddet
+        istatistik_raporu, duzeltme_listesi, duzeltme_reddet = istatistik_raporu, duzeltme_listesi, duzeltme_reddet  # noqa
         rapor = istatistik_raporu()
         if rapor["toplam_kayit"] > 0:
             col_o1, col_o2, col_o3 = st.columns(3)
@@ -1195,7 +1195,6 @@ def _page_dashboard():
 
 
 def _page_fis_gecmisi(hesap_kodlari):
-    import pandas as pd
     st.header("📋 Fiş Geçmişi")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
@@ -1311,7 +1310,6 @@ def _page_fis_gecmisi(hesap_kodlari):
                                 ("iadeler", str(secim_duzelt.get("iadeler", 0)), str(yeni_iade)),
                             ]:
                                 if str(eski) != str(yeni) and eski and yeni:
-                                    from ogrenme_cekirdigi import duzeltme_kaydet, alan_duzeltme_kaydet
                                     ogr_metin = ogrenci_alan_bul(secim_duzelt.get("ocr_text", ""), alan, str(yeni))
                                     if ogr_metin:
                                         duzeltme_kaydet(ogr_metin, str(yeni), alan_adi=alan, kaynak="manuel")
@@ -1433,7 +1431,6 @@ def _page_mukellef_yonetimi():
 
 
 def _page_kdv_ozeti(hesap_kodlari):
-    import pandas as pd
     st.header("🧾 Dönemsel KDV Özeti")
     urun_kodlari = st.session_state.get("urun_kodlari", [])
 
@@ -1818,7 +1815,6 @@ def _page_ayarlar():
     st.subheader("🧠 İstatistiksel Öğrenme Motoru")
     st.caption("Yeni nesil öğrenme sistemi - her düzeltme sayılır, güven puanı hesaplanır.")
     try:
-        from ogrenme_cekirdigi import istatistik_raporu, gecmis_temizle, ogrenme_db_yukle
         rapor = istatistik_raporu()
         col_o1, col_o2, col_o3, col_o4 = st.columns(4)
         with col_o1:
@@ -1918,7 +1914,6 @@ def _page_ayarlar():
 
 def _page_beyanname_takvimi():
     """Beyanname takvimi + email hatirlatici."""
-    import pandas as pd
     from beyanname_takvimi import yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER, email_icerik_olustur
 
     st.header("📅 Beyanname Takvimi")
@@ -2046,7 +2041,6 @@ def _page_beyanname_takvimi():
 
 def _kullanici_yonetimi_paneli():
     """Admin icin kullanici yonetimi paneli."""
-    import pandas as pd
     from user_manager import (
         kullanici_listesi_safe, kullanici_ekle, kullanici_sil,
         kullanici_sifre_degistir, kullanici_admin_mi,
