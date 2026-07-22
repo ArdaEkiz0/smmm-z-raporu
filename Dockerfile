@@ -30,14 +30,9 @@ RUN mkdir -p /app/.streamlit && \
     echo "enableCORS = false" >> /app/.streamlit/config.toml && \
     echo "enableXsrfProtection = false" >> /app/.streamlit/config.toml && \
     echo "maxUploadSize = 25" >> /app/.streamlit/config.toml && \
+    echo "fileWatcherType = \"none\"" >> /app/.streamlit/config.toml && \
     echo "[browser]" >> /app/.streamlit/config.toml && \
-    echo "gatherUsageStats = false" >> /app/.streamlit/config.toml && \
-    echo "[client]" >> /app/.streamlit/config.toml && \
-    echo "caching = true" >> /app/.streamlit/config.toml && \
-    echo "showErrorDetails = false" >> /app/.streamlit/config.toml && \
-    echo "toolbarMode = \"minimal\"" >> /app/.streamlit/config.toml && \
-    echo "[global]" >> /app/.streamlit/config.toml && \
-    echo "developmentMode = false" >> /app/.streamlit/config.toml
+    echo "gatherUsageStats = false" >> /app/.streamlit/config.toml
 
 EXPOSE 8080
 

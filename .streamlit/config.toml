@@ -17,15 +17,5 @@ fileWatcherType = "none"
 [browser]
 gatherUsageStats = false
 
-[client]
-caching = true
-showErrorDetails = false
-toolbarMode = "minimal"
-
-[global]
-developmentMode = false
-logLevel = "info"
-
 [runner]
-# Fast reruns: widget state korunur, script tekrar çalıştırılır
 fastReruns = true
