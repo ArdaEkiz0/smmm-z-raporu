@@ -346,6 +346,34 @@ def _sayi_context_duzelt(text: str) -> str:
 
     text = sayi_pattern_genel.sub(_sub_genel, text)
 
+    # Yildiz prefix ekle: Z raporundaki urun/hizmet satirlarinda * isareti genelde eksik
+    # Satir basinda veya etiket tipinden sonra gelen tutar
+    # ornek: 'T.GIDA 35\n117.224,90' -> 'T.GIDA 35\n*17.224,90'
+    # ornek: 'EKMEK 1\n640,00' -> 'EKMEK 1\n*640,00'
+    # Sadece oncesinde urun/hizmet adi olan tutarlar
+    URUN_KEYWORDS = (
+        'T\\.GIDA', 'EKMEK', 'SIGARA', 'NAKIT', 'K\\.KARTI', 'FIS', 'F\\u0130S',
+        'IPTAL', 'GIDA', 'SEBZE', 'MEYVE', 'ET', 'SUT', 'PEYNIR', 'YAG',
+        'UN', 'SEKER', 'TUZ', 'MAKARNA', 'CORBA', 'SALCA', 'TURSU', 'SALAM',
+        'SOSIS', 'SUCUK', 'PASTIRMA', 'KIYMA', 'CIKOLATA', 'GOFRET', 'BISKUVI',
+        'KEK', 'PASTA', 'TAVUK', 'BALIK', 'BAKLAGIL', 'PIRINC', 'BULGUR',
+        'CAY', 'KAHVE', 'MEYVE SUYU', 'SODA', 'ICECEK', 'BIRA', 'SARAP',
+        'RAKI', 'VISKI', 'VOTKA', 'SEBZEKMEYVE', 'MEYVE&SEBZE', 'YAG',
+    )
+    yildiz_pattern = re.compile(
+        r'(^|\n)((?:' + '|'.join(URUN_KEYWORDS) + r')\s*\d*)\s*\n(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})\b',
+        re.IGNORECASE | re.MULTILINE
+    )
+
+    def _yildiz_ekle(m):
+        oncesi, etiket, tutar = m.group(1), m.group(2), m.group(3)
+        etiket_temiz = etiket.strip()
+        if not etiket_temiz.startswith('*'):
+            return f'{oncesi}{etiket}\n*{tutar}'
+        return m.group(0)
+
+    text = yildiz_pattern.sub(_yildiz_ekle, text)
+
     return text
 
 
