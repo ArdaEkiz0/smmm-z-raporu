@@ -1913,130 +1913,399 @@ def _page_ayarlar():
 
 
 def _page_beyanname_takvimi():
-    """Beyanname takvimi + email hatirlatici."""
-    from beyanname_takvimi import yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER, email_icerik_olustur
+    """Beyanname takvimi + email hatirlatici (gelismis)."""
+    from beyanname_takvimi import (
+        yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER,
+        email_icerik_olustur, yillik_takvim, aylik_heatmap, istatistik,
+        mukellef_atamalari_yukle, mukellef_atamasi_kaydet, mukellef_atamasi_sil,
+        tamamlanma_durumu_yukle, tamamlanma_kaydet, tamamlanma_oku,
+        donem_anahtari, aylik_heatmap
+    )
 
     st.header("📅 Beyanname Takvimi")
-    st.caption("KDV, Muhtasar, BA-BS, Geçici Vergi, Gelir/Kurumlar Vergisi tarihleri")
+    st.caption("KDV, Muhtasar, BA-BS, Geçici Vergi, Gelir/Kurumlar Vergisi, e-Belge, SGK — T-15, T-7, T-3, T-1, T-0 hatırlatma")
 
-    col_f1, col_f2 = st.columns(2)
-    with col_f1:
-        st.metric("Bugün", datetime.now().strftime("%d.%m.%Y"))
-    with col_f2:
-        yaklasan_30 = yaklasan_beyannameler(datetime.now(), 30)
-        kritik_sayisi = len([b for b in yaklasan_30 if b["kalan_gun"] <= 3])
-        if kritik_sayisi > 0:
-            st.metric("⚠️ Kritik (≤3 gün)", f"{kritik_sayisi} beyanname")
-        else:
-            st.metric("Yaklaşan (30 gün)", f"{len(yaklasan_30)} beyanname")
+    # ==== Ust metrikler ====
+    stats = istatistik()
+    col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+    with col_m1:
+        st.metric("📅 Bugün", datetime.now().strftime("%d.%m.%Y"))
+    with col_m2:
+        kritik = stats["kritik_3_gun"]
+        delta_color = "off" if kritik == 0 else "inverse"
+        st.metric("⚠️ Kritik (≤3 gün)", kritik, delta_color=delta_color if kritik else "off")
+    with col_m3:
+        st.metric("📆 30 Gün", stats["yaklasan_30_gun"])
+    with col_m4:
+        st.metric("📆 60 Gün", stats["yaklasan_60_gun"])
+    with col_m5:
+        st.metric("✅ Tamamlanan", stats["tamamlanan_toplam"])
 
     st.divider()
 
-    tab_takvim, tab_email = st.tabs(["📅 Takvim", "📧 Email Bildirim"])
+    tab_takvim, tab_atama, tab_tamamlanma, tab_email = st.tabs([
+        "📅 Takvim", "👥 Mükellef Atama", "✅ Tamamlanma", "📧 Email"
+    ])
 
     with tab_takvim:
-        yaklasan = yaklasan_beyannameler(datetime.now(), 60)
+        _by_takvim_tab()
 
-        st.subheader("Yaklaşan Beyannameler (60 gün)")
-        if not yaklasan:
-            st.info("Yaklaşan 60 gün içinde beyanname yok.")
-        else:
-            cols = st.columns(min(len(yaklasan), 3))
-            for i, b in enumerate(yaklasan):
-                with cols[i % 3]:
-                    with st.container():
-                        if b["kalan_gun"] < 0:
-                            st.error(f"**{b['ad']}**")
-                        elif b["kalan_gun"] <= 3:
-                            st.warning(f"**{b['ad']}**")
-                        else:
-                            st.info(f"**{b['ad']}**")
-                        st.write(f"📅 {b['tarih']}")
-                        st.write(b["kalan_text"])
-                        st.caption(b["aciklama"])
+    with tab_atama:
+        _by_mukellef_atama_tab()
 
-        st.divider()
-        st.subheader("Tüm Beyannameler")
-        tum_veri = []
-        for kod, info in BEYANNAMELER.items():
-            tarih = beyanname_tarihi_hesapla(kod, datetime.now())
-            tarih_sonraki = beyanname_tarihi_hesapla(kod, datetime.now() + timedelta(days=120))
-            tum_veri.append({
-                "Beyanname": info["ad"],
-                "Kod": kod,
-                "Dönem": info["donem"].capitalize(),
-                "Son Gün": tarih.strftime("%d.%m.%Y") if tarih else "-",
-                "Sonraki Dönem": tarih_sonraki.strftime("%d.%m.%Y") if tarih_sonraki else "-",
-                "Açıklama": info["aciklama"],
-            })
-        df = pd.DataFrame(tum_veri)
-        st.dataframe(df, width="stretch", hide_index=True)
+    with tab_tamamlanma:
+        _by_tamamlanma_tab()
 
     with tab_email:
-        st.subheader("Email Bildirim Ayarları")
-        email_config = dosya_oku(EMAIL_FILE, {})
+        _by_email_tab()
 
-        with st.form("email_ayarlar_form", clear_on_submit=False):
-            smtp_server = st.text_input("SMTP Sunucu", value=email_config.get("smtp_server", "smtp.gmail.com"), key="smtp_server")
-            smtp_port = st.number_input("SMTP Port", value=int(email_config.get("port", 587)), key="smtp_port")
-            gonderen = st.text_input("Gönderen Email", value=email_config.get("gonderen", ""), placeholder="ornek@gmail.com", key="gonderen_email")
-            sifre = st.text_input("Uygulama Şifresi", value=email_config.get("sifre", ""), type="password", key="sifre_email",
-                                  help="Gmail için: google.com/account > Güvenlik > Uygulama şifreleri")
-            alici = st.text_input("Alıcı Email (opsiyonel)", value=email_config.get("alici", ""), placeholder="Gönderen ile aynı ise boş bırakın", key="alici_email")
 
-            if st.form_submit_button("💾 Email Ayarlarını Kaydet", type="primary", use_container_width=True):
-                yeni_config = {
-                    "smtp_server": smtp_server,
-                    "port": int(smtp_port),
-                    "gonderen": gonderen,
-                    "sifre": sifre,
-                    "alici": alici or gonderen,
-                }
-                dosya_yaz(EMAIL_FILE, yeni_config)
-                st.success("Email ayarları kaydedildi!")
-                st.rerun()
+def _by_takvim_tab():
+    """Beyanname takvimi tab icerigi."""
+    from beyanname_takvimi import (
+        yaklasan_beyannameler, beyanname_tarihi_hesapla, BEYANNAMELER,
+        aylik_heatmap, yillik_takvim
+    )
 
-        st.divider()
-        st.subheader("Manuel Email Gönderimi")
+    # Filtre satiri
+    col_f1, col_f2, col_f3 = st.columns([2, 1, 1])
+    with col_f1:
+        kategori = st.selectbox("Kategori Filtresi", [
+            "Tümü", "Vergi", "E-Belge", "SGK", "Çevre"
+        ], key="by_kategori_filtre")
+    with col_f2:
+        gun_araligi = st.selectbox("Zaman Aralığı", [30, 60, 90, 180, 365],
+                                    index=1, key="by_gun_araligi")
+    with col_f3:
+        yil_secim = st.selectbox("Yıl", [2024, 2025, 2026, 2027],
+                                  index=2, key="by_yil_secim")
 
-        yaklasan = yaklasan_beyannameler(datetime.now(), 30)
-        if yaklasan:
-            konu, icerik = email_icerik_olustur(yaklasan)
-            with st.expander("📧 Email İçeriği Önizleme", expanded=False):
-                st.text_area("Konu", value=konu, disabled=True, key="onizleme_konu")
-                st.text_area("İçerik", value=icerik, disabled=True, height=200, key="onizleme_icerik")
+    kategori_map = {
+        "Tümü": None, "Vergi": "vergi", "E-Belge": "e-belge",
+        "SGK": "sgk", "Çevre": "cevre",
+    }
+    kat = kategori_map[kategori]
 
-            if st.button("📧 Email Gönder", type="primary", use_container_width=True, key="by_email_gonder"):
-                if not email_config.get("gonderen") or not email_config.get("sifre"):
-                    st.warning("⚠️ Email ayarları yapılandırılmamış. Önce yukarıdaki formu doldurun.")
-                else:
-                    with st.spinner("Email gönderiliyor..."):
-                        from veritabani import email_gonder
-                        basarili = email_gonder(konu, icerik)
-                    if basarili:
-                        st.success("✅ Email gönderildi!")
+    # ==== Yaklasan beyannameler kartlari ====
+    st.subheader(f"⏰ Yaklaşan Beyannameler ({gun_araligi} gün)")
+    yaklasan = yaklasan_beyannameler(datetime.now(), gun_araligi, kategori=kat)
+    if not yaklasan:
+        st.info(f"Bu zaman aralığında {kategori.lower()} kategorisinde beyanname yok.")
+    else:
+        for b in yaklasan:
+            with st.container():
+                col_k1, col_k2, col_k3, col_k4 = st.columns([3, 1, 1, 1])
+                with col_k1:
+                    if b["kalan_gun"] < 0:
+                        st.error(f"🚨 **{b['ad']}**")
+                    elif b["kalan_gun"] <= 3:
+                        st.warning(f"⚠️ **{b['ad']}**")
+                    elif b["kalan_gun"] <= 7:
+                        st.info(f"📋 **{b['ad']}**")
                     else:
-                        st.error("❌ Email gönderilemedi. SMTP ayarlarını kontrol edin.")
+                        st.write(f"📋 **{b['ad']}**")
+                    st.caption(b["aciklama"])
+                with col_k2:
+                    st.metric("Son Gün", b["tarih"])
+                with col_k3:
+                    st.metric("Kalan", b["kalan_text"])
+                with col_k4:
+                    st.markdown(f"<span style='color:{b['renk']}'>●</span> {b['kategori'].title()}",
+                                unsafe_allow_html=True)
+                st.divider()
+
+    # ==== Heatmap (aylik) ====
+    st.subheader(f"🔥 Aylık Yoğunluk Haritası ({yil_secim})")
+    heatmap_col1, heatmap_col2 = st.columns([1, 3])
+    with heatmap_col1:
+        secili_ay = st.selectbox("Ay", list(range(1, 13)),
+                                  format_func=lambda x: [
+                                      "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                                      "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+                                  ][x-1],
+                                  index=datetime.now().month - 1,
+                                  key="by_ay_secim")
+    with heatmap_col2:
+        heatmap = aylik_heatmap(yil_secim, secili_ay)
+        ay_adlari = ["", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+        st.write(f"**{ay_adlari[secili_ay]} {yil_secim}**")
+
+        # Heatmap'i grid olarak goster
+        gun_ici = st.columns(7)
+        gun_basliklari = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pz"]
+        for i, gun in enumerate(gun_basliklari):
+            with gun_ici[i]:
+                st.caption(f"**{gun}**")
+
+        from calendar import monthrange
+        try:
+            _, ay_gun_sayisi = monthrange(yil_secim, secili_ay)
+            ilk_gun = datetime(yil_secim, secili_ay, 1).weekday()
+        except ValueError:
+            ay_gun_sayisi = 30
+            ilk_gun = 0
+
+        # Haftalara bol
+        hafta = []
+        bosluk = [None] * ilk_gun
+        for gun in range(1, ay_gun_sayisi + 1):
+            tarih = datetime(yil_secim, secili_ay, gun)
+            hafta.append(tarih)
+            if len(hafta) == 7:
+                _heatmap_hafta_goster(st, hafta, heatmap, gun_araligi)
+                hafta = []
+        if hafta:
+            while len(hafta) < 7:
+                hafta.append(None)
+            _heatmap_hafta_goster(st, hafta, heatmap, gun_araligi)
+
+    # ==== Yillik tablo ====
+    with st.expander(f"📅 {yil_secim} Yılı Tüm Beyannameler", expanded=False):
+        takvim = yillik_takvim(yil_secim)
+        if takvim:
+            df = pd.DataFrame([{
+                "Beyanname": t["ad"],
+                "Kod": t["kod"],
+                "Tarih": t["tarih"],
+                "Kategori": t["kategori"].title(),
+            } for t in takvim])
+            st.dataframe(df, width="stretch", hide_index=True)
         else:
-            st.info("Yaklaşan 30 gün içinde beyanname yok, email göndermeye gerek yok.")
+            st.info(f"{yil_secim} için veri yok.")
 
-        st.divider()
-        st.subheader("Otomatik Hatırlatma Kuralları")
-        st.caption("Hangi günlerde hatırlatma emaili gönderilsin?")
-        kurallar = {
-            "T-7": "7 gün kala",
-            "T-3": "3 gün kala",
-            "T-1": "1 gün kala",
-            "T-0": "Bugün (son gün)",
-        }
-        secili_kurallar = {}
-        for k, v in kurallar.items():
-            secili_kurallar[k] = st.checkbox(v, value=True, key=f"kur_{k}")
 
-        if st.button("💾 Hatırlatma Kurallarını Kaydet", key="kural_kaydet"):
-            kural_config = {"hatirlatma_gunleri": [int(k.replace("T-", "")) if k != "T-0" else 0 for k, v in secili_kurallar.items() if v]}
-            dosya_yaz(os.path.join(DATA_DIR, "hatirlatma_kurallari.json"), kural_config)
-            st.success("Hatırlatma kuralları kaydedildi!")
+def _heatmap_hafta_goster(st_obj, hafta, heatmap, gun_araligi):
+    """Heatmap haftasini goster - Streamlit uyumlu."""
+    cols = st_obj.columns(7)
+    for i, tarih in enumerate(hafta):
+        with cols[i]:
+            if tarih is None:
+                st_obj.write(" ")
+            else:
+                beyannameler = heatmap.get(tarih.day, [])
+                ref = datetime.now()
+                tarih_renk = "#F0F9FF"
+                if beyannameler:
+                    renk = beyannameler[0]["renk"]
+                    if tarih < ref - timedelta(days=1):
+                        tarih_renk = "#FEE2E2"
+                    elif (tarih - ref).days <= 7:
+                        tarih_renk = "#FEF3C7"
+                    else:
+                        tarih_renk = "#DCFCE7"
+                    etiket = beyannameler[0]["kod"]
+                    if len(beyannameler) > 1:
+                        etiket += f" +{len(beyannameler)-1}"
+                    st_obj.markdown(
+                        f"<div style='background:{tarih_renk};padding:8px;border-radius:6px;"
+                        f"border:2px solid {renk};text-align:center;'>"
+                        f"<b>{tarih.day}</b><br><small>{etiket}</small></div>",
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st_obj.markdown(
+                        f"<div style='background:#F9FAFB;padding:8px;border-radius:6px;"
+                        f"text-align:center;color:#9CA3AF;'>{tarih.day}</div>",
+                        unsafe_allow_html=True,
+                    )
+
+
+def _by_mukellef_atama_tab():
+    """Mukellef atama tab icerigi."""
+    from beyanname_takvimi import (
+        mukellef_atamalari_yukle, mukellef_atamasi_kaydet, mukellef_atamasi_sil,
+        BEYANNAMELER, yaklasan_beyannameler
+    )
+
+    st.subheader("👥 Mükellef Atamaları")
+    st.caption("Her beyanname için hangi mükellefleri takip ettiğinizi belirleyin")
+
+    atamalar = mukellef_atamalari_yukle()
+    yaklasan = yaklasan_beyannameler(datetime.now(), 30)
+
+    col_a1, col_a2 = st.columns([1, 2])
+
+    with col_a1:
+        st.write("**Beyanname Seçin**")
+        secili_beyanname = st.selectbox(
+            "Beyanname",
+            options=list(BEYANNAMELER.keys()),
+            format_func=lambda k: f"{k} - {BEYANNAMELER[k]['ad']}",
+            key="by_atama_beyanname"
+        )
+
+        mevcut_atama = atamalar.get(secili_beyanname, [])
+        st.metric("Atanmış Mükellef", len(mevcut_atama))
+
+        mukellef_text = st.text_area(
+            "Mükellef Adları (her satıra bir tane)",
+            value="\n".join(mevcut_atama),
+            height=200,
+            key="by_mukellef_text",
+            help="Her satıra bir mükellef adı yazın. Örn: 'Ahmet Ticaret Ltd. Şti.'"
+        )
+
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("💾 Kaydet", type="primary", key="by_mukellef_kaydet"):
+                yeni_liste = [m.strip() for m in mukellef_text.split("\n") if m.strip()]
+                if mukellef_atamasi_kaydet(secili_beyanname, yeni_liste):
+                    st.success(f"{len(yeni_liste)} mükellef atandı!")
+                    st.rerun()
+                else:
+                    st.error("Kayıt başarısız!")
+        with col_btn2:
+            if st.button("🗑️ Tümünü Sil", key="by_mukellef_sil"):
+                if mukellef_atamasi_sil(secili_beyanname):
+                    st.success("Atamalar silindi!")
+                    st.rerun()
+
+    with col_a2:
+        st.write("**Mevcut Atamalar**")
+        if atamalar:
+            tum_atama = []
+            for kod, muk_listesi in atamalar.items():
+                if muk_listesi and kod in BEYANNAMELER:
+                    tum_atama.append({
+                        "Beyanname": f"{kod} - {BEYANNAMELER[kod]['ad']}",
+                        "Mükellef Sayısı": len(muk_listesi),
+                        "Örnek Mükellef": muk_listesi[0] if muk_listesi else "-",
+                    })
+            if tum_atama:
+                df = pd.DataFrame(tum_atama)
+                st.dataframe(df, width="stretch", hide_index=True)
+        else:
+            st.info("Henüz mükellef ataması yok.")
+
+
+def _by_tamamlanma_tab():
+    """Tamamlanma durumu tab icerigi."""
+    from beyanname_takvimi import (
+        tamamlanma_durumu_yukle, tamamlanma_kaydet, donem_anahtari,
+        yaklasan_beyannameler, BEYANNAMELER
+    )
+
+    st.subheader("✅ Beyanname Tamamlanma Durumu")
+    st.caption("Her dönem için beyanname gönderildi mi, beklemede mi?")
+
+    tum_durum = tamamlanma_durumu_yukle()
+
+    col_t1, col_t2 = st.columns([2, 1])
+    with col_t1:
+        secili_ref = st.date_input("Referans Tarihi",
+                                    value=datetime.now(),
+                                    key="by_tamamlanma_ref")
+    with col_t2:
+        st.write(" ")
+        st.write(" ")
+        if st.button("🔄 Yenile", key="by_tamamlanma_yenile"):
+            st.rerun()
+
+    yaklasan = yaklasan_beyannameler(secili_ref, 60)
+
+    st.write("**Yaklaşan 60 Gün — Tamamlanma Takibi**")
+    if yaklasan:
+        for b in yaklasan:
+            anahtar = donem_anahtari(b["kod"], datetime.strptime(b["tarih_iso"], "%Y-%m-%d"))
+            mevcut = tum_durum.get(anahtar, {})
+            durum = mevcut.get("durum", "beklemede")
+            notu = mevcut.get("notu", "")
+
+            with st.container():
+                col_tt1, col_tt2, col_tt3, col_tt4 = st.columns([3, 2, 2, 2])
+                with col_tt1:
+                    st.write(f"**{b['ad']}**")
+                    st.caption(f"Son gün: {b['tarih']} ({b['kalan_text']})")
+                with col_tt2:
+                    yeni_durum = st.selectbox(
+                        "Durum",
+                        ["beklemede", "tamamlandi", "gecikti"],
+                        index=["beklemede", "tamamlandi", "gecikti"].index(durum),
+                        key=f"durum_{anahtar}"
+                    )
+                with col_tt3:
+                    yeni_notu = st.text_input("Not", value=notu, key=f"notu_{anahtar}",
+                                               label_visibility="collapsed",
+                                               placeholder="Not ekle...")
+                with col_tt4:
+                    st.write(" ")
+                    if st.button("💾", key=f"kaydet_{anahtar}"):
+                        if tamamlanma_kaydet(anahtar, yeni_durum, yeni_notu):
+                            st.success("✓")
+                            st.rerun()
+                        else:
+                            st.error("X")
+                st.divider()
+    else:
+        st.info("Yaklaşan 60 gün içinde beyanname yok.")
+
+    # Genel istatistik
+    st.write("**Genel Durum**")
+    tamamlanan = sum(1 for v in tum_durum.values() if v.get("durum") == "tamamlandi")
+    beklemede = sum(1 for v in tum_durum.values() if v.get("durum") == "beklemede")
+    geciken = sum(1 for v in tum_durum.values() if v.get("durum") == "gecikti")
+    col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+    with col_s1:
+        st.metric("Toplam Kayıt", len(tum_durum))
+    with col_s2:
+        st.metric("✅ Tamamlanan", tamamlanan)
+    with col_s3:
+        st.metric("⏳ Beklemede", beklemede)
+    with col_s4:
+        st.metric("🚨 Geciken", geciken)
+
+
+def _by_email_tab():
+    """Email bildirim tab icerigi."""
+    from beyanname_takvimi import email_icerik_olustur, yaklasan_beyannameler
+
+    st.subheader("📧 Email Bildirim Ayarları")
+    email_config = dosya_oku(EMAIL_FILE, {})
+
+    with st.form("email_ayarlar_form", clear_on_submit=False):
+        smtp_server = st.text_input("SMTP Sunucu", value=email_config.get("smtp_server", "smtp.gmail.com"), key="smtp_server")
+        smtp_port = st.number_input("SMTP Port", value=int(email_config.get("port", 587)), key="smtp_port")
+        gonderen = st.text_input("Gönderen Email", value=email_config.get("gonderen", ""), placeholder="ornek@gmail.com", key="gonderen_email")
+        sifre = st.text_input("Uygulama Şifresi", value=email_config.get("sifre", ""), type="password", key="sifre_email",
+                              help="Gmail için: google.com/account > Güvenlik > Uygulama şifreleri")
+        alici = st.text_input("Alıcı Email (opsiyonel)", value=email_config.get("alici", ""), placeholder="Gönderen ile aynı ise boş bırakın", key="alici_email")
+
+        if st.form_submit_button("💾 Email Ayarlarını Kaydet", type="primary", use_container_width=True):
+            yeni_config = {
+                "smtp_server": smtp_server,
+                "port": int(smtp_port),
+                "gonderen": gonderen,
+                "sifre": sifre,
+                "alici": alici or gonderen,
+            }
+            dosya_yaz(EMAIL_FILE, yeni_config)
+            st.success("Email ayarları kaydedildi!")
+            st.rerun()
+
+    st.divider()
+    st.subheader("Manuel Email Gönderimi")
+
+    yaklasan = yaklasan_beyannameler(datetime.now(), 30)
+    if yaklasan:
+        konu, icerik = email_icerik_olustur(yaklasan)
+        with st.expander("📧 Email İçeriği Önizleme", expanded=False):
+            st.text_area("Konu", value=konu, disabled=True, key="onizleme_konu")
+            st.text_area("İçerik", value=icerik, disabled=True, height=200, key="onizleme_icerik")
+
+        if st.button("📧 Email Gönder", type="primary", use_container_width=True, key="by_email_gonder"):
+            if not email_config.get("gonderen") or not email_config.get("sifre"):
+                st.warning("⚠️ Email ayarları yapılandırılmamış.")
+            else:
+                with st.spinner("Email gönderiliyor..."):
+                    from veritabani import email_gonder
+                    basarili = email_gonder(konu, icerik)
+                if basarili:
+                    st.success("✅ Email gönderildi!")
+                else:
+                    st.error("❌ Email gönderilemedi.")
+    else:
+        st.info("Yaklaşan 30 gün içinde beyanname yok.")
 
 
 def _kullanici_yonetimi_paneli():
