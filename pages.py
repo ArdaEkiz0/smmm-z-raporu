@@ -1943,8 +1943,8 @@ def _page_beyanname_takvimi():
 
     st.divider()
 
-    tab_takvim, tab_atama, tab_tamamlanma, tab_email = st.tabs([
-        "📅 Takvim", "👥 Mükellef Atama", "✅ Tamamlanma", "📧 Email"
+    tab_takvim, tab_atama, tab_tamamlanma, tab_email, tab_bildirim = st.tabs([
+        "📅 Takvim", "👥 Mükellef Atama", "✅ Tamamlanma", "📧 Email", "🔔 Bildirim Geçmişi"
     ])
 
     with tab_takvim:
@@ -1959,6 +1959,9 @@ def _page_beyanname_takvimi():
     with tab_email:
         _by_email_tab()
 
+    with tab_bildirim:
+        _by_bildirim_tab()
+
 
 def _by_takvim_tab():
     """Beyanname takvimi tab icerigi."""
@@ -1968,7 +1971,7 @@ def _by_takvim_tab():
     )
 
     # Filtre satiri
-    col_f1, col_f2, col_f3 = st.columns([2, 1, 1])
+    col_f1, col_f2, col_f3, col_f4 = st.columns([2, 1, 1, 2])
     with col_f1:
         kategori = st.selectbox("Kategori Filtresi", [
             "Tümü", "Vergi", "E-Belge", "SGK", "Çevre"
@@ -1977,8 +1980,19 @@ def _by_takvim_tab():
         gun_araligi = st.selectbox("Zaman Aralığı", [30, 60, 90, 180, 365],
                                     index=1, key="by_gun_araligi")
     with col_f3:
-        yil_secim = st.selectbox("Yıl", [2024, 2025, 2026, 2027],
+        yil_secim = st.selectbox("Yıl", [2024, 2025, 2026, 2027, 2028, 2029, 2030],
                                   index=2, key="by_yil_secim")
+    with col_f4:
+        from beyanname_takvimi import mukellef_atamalari_yukle
+        atamalar = mukellef_atamalari_yukle()
+        tum_mukellefler = sorted(set(
+            m for liste in atamalar.values() for m in liste
+        ))
+        mukellef_secim = st.selectbox(
+            "Mükellef Filtresi",
+            ["Tümü"] + tum_mukellefler,
+            key="by_mukellef_filtre"
+        )
 
     kategori_map = {
         "Tümü": None, "Vergi": "vergi", "E-Belge": "e-belge",
@@ -1988,7 +2002,12 @@ def _by_takvim_tab():
 
     # ==== Yaklasan beyannameler kartlari ====
     st.subheader(f"⏰ Yaklaşan Beyannameler ({gun_araligi} gün)")
-    yaklasan = yaklasan_beyannameler(datetime.now(), gun_araligi, kategori=kat)
+    from beyanname_takvimi import mukellef_bazli_liste
+    if mukellef_secim != "Tümü":
+        yaklasan = mukellef_bazli_liste(mukellef_secim, datetime.now(), gun_araligi)
+        yaklasan = [b for b in yaklasan if kat is None or b["kategori"] == kat]
+    else:
+        yaklasan = yaklasan_beyannameler(datetime.now(), gun_araligi, kategori=kat)
     if not yaklasan:
         st.info(f"Bu zaman aralığında {kategori.lower()} kategorisinde beyanname yok.")
     else:
@@ -2062,6 +2081,7 @@ def _by_takvim_tab():
 
     # ==== Yillik tablo ====
     with st.expander(f"📅 {yil_secim} Yılı Tüm Beyannameler", expanded=False):
+        from beyanname_takvimi import takvim_export_csv, takvim_export_json
         takvim = yillik_takvim(yil_secim)
         if takvim:
             df = pd.DataFrame([{
@@ -2071,6 +2091,24 @@ def _by_takvim_tab():
                 "Kategori": t["kategori"].title(),
             } for t in takvim])
             st.dataframe(df, width="stretch", hide_index=True)
+
+            col_e1, col_e2 = st.columns(2)
+            with col_e1:
+                csv_data = takvim_export_csv(yil_secim)
+                if csv_data:
+                    st.download_button(
+                        "📥 CSV İndir", csv_data,
+                        f"beyanname_takvimi_{yil_secim}.csv",
+                        "text/csv", use_container_width=True
+                    )
+            with col_e2:
+                json_data = takvim_export_json(yil_secim)
+                if json_data:
+                    st.download_button(
+                        "📥 JSON İndir", json_data,
+                        f"beyanname_takvimi_{yil_secim}.json",
+                        "application/json", use_container_width=True
+                    )
         else:
             st.info(f"{yil_secim} için veri yok.")
 
@@ -2255,6 +2293,24 @@ def _by_tamamlanma_tab():
     with col_s4:
         st.metric("🚨 Geciken", geciken)
 
+    # Aylik grafik
+    from beyanname_takvimi import aylik_tamamlanma_istatistik
+    grafik_yil = st.selectbox("Grafik Yılı", [2024, 2025, 2026, 2027, 2028],
+                                index=2, key="by_grafik_yil")
+    aylik_veri = aylik_tamamlanma_istatistik(grafik_yil)
+    if any(v["toplam"] > 0 for v in aylik_veri.values()):
+        ay_adlari = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                     "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
+        grafik_df = pd.DataFrame([{
+            "Ay": ay_adlari[ay-1],
+            "Tamamlandı": v["tamamlandi"],
+            "Beklemede": v["beklemede"],
+            "Gecikti": v["gecikti"],
+        } for ay, v in aylik_veri.items()])
+        st.bar_chart(grafik_df.set_index("Ay"), height=300)
+    else:
+        st.info(f"{grafik_yil} için henüz tamamlanma kaydı yok.")
+
 
 def _by_email_tab():
     """Email bildirim tab icerigi."""
@@ -2306,6 +2362,90 @@ def _by_email_tab():
                     st.error("❌ Email gönderilemedi.")
     else:
         st.info("Yaklaşan 30 gün içinde beyanname yok.")
+
+
+def _by_bildirim_tab():
+    """Bildirim gecmisi tab icerigi."""
+    from beyanname_takvimi import (
+        bildirim_log_listele, bildirim_log_temizle,
+        otomatik_email_kontrol, BEYANNAMELER, HATIRLATMA_GUNLERI
+    )
+
+    st.subheader("🔔 Bildirim Geçmişi")
+    st.caption("Otomatik ve manuel bildirimlerin kaydı")
+
+    col_b1, col_b2 = st.columns([2, 1])
+    with col_b1:
+        tur_filtre = st.selectbox("Bildirim Türü Filtresi",
+                                   ["Tümü", "email", "sms", "whatsapp"],
+                                   key="by_bildirim_tur")
+    with col_b2:
+        if st.button("🗑️ Logları Temizle", key="by_bildirim_temizle"):
+            if bildirim_log_temizle():
+                st.success("Loglar temizlendi!")
+                st.rerun()
+
+    loglar = bildirim_log_listele(limit=100, tur=tur_filtre if tur_filtre != "Tümü" else None)
+
+    if loglar:
+        log_df = []
+        for log in reversed(loglar):
+            bey_kod = log.get("beyanname_kod", "")
+            bey_adi = BEYANNAMELER.get(bey_kod, {}).get("ad", bey_kod) if bey_kod else "-"
+            log_df.append({
+                "Tarih": log.get("tarih", "")[:19].replace("T", " "),
+                "Tür": log.get("tur", "").upper(),
+                "Beyanname": bey_adi,
+                "Mesaj": log.get("mesaj", "")[:60],
+                "Durum": "✅" if log.get("basarili") else "❌",
+            })
+        st.dataframe(pd.DataFrame(log_df), width="stretch", hide_index=True)
+    else:
+        st.info("Henüz bildirim gönderilmemiş.")
+
+    st.divider()
+    st.subheader("🔄 Otomatik Email Zamanlayıcı")
+    st.caption("T-15, T-7, T-3, T-1, T-0 günlerinde otomatik bildirim kontrolü")
+
+    gonderilecek = otomatik_email_kontrol()
+    if gonderilecek:
+        st.warning(f"⚠️ **{len(gonderilecek)}** bildirim gönderilmeyi bekliyor!")
+        for b in gonderilecek:
+            with st.container():
+                col_z1, col_z2, col_z3 = st.columns([3, 1, 1])
+                with col_z1:
+                    st.write(f"**{b['ad']}**")
+                    st.caption(b["aciklama"])
+                with col_z2:
+                    st.metric("Kalan", b["kalan_text"])
+                with col_z3:
+                    st.metric("Son Gün", b["tarih"])
+                st.divider()
+
+        if st.button("📧 Bekleyen Bildirimleri Gönder", type="primary",
+                      use_container_width=True, key="by_bekleyen_gonder"):
+            email_config = dosya_oku(EMAIL_FILE, {})
+            if not email_config.get("gonderen") or not email_config.get("sifre"):
+                st.warning("⚠️ Önce Email ayarlarını yapılandırın (Email tab'ı)!")
+            else:
+                from beyanname_takvimi import email_icerik_olustur, bildirim_log_kaydet
+                from veritabani import email_gonder
+
+                basarili_sayisi = 0
+                for b in gonderilecek:
+                    konu, icerik = email_icerik_olustur([b])
+                    ok = email_gonder(konu, icerik)
+                    bildirim_log_kaydet("email", b["kod"],
+                                        f"{b['ad']} - {b['kalan_text']}", ok)
+                    if ok:
+                        basarili_sayisi += 1
+                if basarili_sayisi > 0:
+                    st.success(f"✅ {basarili_sayisi}/{len(gonderilecek)} bildirim gönderildi!")
+                else:
+                    st.error("❌ Bildirim gönderilemedi. Email ayarlarını kontrol edin.")
+                st.rerun()
+    else:
+        st.success("✅ Bekleyen bildirim yok. Tüm hatırlatmalar gönderilmiş.")
 
 
 def _kullanici_yonetimi_paneli():

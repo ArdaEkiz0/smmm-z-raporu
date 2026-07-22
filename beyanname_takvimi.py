@@ -645,6 +645,163 @@ def istatistik(ref_date: Optional[datetime] = None) -> Dict:
     }
 
 
+# ==== Bildirim Log Sistemi ====
+BILDIRIM_LOG_FILE = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "data", "bildirim_log.json"
+)
+
+
+def bildirim_log_kaydet(tur: str, beyanname_kod: str, mesaj: str, basarili: bool = True):
+    """Bildirim gonderimini logla."""
+    loglar = _bildirim_log_yukle()
+    loglar.append({
+        "tur": tur,
+        "beyanname_kod": beyanname_kod,
+        "mesaj": mesaj,
+        "basarili": basarili,
+        "tarih": datetime.now().isoformat(),
+    })
+    try:
+        os.makedirs(os.path.dirname(BILDIRIM_LOG_FILE), exist_ok=True)
+        with open(BILDIRIM_LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump(loglar[-500:], f, ensure_ascii=False, indent=2)
+    except OSError:
+        pass
+
+
+def _bildirim_log_yukle() -> List[Dict]:
+    if not os.path.exists(BILDIRIM_LOG_FILE):
+        return []
+    try:
+        with open(BILDIRIM_LOG_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return []
+
+
+def bildirim_log_listele(limit: int = 50, tur: Optional[str] = None) -> List[Dict]:
+    """Bildirim loglarini listele."""
+    loglar = _bildirim_log_yukle()
+    if tur:
+        loglar = [l for l in loglar if l.get("tur") == tur]
+    return loglar[-limit:]
+
+
+def bildirim_log_temizle():
+    """Tum bildirim loglarini temizle."""
+    try:
+        os.makedirs(os.path.dirname(BILDIRIM_LOG_FILE), exist_ok=True)
+        with open(BILDIRIM_LOG_FILE, "w", encoding="utf-8") as f:
+            json.dump([], f)
+        return True
+    except OSError:
+        return False
+
+
+def otomatik_email_kontrol() -> List[Dict]:
+    """T-15/T-7/T-3/T-1/T-0 kontrolu yap.
+    
+    Hangi beyannameler icin bildirim gonderilmesi gerektigini dondur.
+    Her beyanname icin son 24 saatte bildirim gonderilmemis olmali.
+    """
+    bugun = datetime.now()
+    son_24 = bugun - timedelta(hours=24)
+    loglar = _bildirim_log_yukle()
+    
+    gonderilecek = []
+    for b in yaklasan_beyannameler(bugun, 30):
+        kalan = b["kalan_gun"]
+        if kalan not in HATIRLATMA_GUNLERI or kalan < 0:
+            continue
+        
+        # Son 24 saatte bildirim gonderilmis mi kontrol et
+        gonderilmemis = True
+        for log in loglar:
+            if log.get("beyanname_kod") == b["kod"]:
+                try:
+                    log_tarih = datetime.fromisoformat(log["tarih"])
+                    if log_tarih > son_24:
+                        gonderilmemis = False
+                        break
+                except (ValueError, KeyError):
+                    pass
+        
+        if gonderilmemis:
+            gonderilecek.append(b)
+    
+    return gonderilecek
+
+
+# ==== Mukellef bazli liste ====
+def mukellef_bazli_liste(mukellef_adi: str, ref_date: Optional[datetime] = None,
+                          gun_araligi: int = 90) -> List[Dict]:
+    """Belirli bir mukellefe atanmis beyannameleri listele."""
+    if ref_date is None:
+        ref_date = datetime.now()
+    
+    atamalar = mukellef_atamalari_yukle()
+    tum_yaklasan = yaklasan_beyannameler(ref_date, gun_araligi)
+    sonuc = []
+    
+    for b in tum_yaklasan:
+        if b["kod"] in atamalar and mukellef_adi in atamalar[b["kod"]]:
+            sonuc.append(b)
+    
+    return sonuc
+
+
+# ==== Export fonksiyonlari ====
+def takvim_export_csv(yil: int) -> str:
+    """Yillik takvimi CSV olarak export et."""
+    takvim = yillik_takvim(yil)
+    if not takvim:
+        return ""
+    
+    baslik = "Kod;Ad;Tarih;Kategori\n"
+    satirlar = [
+        f"{t['kod']};{t['ad']};{t['tarih']};{t['kategori']}"
+        for t in takvim
+    ]
+    return baslik + "\n".join(satirlar)
+
+
+def takvim_export_json(yil: int) -> str:
+    """Yillik takvimi JSON olarak export et."""
+    takvim = yillik_takvim(yil)
+    return json.dumps(takvim, ensure_ascii=False, indent=2)
+
+
+# ==== Dashboard grafik verisi ====
+def aylik_tamamlanma_istatistik(yil: int) -> Dict[int, Dict]:
+    """Yillik aylik bazda tamamlanma istatistikleri."""
+    tum_durum = tamamlanma_durumu_yukle()
+    aylar = {}
+    
+    for ay in range(1, 13):
+        aylar[ay] = {
+            "toplam": 0,
+            "tamamlandi": 0,
+            "beklemede": 0,
+            "gecikti": 0,
+        }
+    
+    for anahtar, durum in tum_durum.items():
+        try:
+            _, yilay = anahtar.split("_")
+            kayit_yil = int(yilay[:4])
+            kayit_ay = int(yilay[4:6])
+            if kayit_yil == yil:
+                aylar[kayit_ay]["toplam"] += 1
+                durum_adi = durum.get("durum", "beklemede")
+                if durum_adi in aylar[kayit_ay]:
+                    aylar[kayit_ay][durum_adi] += 1
+        except (ValueError, IndexError):
+            pass
+    
+    return aylar
+
+
 if __name__ == "__main__":
     print("Beyanname Takvimi Test")
     print("=" * 60)
