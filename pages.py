@@ -2112,6 +2112,49 @@ def _by_takvim_tab():
         else:
             st.info(f"{yil_secim} için veri yok.")
 
+    # ==== TÜRMOB Senkronizasyon ====
+    with st.expander("🌐 TÜRMOB Mali Takvim Senkronizasyonu", expanded=False):
+        from turmob_scraper import kisa_ozet, gunluk_kontrol_ve_bildirim, son_durum, ogeleri_beyanname_ile_karsilastir
+
+        ozet = kisa_ozet()
+        col_t1, col_t2, col_t3, col_t4 = st.columns(4)
+        with col_t1:
+            st.metric("📦 TÜRMOB Öğe", ozet["toplam_oge"])
+        with col_t2:
+            st.metric("📅 Bu Ay", ozet["bu_ay_oge"])
+        with col_t3:
+            st.metric("✅ Aktif", ozet["bu_ay_aktif"])
+        with col_t4:
+            eslesmeme = ozet["eslesmeyen_sayisi"]
+            st.metric("🔍 Eşleşmeyen", eslesmeme, delta_color="inverse" if eslesmeme > 0 else "off")
+
+        if ozet["son_guncelleme"]:
+            st.caption(f"Son güncelleme: {ozet['son_guncelleme'][:19].replace('T', ' ')}")
+
+        col_s1, col_s2 = st.columns(2)
+        with col_s1:
+            if st.button("🔄 Şimdi Tara", type="primary", use_container_width=True, key="by_turmob_tara"):
+                with st.spinner("TÜRMOB taranıyor (tüm yıl, ~5sn)..."):
+                    sonuc = gunluk_kontrol_ve_bildirim()
+                st.success(sonuc["mesaj"])
+                if sonuc.get("karsilastirma", {}).get("eslesmeyen"):
+                    st.info(f"{len(sonuc['karsilastirma']['eslesmeyen'])} öğe beyanname listemizle eşleşmedi:")
+                    for o in sonuc["karsilastirma"]["eslesmeyen"][:5]:
+                        st.caption(f"• {o['baslik'][:65]}...")
+                st.rerun()
+
+        with col_s2:
+            cache = son_durum()
+            veri = cache.get("veriler", [])
+            if veri:
+                turmob_df = pd.DataFrame([{
+                    "Başlık": o["baslik"][:50],
+                    "Başlangıç": o.get("bas_tarih", ""),
+                    "Bitiş": o.get("bitis_tarih", ""),
+                    "Eşleşme": BEYANNAMELER.get(o.get("eslesti_kod"), {}).get("ad", o.get("eslesti_kod", "❌")),
+                } for o in veri[-20:]])
+                st.dataframe(turmob_df, width="stretch", hide_index=True)
+
 
 def _heatmap_hafta_goster(st_obj, hafta, heatmap, gun_araligi):
     """Heatmap haftasini goster - Streamlit uyumlu."""
