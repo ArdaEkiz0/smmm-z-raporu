@@ -18,9 +18,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Sonra uygulama kodunu kopyala
 COPY . .
 
-# EasyOCR modelini build sırasında indir (~100MB) - cold start'ı hızlandırır.
-# Model indirilemezse build yine de başarılı olsun.
-RUN python -c "import easyocr; easyocr.Reader(['tr'], gpu=False, verbose=False)" || true
+# EasyOCR modeli build'de indirilmez - runtime'da lazy yuklenir (Render 512MB OOM korumasi)
 
 # Streamlit config
 RUN mkdir -p /app/.streamlit && \

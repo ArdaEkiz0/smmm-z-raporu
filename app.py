@@ -70,22 +70,22 @@ st.set_page_config(page_title="SMMM Z Raporu Sistemi", layout="wide", page_icon=
 
 st.caption(f"<span style='font-size:0.7rem;color:#94a3b8;'>v3.1</span>", unsafe_allow_html=True)
 
-# EasyOCR warm-up: @st.cache_resource ile her session paylasir
-@st.cache_resource(show_spinner=False)
-def _warmup_easyocr():
-    try:
-        from ocr import _get_easyocr
-        reader = _get_easyocr()
-        return reader is not None
-    except Exception:
-        return False
-
-if "_easyocr_warmed" not in st.session_state:
-    try:
-        _warmup_easyocr()
-        st.session_state["_easyocr_warmed"] = True
-    except Exception:
-        log.warning("EasyOCR warm-up basarisiz", exc_info=True)
+# EasyOCR warm-up: Render'da atla (512MB OOM korumasi), local'de lazy yuklenir
+if not os.getenv("RENDER"):
+    @st.cache_resource(show_spinner=False)
+    def _warmup_easyocr():
+        try:
+            from ocr import _get_easyocr
+            reader = _get_easyocr()
+            return reader is not None
+        except Exception:
+            return False
+    if "_easyocr_warmed" not in st.session_state:
+        try:
+            _warmup_easyocr()
+            st.session_state["_easyocr_warmed"] = True
+        except Exception:
+            log.warning("EasyOCR warm-up basarisiz", exc_info=True)
 
 try:
     from ogrenme_cekirdigi import mevcut_sozlukleri_birlestir
